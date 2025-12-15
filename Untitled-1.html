@@ -1,0 +1,260 @@
+"use client";
+
+import Link from "next/link";
+import { useMemo, useState } from "react";
+import { tours, type Tour } from "@/app/lib/tours";
+
+function yen(n: number) {
+  return new Intl.NumberFormat("ja-JP").format(n);
+}
+
+const categories = [
+  { key: "food", label: "食べ歩き", emoji: ":ラーメン:" },
+  { key: "walk", label: "街歩き", emoji: ":歩く人:" },
+  { key: "nature", label: "自然", emoji: ":国立公園:" },
+  { key: "history", label: "歴史", emoji: ":鳥居:" },
+  { key: "night", label: "ナイト", emoji: ":クレセントムーン:" },
+  { key: "photo", label: "写真", emoji: ":カメラ:" },
+];
+
+export default function Home() {
+  const [query, setQuery] = useState("");
+  const [activeBadges, setActiveBadges] = useState<string[]>([]);
+
+  const allBadges = useMemo(() => {
+    const s = new Set<string>();
+    tours.forEach((t) => (t.badges ?? []).forEach((b) => s.add(b)));
+    return Array.from(s);
+  }, []);
+
+  const filteredTours = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return tours.filter((t) => {
+      const hitText =
+        !q ||
+        t.title.toLowerCase().includes(q) ||
+        t.city.toLowerCase().includes(q);
+
+      const hitBadges =
+        activeBadges.length === 0 ||
+        activeBadges.every((b) => (t.badges ?? []).includes(b));
+
+      return hitText && hitBadges;
+    });
+  }, [query, activeBadges]);
+
+  function toggleBadge(badge: string) {
+    setActiveBadges((prev) =>
+      prev.includes(badge) ? prev.filter((x) => x !== badge) : [...prev, badge]
+    );
+  }
+
+  return (
+    <main className="min-h-screen bg-white">
+      {/* Top bar */}
+      <header className="sticky top-0 z-30 bg-white/80 backdrop-blur border-b">
+        <div className="mx-auto max-w-6xl px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-xl bg-slate-900" />
+            <div className="text-lg font-bold">TripFinder</div>
+          </div>
+          <nav className="hidden md:flex items-center gap-8 text-sm text-slate-700">
+            <a href="#categories" className="hover:text-slate-900">
+              カテゴリ
+            </a>
+            <a href="#popular" className="hover:text-slate-900">
+              人気ツアー
+            </a>
+            <a href="#reviews" className="hover:text-slate-900">
+              レビュー
+            </a>
+          </nav>
+          <button className="rounded-xl bg-slate-900 px-5 py-2 text-white text-sm font-medium">
+            ログイン
+          </button>
+        </div>
+      </header>
+
+      {/* Hero */}
+      <section className="relative">
+        <div
+          className="h-[420px] bg-cover bg-center"
+          style={{
+            backgroundImage:
+              "url(https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1600&q=60)",
+          }}
+        />
+        <div className="absolute inset-0 bg-black/45" />
+        <div className="absolute inset-0">
+          <div className="mx-auto max-w-6xl px-6 h-full flex flex-col justify-center">
+            <div className="text-white">
+              <div className="flex items-center gap-6 text-sm opacity-90">
+                <span>✓ 予約保証（例）</span>
+                <span>✓ 厳選レビュー</span>
+                <span>✓ 24時間サポート（例）</span>
+              </div>
+              <h1 className="mt-4 text-4xl md:text-5xl font-bold">
+                最高の体験を、簡単に予約
+              </h1>
+              <p className="mt-3 text-white/90">
+                人気都市のツアー・アクティビティを検索
+              </p>
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="行き先・体験（例：京都）"
+                className="mt-6 h-12 w-full max-w-xl rounded-xl px-4 text-slate-900"
+              />
+              <div className="mt-4 flex flex-wrap gap-2">
+                {allBadges.map((b) => {
+                  const active = activeBadges.includes(b);
+                  return (
+                    <button
+                      key={b}
+                      onClick={() => toggleBadge(b)}
+                      className={
+                        "rounded-full px-3 py-1 text-sm border " +
+                        (active
+                          ? "bg-white text-slate-900"
+                          : "bg-white/0 text-white border-white/40")
+                      }
+                    >
+                      {b}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Categories */}
+      <section id="categories" className="mx-auto max-w-6xl px-6 py-12">
+        <div className="flex items-end justify-between">
+          <h2 className="text-2xl font-bold">人気カテゴリ</h2>
+          <span className="text-sm text-slate-500">すべて見る</span>
+        </div>
+        <div className="mt-6 overflow-x-auto">
+          <div className="flex gap-4 min-w-max pb-2">
+            {categories.map((c) => (
+              <button
+                key={c.key}
+                onClick={() => setQuery(c.label)}
+                className="w-[220px] rounded-2xl border p-5 text-left hover:shadow-sm"
+              >
+                <div className="text-2xl">{c.emoji}</div>
+                <div className="mt-3 font-semibold">{c.label}</div>
+                <div className="mt-1 text-sm text-slate-500">
+                  クリックで検索に反映
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Tours */}
+      <section id="popular" className="bg-slate-50">
+        <div className="mx-auto max-w-6xl px-6 py-12">
+          <div className="flex items-end justify-between">
+            <div>
+              <h2 className="text-2xl font-bold">人気のツアー</h2>
+              <p className="mt-2 text-sm text-slate-600">
+                文字入力やバッジで絞り込みできます。
+              </p>
+            </div>
+            <div className="text-sm text-slate-500">
+              表示中：{filteredTours.length}件
+            </div>
+          </div>
+          <div className="mt-8 grid gap-6 md:grid-cols-3">
+            {filteredTours.map((t: Tour) => (
+              <div key={t.id} className="rounded-2xl border bg-white shadow-sm">
+                <div className="relative">
+                  <img
+                    src={t.imageUrl}
+                    alt={t.title}
+                    className="h-52 w-full rounded-t-2xl object-cover"
+                  />
+                  <div className="absolute left-3 top-3 flex gap-2">
+                    {(t.badges ?? []).slice(0, 2).map((b) => (
+                      <span
+                        key={b}
+                        className="rounded-full bg-white/90 px-3 py-1 text-xs"
+                      >
+                        {b}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="p-5">
+                  <div className="text-sm text-slate-500">
+                    {t.city}・{t.duration}
+                  </div>
+                  <h3 className="mt-1 text-lg font-semibold">{t.title}</h3>
+                  <div className="mt-3 flex items-center gap-2 text-sm">
+                    <span>★ {t.rating}</span>
+                    <span className="text-slate-500">({yen(t.reviews)}件)</span>
+                  </div>
+                  <div className="mt-4 flex items-end justify-between">
+                    <div className="text-sm text-slate-500">1人あたり</div>
+                    <div className="text-xl font-bold">¥{yen(t.priceJPY)}</div>
+                  </div>
+                  <Link
+                    href={`/tours/${t.id}`}
+                    className="mt-5 block w-full rounded-xl bg-slate-900 px-6 py-3 text-center text-white font-medium"
+                  >
+                    詳細を見る
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Reviews */}
+      <section id="reviews" className="mx-auto max-w-6xl px-6 py-12">
+        <h2 className="text-2xl font-bold">みんなのレビュー</h2>
+        <div className="mt-6 grid gap-6 md:grid-cols-3">
+          {[
+            {
+              star: "★ 5.0",
+              text: "初めてでも迷わず予約できた。キャンセル無料が助かる！",
+              name: "Aki",
+            },
+            {
+              star: "★ 5.0",
+              text: "写真通りで満足。ガイドさんが最高だった。",
+              name: "Rina",
+            },
+            {
+              star: "★ 5.0",
+              text: "時間通りで安心。次の旅行でも使いたい。",
+              name: "Ken",
+            },
+          ].map((r, i) => (
+            <div key={i} className="rounded-2xl border p-6">
+              <div className="font-semibold">{r.star}</div>
+              <p className="mt-3 text-slate-700 leading-relaxed">{r.text}</p>
+              <div className="mt-4 text-sm text-slate-500">{r.name}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <footer className="border-t">
+        <div className="mx-auto max-w-6xl px-6 py-10 flex items-center justify-between text-sm text-slate-500">
+          <div>© 2025 TripFinder</div>
+          <div className="flex gap-6">
+            <span>利用規約</span>
+            <span>プライバシー</span>
+            <span>お問い合わせ</span>
+          </div>
+        </div>
+      </footer>
+    </main>
+  );
+}
+
