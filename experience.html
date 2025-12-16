@@ -285,6 +285,7 @@
   </footer>
 
   <script src="data.js"></script>
+  <script src="event-template.js"></script>
   <script>
     // URLパラメータからイベントIDを取得
     const urlParams = new URLSearchParams(window.location.search);
@@ -294,130 +295,8 @@
     const event = eventData.events.find(e => e.id === eventId);
     const organizer = event ? eventData.organizers.find(o => o.id === event.organizerId) : null;
 
-    if (event) {
-      // タイトル
-      document.getElementById('event-title').textContent = event.title;
-      document.title = `${event.title} | GreenTrails`;
-      document.getElementById('meta-description').content = event.description;
-
-      // 構造化データ
-      const structuredData = {
-        "@context": "https://schema.org",
-        "@type": "Event",
-        "name": event.title,
-        "description": event.description,
-        "image": event.image,
-        "startDate": event.dates[0] ? `${event.dates[0].date}T${event.dates[0].time}:00` : "",
-        "location": {
-          "@type": "Place",
-          "name": event.location ? event.location.name : `${event.area}, ${event.prefecture}`,
-          "address": {
-            "@type": "PostalAddress",
-            "addressLocality": event.area,
-            "addressRegion": event.prefecture
-          }
-        },
-        "offers": {
-          "@type": "Offer",
-          "price": event.price,
-          "priceCurrency": "JPY"
-        }
-      };
-      document.getElementById('event-structured-data').textContent = JSON.stringify(structuredData);
-
-      // バッジ
-      const badgesContainer = document.getElementById('event-badges');
-      const badges = [];
-      if (event.isRecommended) badges.push('<span class="badge recommended">おすすめ</span>');
-      if (event.isNew) badges.push('<span class="badge new">新着</span>');
-      if (event.externalLink) badges.push('<span class="badge external-link">外部申込可</span>');
-      badgesContainer.innerHTML = badges.join('');
-
-      // 画像
-      document.getElementById('event-main-image').style.backgroundImage = `url('${event.image}')`;
-
-      // パンくず
-      const category = eventData.categories.find(c => c.id === event.categoryId);
-      document.getElementById('breadcrumb-category').textContent = category ? category.name : event.category;
-
-      // 説明
-      document.getElementById('event-description').textContent = event.description;
-
-      // 情報
-      document.getElementById('event-duration').textContent = event.duration;
-      document.getElementById('event-location').textContent = event.location ? event.location.name : `${event.area}, ${event.prefecture}`;
-      document.getElementById('event-target-age').textContent = event.targetAge || '全年齢';
-      document.getElementById('event-price').textContent = event.price.toLocaleString();
-      document.getElementById('booking-price').textContent = event.price.toLocaleString();
-
-      // 開催日程
-      const datesList = document.getElementById('event-dates');
-      const bookingDateSelect = document.getElementById('booking-date');
-      event.dates.forEach(d => {
-        const dateObj = new Date(d.date);
-        const dateStr = `${dateObj.getFullYear()}年${dateObj.getMonth() + 1}月${dateObj.getDate()}日`;
-        const weekday = ['日', '月', '火', '水', '木', '金', '土'][dateObj.getDay()];
-
-        const li = document.createElement('li');
-        li.innerHTML = `<span>${dateStr}(${weekday}) ${d.time}</span>`;
-        datesList.appendChild(li);
-
-        const option = document.createElement('option');
-        option.value = d.date;
-        option.textContent = `${dateStr}(${weekday}) ${d.time}`;
-        bookingDateSelect.appendChild(option);
-      });
-
-      // ハイライト
-      const highlightsList = document.getElementById('event-highlights');
-      if (event.highlights && event.highlights.length > 0) {
-        event.highlights.forEach(h => {
-          const li = document.createElement('li');
-          li.textContent = h;
-          highlightsList.appendChild(li);
-        });
-      } else {
-        highlightsList.parentElement.style.display = 'none';
-      }
-
-      // 注意事項
-      document.getElementById('event-notes').textContent = event.notes || '特になし';
-
-      // 催行会社情報
-      if (organizer) {
-        document.getElementById('organizer-info').innerHTML = `
-          <div style="display: flex; gap: 16px; align-items: flex-start;">
-            <img src="${organizer.logo}" alt="${organizer.name}" style="width: 80px; height: 80px; border-radius: 8px; object-fit: cover; background: #f0f0f0;">
-            <div>
-              <h4 style="margin: 0 0 8px 0;">${organizer.name}</h4>
-              <p style="margin: 0; color: #6c7a72; font-size: 0.9rem;">${organizer.description}</p>
-              <div style="margin-top: 8px; font-size: 0.85rem; color: #6c7a72;">
-                設立: ${organizer.establishedYear}年 | 評価: ★${organizer.rating} (${organizer.reviewCount}件)
-              </div>
-            </div>
-          </div>
-        `;
-        document.getElementById('organizer-link').href = `organizer-detail.html?id=${organizer.id}`;
-      }
-
-      // 外部申込ボタン
-      const bookingBtn = document.getElementById('external-booking-btn');
-      if (event.externalLink) {
-        bookingBtn.href = event.externalLink;
-        bookingBtn.textContent = '外部サイトで予約する';
-      } else {
-        bookingBtn.style.display = 'none';
-      }
-    } else {
-      // イベントが見つからない場合
-      document.querySelector('.page').innerHTML = `
-        <div class="empty-state">
-          <div class="empty-state-icon">🔍</div>
-          <h2>イベントが見つかりませんでした</h2>
-          <p><a href="list.html">イベント一覧に戻る</a></p>
-        </div>
-      `;
-    }
+    // テンプレートを使用してページをレンダリング
+    EventPageRenderer.render(event, organizer);
   </script>
 </body>
 </html>

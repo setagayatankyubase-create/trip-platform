@@ -272,7 +272,7 @@ body {
 .section {
   margin: 60px auto 0;
   padding: 0 18px;
-  max-width: 1180px;
+  max-width: 1300px;
   margin-left: auto;
   margin-right: auto;
 }
@@ -297,8 +297,9 @@ body {
   position: relative;
   margin-top: 20px;
   max-width: 1280px;
-  margin-left: auto;
+  margin-left: 0;
   margin-right: auto;
+  padding: 0;
 }
 
 .card-carousel {
@@ -313,21 +314,27 @@ body {
   -ms-overflow-style: none;
 }
 
+.card-carousel .card {
+  width: 300px;
+  min-width: 300px;
+  max-width: 300px;
+}
+
 @media (min-width: 1400px) {
   .card-carousel {
-    grid-template-columns: repeat(4, 300px);
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 
 @media (max-width: 1399px) {
   .card-carousel {
-    grid-template-columns: repeat(3, 300px);
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
 @media (max-width: 1024px) {
   .card-carousel {
-    grid-template-columns: repeat(2, 300px);
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
