@@ -442,7 +442,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  text-align: left;
+  text-align: center;
+  align-items: center;
 }
 
 .card-type {
@@ -450,7 +451,7 @@ body {
   color: #666;
   font-weight: 500;
   margin-bottom: 2px;
-  text-align: left;
+  text-align: center;
 }
 
 .card-title {
@@ -463,14 +464,14 @@ body {
   overflow: hidden;
   color: #333;
   margin-bottom: 4px;
-  text-align: left;
+  text-align: center;
 }
 
 .card-duration {
   font-size: 0.85rem;
   color: #666;
   margin-bottom: 6px;
-  text-align: left;
+  text-align: center;
 }
 
 .card-rating {
@@ -501,7 +502,7 @@ body {
   font-size: 0.85rem;
   color: #666;
   margin-bottom: 8px;
-  text-align: left;
+  text-align: center;
 }
 
 .card-price {
@@ -509,7 +510,7 @@ body {
   font-weight: 700;
   font-size: 1.1rem;
   margin-top: auto;
-  text-align: left;
+  text-align: center;
 }
 
 .card-badges {
