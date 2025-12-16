@@ -309,39 +309,23 @@ body {
 }
 
 .card-carousel {
-  display: grid;
-  grid-template-columns: repeat(4, 280px);
+  display: flex;
   gap: 16px;
-  justify-content: start;
   overflow-x: auto;
   scroll-behavior: smooth;
-  padding-bottom: 10px;
+  padding: 10px 18px;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
 }
 
 .card-carousel .card {
+  flex: 0 0 280px;
   width: 280px;
   min-width: 280px;
   max-width: 280px;
-}
-
-@media (min-width: 1200px) {
-  .card-carousel {
-    grid-template-columns: repeat(4, 280px);
-  }
-}
-
-@media (max-width: 1199px) {
-  .card-carousel {
-    grid-template-columns: repeat(3, 280px);
-  }
-}
-
-@media (max-width: 1024px) {
-  .card-carousel {
-    grid-template-columns: repeat(2, 280px);
-  }
+  scroll-snap-align: start;
 }
 
 .card-carousel::-webkit-scrollbar {
@@ -767,17 +751,21 @@ body {
   overflow-x: auto;
   min-height: 80px;
   max-width: 1180px;
-  margin: 0;
+  margin: 0 auto;
+  scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
 }
 
 .week-calendar-list {
   display: flex;
   gap: 10px;
   align-items: stretch;
+  width: max-content;
 }
 
 .week-day-item {
-  flex: 1;
+  flex: 0 0 90px;
   min-width: 90px;
   padding: 12px 8px;
   text-align: center;
@@ -790,6 +778,7 @@ body {
   flex-direction: column;
   justify-content: center;
   background: #fff;
+  scroll-snap-align: start;
 }
 
 .week-day-item:hover {
