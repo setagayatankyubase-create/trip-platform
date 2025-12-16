@@ -209,7 +209,14 @@ const CardRenderer = {
     return `
       <a href="experience.html?id=${event.id}" class="card-link" data-event-id="${event.id}">
         <div class="card" data-event-id="${event.id}">
-          <img src="${event.image}" alt="${event.title}" loading="lazy">
+          <div class="card-image-wrapper">
+            <img src="${event.image}" alt="${event.title}" loading="lazy">
+            <button class="card-favorite" onclick="event.preventDefault(); event.stopPropagation();" title="お気に入りに追加">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+              </svg>
+            </button>
+          </div>
           <div class="card-body">
             <div class="card-badges">${badges.join('')}</div>
             <div class="card-title">${event.title}</div>
@@ -236,6 +243,24 @@ const CardRenderer = {
     if (events.length === 0) {
       container.innerHTML = `
         <div class="empty-state">
+          <div class="empty-state-icon">🔍</div>
+          <h3>該当するイベントが見つかりませんでした</h3>
+          <p>検索条件を変更してお試しください</p>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = events.map(event => this.render(event)).join('');
+  },
+
+  renderCarousel(events, containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    if (events.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state" style="width: 100%; padding: 40px;">
           <div class="empty-state-icon">🔍</div>
           <h3>該当するイベントが見つかりませんでした</h3>
           <p>検索条件を変更してお試しください</p>

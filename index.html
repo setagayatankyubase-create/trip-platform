@@ -31,7 +31,7 @@
   <!-- Hero Section -->
   <section class="hero-section">
     <div class="hero-content">
-      <h1 class="hero-title">アクティビティを検索 & 予約</h1>
+      <h1 class="hero-title">東京近郊で自然体験</h1>
       <form class="hero-search-form" id="main-search-form" onsubmit="handleSearch(event)">
         <input type="text" id="search-query" placeholder="行き先やアクティビティを検索" name="q" class="hero-search-input">
         <button type="submit" class="hero-search-button">検索</button>
@@ -61,7 +61,10 @@
         <h2>おすすめイベント</h2>
         <a href="list.html?recommended=1" class="view-all">すべて見る →</a>
       </div>
-      <div class="grid" id="recommended-events"></div>
+      <div class="card-carousel-wrapper">
+        <div class="card-carousel" id="recommended-events"></div>
+        <button class="carousel-arrow carousel-arrow-right" onclick="scrollCarousel('recommended-events', 'right')">→</button>
+      </div>
     </section>
 
     <!-- 新着イベント -->
@@ -70,7 +73,10 @@
         <h2>新着イベント</h2>
         <a href="list.html?new=1" class="view-all">すべて見る →</a>
       </div>
-      <div class="grid" id="new-events"></div>
+      <div class="card-carousel-wrapper">
+        <div class="card-carousel" id="new-events"></div>
+        <button class="carousel-arrow carousel-arrow-right" onclick="scrollCarousel('new-events', 'right')">→</button>
+      </div>
     </section>
 
     <!-- 直近開催イベント -->
@@ -79,7 +85,10 @@
         <h2>直近開催イベント</h2>
         <a href="list.html?upcoming=1" class="view-all">すべて見る →</a>
       </div>
-      <div class="grid" id="upcoming-events"></div>
+      <div class="card-carousel-wrapper">
+        <div class="card-carousel" id="upcoming-events"></div>
+        <button class="carousel-arrow carousel-arrow-right" onclick="scrollCarousel('upcoming-events', 'right')">→</button>
+      </div>
     </section>
   </main>
 
@@ -193,13 +202,30 @@
 
     // イベントブロックの表示
     function renderEventBlocks() {
-      const recommended = SearchFilter.getRecommendedEvents(eventData.events).slice(0, 3);
-      const newEvents = SearchFilter.getNewEvents(eventData.events).slice(0, 3);
-      const upcoming = SearchFilter.getUpcomingEvents(eventData.events, 7).slice(0, 3);
+      const recommended = SearchFilter.getRecommendedEvents(eventData.events);
+      const newEvents = SearchFilter.getNewEvents(eventData.events);
+      const upcoming = SearchFilter.getUpcomingEvents(eventData.events, 30);
 
-      CardRenderer.renderList(recommended, 'recommended-events');
-      CardRenderer.renderList(newEvents, 'new-events');
-      CardRenderer.renderList(upcoming, 'upcoming-events');
+      CardRenderer.renderCarousel(recommended, 'recommended-events');
+      CardRenderer.renderCarousel(newEvents, 'new-events');
+      CardRenderer.renderCarousel(upcoming, 'upcoming-events');
+    }
+
+    // カルーセルスクロール
+    function scrollCarousel(carouselId, direction) {
+      const carousel = document.getElementById(carouselId);
+      if (!carousel) return;
+      
+      const scrollAmount = 400;
+      const currentScroll = carousel.scrollLeft;
+      const newScroll = direction === 'right' 
+        ? currentScroll + scrollAmount 
+        : currentScroll - scrollAmount;
+      
+      carousel.scrollTo({
+        left: newScroll,
+        behavior: 'smooth'
+      });
     }
 
     // 初期化
