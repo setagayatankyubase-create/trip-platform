@@ -334,6 +334,11 @@ body {
   display: none;
 }
 
+/* カルーセルの青い矢印ボタンは非表示 */
+.carousel-arrow {
+  display: none;
+}
+
 .card-carousel .card {
   width: 100%;
 }
@@ -800,6 +805,16 @@ body {
   align-items: stretch;
   width: max-content;
   margin: 0 auto;
+}
+
+/* 今週のイベントのスクロールバーを非表示 */
+.week-calendar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.week-calendar::-webkit-scrollbar {
+  display: none;
 }
 
 .week-day-item {
