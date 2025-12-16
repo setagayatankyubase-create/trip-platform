@@ -186,26 +186,7 @@ const MapManager = {
   },
 
   highlightEvent(eventId) {
-    // カードのハイライト処理
-    document.querySelectorAll('.card').forEach(card => {
-      card.classList.remove('highlighted');
-      if (card.dataset.eventId === eventId) {
-        card.classList.add('highlighted');
-        card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }
-    });
-  },
-
-  setupCardMapInteraction() {
-    // カードクリック時にマップのマーカーをハイライト
-    document.querySelectorAll('.card').forEach(card => {
-      card.addEventListener('mouseenter', () => {
-        const eventId = card.dataset.eventId;
-        if (eventId) {
-          this.highlightEvent(eventId);
-        }
-      });
-    });
+    // カードのハイライト処理（使用しない）
   }
 };
 
@@ -262,11 +243,6 @@ const CardRenderer = {
     }
 
     container.innerHTML = events.map(event => this.render(event)).join('');
-    
-    // カードとマップの連動を設定
-    setTimeout(() => {
-      MapManager.setupCardMapInteraction();
-    }, 100);
   }
 };
 

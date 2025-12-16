@@ -148,9 +148,7 @@
       MapManager.clearMarkers();
       currentEvents.forEach(event => {
         if (event.location && event.location.lat) {
-          MapManager.addMarker(event, (eventId) => {
-            MapManager.highlightEvent(eventId);
-          });
+          MapManager.addMarker(event, () => {});
         }
       });
     }
@@ -229,20 +227,6 @@
       if (mapVisible) {
         renderMapMarkers();
       }
-      
-      // カードクリックでマップ連動
-      document.querySelectorAll('.card').forEach(card => {
-        card.addEventListener('click', (e) => {
-          // リンクの遷移は通常通り実行
-          // マップが表示されている場合はハイライト
-          if (mapVisible) {
-            const eventId = card.dataset.eventId;
-            if (eventId) {
-              MapManager.highlightEvent(eventId);
-            }
-          }
-        });
-      });
 
       // 検索フォームに値を設定
       document.getElementById('search-query').value = params.q || '';

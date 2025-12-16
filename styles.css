@@ -27,7 +27,7 @@ body {
 header {
   background: linear-gradient(135deg, #0b7a5d, #11a381);
   color: #fff;
-  padding: 20px 18px;
+  padding: 12px 18px;
   position: sticky;
   top: 0;
   z-index: 100;
@@ -44,20 +44,20 @@ header {
 
 .logo {
   font-weight: 800;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   letter-spacing: 0.4px;
 }
 
 .nav-links {
   display: flex;
-  gap: 20px;
+  gap: 16px;
   align-items: center;
 }
 
 .nav a {
   color: #e7fbf3;
   text-decoration: none;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   transition: opacity 0.2s;
 }
 
@@ -70,42 +70,64 @@ header {
   max-width: 1180px;
   margin: 0 auto;
   background: var(--card);
-  padding: 20px;
-  border-radius: 14px;
-  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.10);
-  margin-top: 20px;
+  padding: 12px;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  margin-top: 12px;
 }
 
 .search-form {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr 1fr auto;
-  gap: 12px;
+  gap: 8px;
   align-items: end;
 }
 
 .search-form input,
 .search-form select {
-  padding: 12px;
+  padding: 10px;
   border: 1px solid var(--border);
-  border-radius: 10px;
-  font-size: 0.96rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
   width: 100%;
 }
 
 .search-form button {
-  padding: 12px 24px;
+  padding: 10px 20px;
   background: var(--accent);
   color: #fff;
   border: none;
-  border-radius: 10px;
+  border-radius: 8px;
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
   transition: background 0.2s;
+  font-size: 0.9rem;
 }
 
 .search-form button:hover {
   background: #e55a2e;
+}
+
+.search-quick-buttons {
+  margin-top: 8px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.search-quick-buttons button {
+  padding: 6px 12px;
+  background: #f5f5f5;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: background 0.2s;
+}
+
+.search-quick-buttons button:hover {
+  background: #e8e8e8;
 }
 
 /* Container */
@@ -450,14 +472,46 @@ header {
 
 /* Mobile */
 @media (max-width: 768px) {
-  .search-form {
-    grid-template-columns: 1fr;
+  header {
+    padding: 10px 12px;
+  }
+
+  .logo {
+    font-size: 1rem;
   }
 
   .nav-links {
-    flex-direction: column;
+    gap: 12px;
+  }
+
+  .nav a {
+    font-size: 0.85rem;
+  }
+
+  .search-bar {
+    padding: 10px;
+    margin-top: 8px;
+    border-radius: 8px;
+  }
+
+  .search-form {
+    grid-template-columns: 1fr auto;
     gap: 8px;
-    align-items: flex-start;
+  }
+
+  .search-form input,
+  .search-form select {
+    padding: 8px;
+    font-size: 0.85rem;
+  }
+
+  .search-form button {
+    padding: 8px 16px;
+    font-size: 0.85rem;
+  }
+
+  .search-quick-buttons {
+    display: none;
   }
 
   .grid {
