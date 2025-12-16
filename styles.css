@@ -305,7 +305,7 @@ body {
   display: grid;
   grid-template-columns: repeat(4, 300px);
   gap: 16px;
-  justify-content: center;
+  justify-content: start;
   overflow-x: auto;
   scroll-behavior: smooth;
   padding-bottom: 10px;
