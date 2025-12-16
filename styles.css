@@ -280,6 +280,8 @@ body {
 .section.event-block {
   padding: 0 18px;
   max-width: 1180px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .section h2 {
@@ -301,7 +303,7 @@ body {
 .card-carousel-wrapper {
   position: relative;
   margin-top: 20px;
-  max-width: 100%;
+  max-width: 1180px;
   margin-left: auto;
   margin-right: auto;
   padding: 0;
@@ -785,8 +787,6 @@ body {
   scroll-behavior: smooth;
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
-  display: flex;
-  justify-content: center;
 }
 
 .week-calendar-list {
