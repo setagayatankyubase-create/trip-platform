@@ -1,7 +1,7 @@
 :root {
   --primary: #0b7a5d;
   --accent: #f86b40;
-  --bg: #f4f7f4;
+  --bg: #ffffff;
   --card: #ffffff;
   --text: #1e2a23;
   --border: #d9e4dc;
@@ -908,8 +908,8 @@ body {
   max-width: 1180px;
   margin: 0 auto;
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 40px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 60px;
   margin-bottom: 40px;
 }
 
@@ -1015,16 +1015,10 @@ body {
   background: #555;
 }
 
-@media (max-width: 1024px) {
-  .footer-content {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
 @media (max-width: 768px) {
   .footer-content {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 30px;
+    grid-template-columns: 1fr;
+    gap: 40px;
   }
 
   .footer-bottom {
