@@ -193,6 +193,29 @@ const MapManager = {
 // イベントカードのレンダリング
 const CardRenderer = {
   render(event) {
+    // バッジ判定
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const upcomingLimit = new Date(today);
+    upcomingLimit.setDate(today.getDate() + 7);
+
+    const isUpcoming = event.dates.some(d => {
+      const eventDate = new Date(d.date);
+      eventDate.setHours(0, 0, 0, 0);
+      return eventDate >= today && eventDate <= upcomingLimit;
+    });
+
+    let badgesHtml = '';
+    if (event.isRecommended) {
+      badgesHtml += '<span class="badge recommended">おすすめ</span>';
+    }
+    if (event.isNew) {
+      badgesHtml += '<span class="badge new">新着</span>';
+    }
+    if (isUpcoming) {
+      badgesHtml += '<span class="badge upcoming">直近開催</span>';
+    }
+
     return `
       <a href="experience.html?id=${event.id}" class="card-link" data-event-id="${event.id}">
         <div class="card" data-event-id="${event.id}">
@@ -205,6 +228,7 @@ const CardRenderer = {
             </button>
           </div>
           <div class="card-body">
+            ${badgesHtml ? `<div class="card-badges">${badgesHtml}</div>` : ''}
             <div class="card-title">${event.title}</div>
             <div class="card-location">${event.area}, ${event.prefecture}</div>
             <div class="card-price">¥ ${event.price.toLocaleString()}</div>

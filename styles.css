@@ -546,6 +546,11 @@ body {
   color: #7b1fa2;
 }
 
+.badge.upcoming {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
 .card-link {
   text-decoration: none;
   color: inherit;
