@@ -842,6 +842,24 @@ body {
   color: var(--accent);
 }
 
+.week-nav-button {
+  padding: 8px 16px;
+  background: #f5f5f5;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--text);
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.week-nav-button:hover {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
 /* Organizer */
 .organizer-card {
   background: var(--card);

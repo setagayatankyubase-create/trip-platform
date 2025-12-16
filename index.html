@@ -57,7 +57,10 @@
 
     <!-- 今週のイベント -->
     <section class="section event-block">
-      <h2>今週のイベント</h2>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h2 style="margin: 0;">今週のイベント</h2>
+        <button id="next-week-btn" class="week-nav-button" onclick="showNextWeek()">次週 →</button>
+      </div>
       <div class="week-calendar" id="week-calendar"></div>
     </section>
 
@@ -160,18 +163,25 @@
       window.location.href = `list.html?weekday=${weekday}`;
     }
 
+    // 週のオフセット（0=今週、1=次週、-1=先週など）
+    let weekOffset = 0;
+
     // 今週のカレンダー表示
-    function renderWeekCalendar() {
+    function renderWeekCalendar(offset = 0) {
       const container = document.getElementById('week-calendar');
       if (!container) return;
 
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const dayOfWeek = today.getDay(); // 0=日曜日, 6=土曜日
+      
+      // 月曜日始まりに調整（月曜日=1なので、1を引いて0にする）
+      const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // 日曜日の場合は6日戻す
+      
       const startOfWeek = new Date(today);
-      startOfWeek.setDate(today.getDate() - dayOfWeek); // 今週の日曜日
+      startOfWeek.setDate(today.getDate() - daysFromMonday + (offset * 7)); // 月曜日を起点に、オフセット分の週を加算
 
-      // 今週の7日間を取得
+      // 今週の7日間を取得（月曜日から日曜日まで）
       const weekDays = [];
       for (let i = 0; i < 7; i++) {
         const date = new Date(startOfWeek);
@@ -192,8 +202,8 @@
       // 今日の日付文字列
       const todayStr = today.toISOString().split('T')[0];
 
-      // 曜日名
-      const weekDayNames = ['日', '月', '火', '水', '木', '金', '土'];
+      // 曜日名（月曜日始まり）
+      const weekDayNames = ['月', '火', '水', '木', '金', '土', '日'];
 
       // リスト生成
       let html = '<div class="week-calendar-list">';
@@ -202,7 +212,8 @@
         const dateStr = date.toISOString().split('T')[0];
         const month = date.getMonth() + 1;
         const day = date.getDate();
-        const dayName = weekDayNames[date.getDay()];
+        const dayIndex = date.getDay() === 0 ? 6 : date.getDay() - 1; // 月曜日始まりのインデックス
+        const dayName = weekDayNames[dayIndex];
         const count = eventCounts[dateStr] || 0;
         const isToday = dateStr === todayStr;
         const hasEvents = count > 0;
@@ -221,6 +232,30 @@
 
       html += '</div>';
       container.innerHTML = html;
+
+      // 次週ボタンの表示を更新
+      const nextWeekBtn = document.getElementById('next-week-btn');
+      if (nextWeekBtn) {
+        if (offset === 0) {
+          nextWeekBtn.textContent = '次週 →';
+          nextWeekBtn.style.display = 'block';
+        } else {
+          nextWeekBtn.textContent = '今週 ←';
+          nextWeekBtn.onclick = () => showThisWeek();
+        }
+      }
+    }
+
+    // 次週を表示
+    function showNextWeek() {
+      weekOffset = 1;
+      renderWeekCalendar(weekOffset);
+    }
+
+    // 今週を表示
+    function showThisWeek() {
+      weekOffset = 0;
+      renderWeekCalendar(weekOffset);
     }
 
     // 日付クリックでイベント一覧に遷移
