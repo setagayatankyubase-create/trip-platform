@@ -157,6 +157,7 @@
       if (!container) return;
 
       const today = new Date();
+      today.setHours(0, 0, 0, 0);
       const dayOfWeek = today.getDay(); // 0=日曜日, 6=土曜日
       const startOfWeek = new Date(today);
       startOfWeek.setDate(today.getDate() - dayOfWeek); // 今週の日曜日
@@ -185,39 +186,31 @@
       // 曜日名
       const weekDayNames = ['日', '月', '火', '水', '木', '金', '土'];
 
-      // テーブル生成
-      let html = '<table class="week-calendar-table">';
-      html += '<thead><tr>';
-      weekDayNames.forEach(name => {
-        html += `<th>${name}</th>`;
-      });
-      html += '</tr></thead>';
-      html += '<tbody><tr>';
+      // リスト生成
+      let html = '<div class="week-calendar-list">';
 
       weekDays.forEach(date => {
         const dateStr = date.toISOString().split('T')[0];
-        const dayNumber = date.getDate();
+        const month = date.getMonth() + 1;
+        const day = date.getDate();
         const dayName = weekDayNames[date.getDay()];
         const count = eventCounts[dateStr] || 0;
         const isToday = dateStr === todayStr;
         const hasEvents = count > 0;
 
-        let cellClass = 'week-day-cell';
-        if (isToday) cellClass += ' today';
-        if (hasEvents) cellClass += ' has-events';
+        let itemClass = 'week-day-item';
+        if (isToday) itemClass += ' today';
+        if (hasEvents) itemClass += ' has-events';
 
-        html += `<td>`;
-        html += `<div class="${cellClass}" onclick="goToDateEvents('${dateStr}')">`;
-        html += `<div class="week-day-number">${dayNumber}</div>`;
-        html += `<div class="week-day-name">${dayName}</div>`;
+        html += `<div class="${itemClass}" onclick="goToDateEvents('${dateStr}')">`;
+        html += `<span class="week-day-date">${month}/${day}(${dayName})</span>`;
         if (hasEvents) {
-          html += `<div class="week-day-count">${count}件</div>`;
+          html += `<span class="week-day-count">${count}件</span>`;
         }
         html += `</div>`;
-        html += `</td>`;
       });
 
-      html += '</tr></tbody></table>';
+      html += '</div>';
       container.innerHTML = html;
     }
 

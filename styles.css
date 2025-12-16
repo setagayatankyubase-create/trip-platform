@@ -427,86 +427,70 @@ header {
 /* Week Calendar */
 .week-calendar {
   background: var(--card);
-  border-radius: 14px;
-  padding: 20px;
-  box-shadow: 0 12px 26px var(--shadow);
+  border-radius: 10px;
+  padding: 12px;
+  box-shadow: 0 4px 12px var(--shadow);
   overflow-x: auto;
 }
 
-.week-calendar-table {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 600px;
+.week-calendar-list {
+  display: flex;
+  gap: 8px;
+  align-items: center;
 }
 
-.week-calendar-table th {
-  padding: 12px 8px;
+.week-day-item {
+  flex: 1;
+  min-width: 80px;
+  padding: 8px 6px;
   text-align: center;
-  font-size: 0.9rem;
-  color: #6c7a72;
-  font-weight: 600;
-  border-bottom: 2px solid var(--border);
-}
-
-.week-calendar-table td {
-  padding: 0;
-  text-align: center;
-  vertical-align: top;
-}
-
-.week-day-cell {
-  padding: 12px 8px;
   cursor: pointer;
-  transition: background 0.2s;
-  border-radius: 8px;
-  position: relative;
+  transition: all 0.2s;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  font-size: 0.85rem;
 }
 
-.week-day-cell:hover {
+.week-day-item:hover {
   background: #f0f5f1;
 }
 
-.week-day-cell.has-events {
+.week-day-item.has-events {
   background: #eaf7f1;
-  font-weight: 700;
+  border-color: var(--primary);
+  font-weight: 600;
 }
 
-.week-day-cell.has-events:hover {
+.week-day-item.has-events:hover {
   background: #d4ede4;
 }
 
-.week-day-cell.today {
+.week-day-item.today {
   background: #fff3e0;
-  border: 2px solid var(--accent);
+  border-color: var(--accent);
+  font-weight: 700;
 }
 
-.week-day-cell.today.has-events {
+.week-day-item.today.has-events {
   background: #ffe0b2;
 }
 
-.week-day-number {
-  font-size: 1.2rem;
-  font-weight: 700;
-  margin-bottom: 4px;
-}
-
-.week-day-name {
-  font-size: 0.85rem;
-  color: #6c7a72;
-  margin-bottom: 4px;
+.week-day-date {
+  display: block;
+  margin-bottom: 2px;
 }
 
 .week-day-count {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   color: var(--primary);
-  background: rgba(11, 122, 93, 0.1);
-  padding: 2px 6px;
-  border-radius: 10px;
+  background: rgba(11, 122, 93, 0.15);
+  padding: 1px 4px;
+  border-radius: 8px;
   display: inline-block;
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
-.week-day-cell.today .week-day-count {
+.week-day-item.today .week-day-count {
   background: rgba(248, 107, 64, 0.2);
   color: var(--accent);
 }
@@ -626,23 +610,12 @@ header {
   }
 
   .week-calendar {
-    padding: 12px;
+    padding: 10px;
   }
 
-  .week-calendar-table {
-    min-width: 500px;
-  }
-
-  .week-calendar-table th,
-  .week-day-cell {
-    padding: 8px 4px;
-  }
-
-  .week-day-number {
-    font-size: 1rem;
-  }
-
-  .week-day-name {
+  .week-day-item {
+    min-width: 70px;
+    padding: 6px 4px;
     font-size: 0.8rem;
   }
 }
