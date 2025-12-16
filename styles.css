@@ -780,23 +780,27 @@ body {
   overflow-x: auto;
   min-height: 80px;
   max-width: 1180px;
+  width: 100%;
   margin: 0 auto;
   scroll-behavior: smooth;
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
+  display: flex;
+  justify-content: center;
 }
 
 .week-calendar-list {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   align-items: stretch;
   width: max-content;
+  margin: 0 auto;
 }
 
 .week-day-item {
-  flex: 0 0 90px;
-  min-width: 90px;
-  padding: 12px 8px;
+  flex: 0 0 110px;
+  min-width: 110px;
+  padding: 14px 10px;
   text-align: center;
   cursor: pointer;
   transition: all 0.2s;
