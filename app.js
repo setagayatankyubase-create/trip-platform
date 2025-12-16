@@ -85,13 +85,17 @@ const SearchFilter = {
         const sunday = new Date(saturday);
         sunday.setDate(saturday.getDate() + 1);
         targetDates = [saturday, sunday];
-      } else if (params.weekday === 'next-holiday') {
-        // 次の祝日（簡易版：次の日曜日）
+      } else if (params.weekday === 'next-weekend') {
+        // 来週末（土日）
         const dayOfWeek = today.getDay();
-        const daysUntilSunday = (7 - dayOfWeek) % 7 || 7;
-        const nextSunday = new Date(today);
-        nextSunday.setDate(today.getDate() + daysUntilSunday);
-        targetDates = [nextSunday];
+        const daysUntilSaturday = (6 - dayOfWeek + 7) % 7 || 7;
+        const thisSaturday = new Date(today);
+        thisSaturday.setDate(today.getDate() + daysUntilSaturday);
+        const nextSaturday = new Date(thisSaturday);
+        nextSaturday.setDate(thisSaturday.getDate() + 7);
+        const nextSunday = new Date(nextSaturday);
+        nextSunday.setDate(nextSaturday.getDate() + 1);
+        targetDates = [nextSaturday, nextSunday];
       }
 
       filtered = filtered.filter(event =>
