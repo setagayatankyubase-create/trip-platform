@@ -107,34 +107,25 @@ const SearchFilter = {
     return filtered;
   },
 
-  getUpcomingEvents(events, days = 7) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const futureDate = new Date(today);
-    futureDate.setDate(today.getDate() + days);
-
-    return events.filter(event =>
-      event.dates.some(d => {
-        const eventDate = new Date(d.date);
-        eventDate.setHours(0, 0, 0, 0);
-        return eventDate >= today && eventDate <= futureDate;
+  // 直近開催イベント
+  // デモ用に「今日からの◯日」ではなく、データ内の開催日が早い順に並べて返す
+  getUpcomingEvents(events, limit = 20) {
+    return events
+      .filter(event => event.dates && event.dates.length > 0)
+      .sort((a, b) => {
+        const aDate = new Date(a.dates[0].date);
+        const bDate = new Date(b.dates[0].date);
+        return aDate - bDate;
       })
-    ).sort((a, b) => {
-      const aDate = new Date(a.dates[0].date);
-      const bDate = new Date(b.dates[0].date);
-      return aDate - bDate;
-    });
+      .slice(0, limit);
   },
 
-  getNewEvents(events, days = 30) {
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - days);
-    return events.filter(event => {
-      const published = new Date(event.publishedAt);
-      return published >= cutoff;
-    }).sort((a, b) => {
-      return new Date(b.publishedAt) - new Date(a.publishedAt);
-    });
+  // 新着イベント
+  // デモ用に期間フィルタを外し、公開日の新しい順で並べる
+  getNewEvents(events) {
+    return events
+      .filter(event => event.publishedAt)
+      .sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
   },
 
   getRecommendedEvents(events) {
