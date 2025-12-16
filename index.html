@@ -17,7 +17,7 @@
   </script>
 </head>
 <body>
-  <header>
+  <header class="main-header">
     <div class="nav">
       <div class="logo">GreenTrails</div>
       <div class="nav-links">
@@ -26,24 +26,19 @@
         <a href="organizer-list.html">催行会社</a>
       </div>
     </div>
-    <div class="search-bar">
-      <form class="search-form" id="main-search-form" onsubmit="handleSearch(event)">
-        <input type="text" id="search-query" placeholder="体験名・語句で検索（例: 屋久島、トレッキング）" name="q">
-        <select id="search-category" name="category">
-          <option value="">すべてのカテゴリ</option>
-        </select>
-        <input type="date" id="search-date" name="date">
-        <select id="search-area" name="area">
-          <option value="">すべてのエリア</option>
-        </select>
-        <button type="submit">検索</button>
-      </form>
-      <div class="search-quick-buttons">
-        <button type="button" onclick="searchByWeekday('this-weekend')">今週末</button>
-        <button type="button" onclick="searchByWeekday('next-holiday')">次の祝日</button>
-      </div>
-    </div>
   </header>
+
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="hero-content">
+      <h1 class="hero-title">アクティビティを検索 & 予約</h1>
+      <form class="hero-search-form" id="main-search-form" onsubmit="handleSearch(event)">
+        <input type="text" id="search-query" placeholder="行き先やアクティビティを検索" name="q" class="hero-search-input">
+        <button type="submit" class="hero-search-button">検索</button>
+      </form>
+      <p class="hero-subtext">旅行の計画を続ける</p>
+    </div>
+  </section>
 
   <main>
     <!-- カテゴリ -->
@@ -108,29 +103,6 @@
       `).join('');
     }
 
-    // カテゴリ・エリアの選択肢を設定
-    function populateSearchOptions() {
-      const categorySelect = document.getElementById('search-category');
-      const areaSelect = document.getElementById('search-area');
-
-      if (categorySelect) {
-        eventData.categories.forEach(cat => {
-          const option = document.createElement('option');
-          option.value = cat.id;
-          option.textContent = cat.name;
-          categorySelect.appendChild(option);
-        });
-      }
-
-      if (areaSelect) {
-        eventData.areas.forEach(area => {
-          const option = document.createElement('option');
-          option.value = area;
-          option.textContent = area;
-          areaSelect.appendChild(option);
-        });
-      }
-    }
 
     // 検索処理
     function handleSearch(event) {

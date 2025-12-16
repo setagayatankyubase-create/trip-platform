@@ -202,6 +202,10 @@ const CardRenderer = {
     if (event.isNew) badges.push('<span class="badge new">新着</span>');
     if (event.externalLink) badges.push('<span class="badge external-link">外部申込</span>');
 
+    // ダミーの評価とレビュー数（実際のデータがあればそれを使用）
+    const rating = 4.5 + Math.random() * 0.5; // 4.5-5.0の範囲
+    const reviewCount = Math.floor(Math.random() * 5000) + 100;
+
     return `
       <a href="experience.html?id=${event.id}" class="card-link" data-event-id="${event.id}">
         <div class="card" data-event-id="${event.id}">
@@ -210,17 +214,15 @@ const CardRenderer = {
             <div class="card-badges">${badges.join('')}</div>
             <div class="card-title">${event.title}</div>
             <div class="card-meta">
-              <span>${event.category}</span>
-              <span>•</span>
-              <span>${dateStr}</span>
-              <span>•</span>
-              <span>${event.area}</span>
-            </div>
-            <div class="card-meta">
               <span>${event.duration}</span>
-              <span>•</span>
-              <span>¥${event.price.toLocaleString()}</span>
+              ${event.externalLink ? '<span>•</span><span>行列をスキップ</span>' : ''}
             </div>
+            <div class="card-rating">
+              <span>★</span>
+              <span>${rating.toFixed(1)}</span>
+              <span>(${reviewCount.toLocaleString()})</span>
+            </div>
+            <div class="card-price">料金 ¥${event.price.toLocaleString()}</div>
           </div>
         </div>
       </a>
