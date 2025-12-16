@@ -52,6 +52,14 @@
       <div class="categories" id="category-list"></div>
     </section>
 
+    <!-- 今週のイベント -->
+    <section class="section event-block">
+      <div class="event-block-header">
+        <h2>今週のイベント</h2>
+      </div>
+      <div class="week-calendar" id="week-calendar"></div>
+    </section>
+
     <!-- おすすめイベント -->
     <section class="section event-block">
       <div class="event-block-header">
@@ -143,6 +151,81 @@
       window.location.href = `list.html?weekday=${weekday}`;
     }
 
+    // 今週のカレンダー表示
+    function renderWeekCalendar() {
+      const container = document.getElementById('week-calendar');
+      if (!container) return;
+
+      const today = new Date();
+      const dayOfWeek = today.getDay(); // 0=日曜日, 6=土曜日
+      const startOfWeek = new Date(today);
+      startOfWeek.setDate(today.getDate() - dayOfWeek); // 今週の日曜日
+
+      // 今週の7日間を取得
+      const weekDays = [];
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(startOfWeek);
+        date.setDate(startOfWeek.getDate() + i);
+        weekDays.push(date);
+      }
+
+      // 各日のイベント数をカウント
+      const eventCounts = {};
+      weekDays.forEach(date => {
+        const dateStr = date.toISOString().split('T')[0];
+        const count = eventData.events.filter(event =>
+          event.dates.some(d => d.date === dateStr)
+        ).length;
+        eventCounts[dateStr] = count;
+      });
+
+      // 今日の日付文字列
+      const todayStr = today.toISOString().split('T')[0];
+
+      // 曜日名
+      const weekDayNames = ['日', '月', '火', '水', '木', '金', '土'];
+
+      // テーブル生成
+      let html = '<table class="week-calendar-table">';
+      html += '<thead><tr>';
+      weekDayNames.forEach(name => {
+        html += `<th>${name}</th>`;
+      });
+      html += '</tr></thead>';
+      html += '<tbody><tr>';
+
+      weekDays.forEach(date => {
+        const dateStr = date.toISOString().split('T')[0];
+        const dayNumber = date.getDate();
+        const dayName = weekDayNames[date.getDay()];
+        const count = eventCounts[dateStr] || 0;
+        const isToday = dateStr === todayStr;
+        const hasEvents = count > 0;
+
+        let cellClass = 'week-day-cell';
+        if (isToday) cellClass += ' today';
+        if (hasEvents) cellClass += ' has-events';
+
+        html += `<td>`;
+        html += `<div class="${cellClass}" onclick="goToDateEvents('${dateStr}')">`;
+        html += `<div class="week-day-number">${dayNumber}</div>`;
+        html += `<div class="week-day-name">${dayName}</div>`;
+        if (hasEvents) {
+          html += `<div class="week-day-count">${count}件</div>`;
+        }
+        html += `</div>`;
+        html += `</td>`;
+      });
+
+      html += '</tr></tbody></table>';
+      container.innerHTML = html;
+    }
+
+    // 日付クリックでイベント一覧に遷移
+    function goToDateEvents(dateStr) {
+      window.location.href = `list.html?date=${dateStr}`;
+    }
+
     // イベントブロックの表示
     function renderEventBlocks() {
       const recommended = SearchFilter.getRecommendedEvents(eventData.events).slice(0, 3);
@@ -158,6 +241,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       renderCategories();
       populateSearchOptions();
+      renderWeekCalendar();
       renderEventBlocks();
     });
   </script>
