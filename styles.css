@@ -683,6 +683,7 @@ body {
   margin-bottom: 24px;
   gap: 16px;
   position: relative;
+  width: 100%;
 }
 
 .event-block-header h2 {
@@ -690,9 +691,36 @@ body {
   font-size: 1.8rem;
   font-weight: 700;
   text-align: center;
+  flex: 1;
+  display: flex;
+  justify-content: center;
 }
 
 .event-block-header .view-all {
+  position: absolute;
+  right: 0;
+}
+
+.week-event-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 16px;
+  position: relative;
+  width: 100%;
+}
+
+.week-event-header h2 {
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 700;
+  text-align: center;
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.week-event-header .week-nav-button {
   position: absolute;
   right: 0;
 }
