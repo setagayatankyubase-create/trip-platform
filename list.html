@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="自然体験・イベント一覧。検索条件で絞り込んで、あなたにぴったりのアクティビティを見つけよう。">
+  <title>イベント一覧 | GreenTrails</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <div class="nav">
+      <div class="logo">GreenTrails</div>
+      <div class="nav-links">
+        <a href="index.html">ホーム</a>
+        <a href="list.html">イベント一覧</a>
+        <a href="organizer-list.html">催行会社</a>
+      </div>
+    </div>
+    <div class="search-bar">
+      <form class="search-form" id="main-search-form" onsubmit="handleSearch(event)">
+        <input type="text" id="search-query" placeholder="体験名・語句で検索" name="q">
+        <select id="search-category" name="category">
+          <option value="">すべてのカテゴリ</option>
+        </select>
+        <input type="date" id="search-date" name="date">
+        <select id="search-area" name="area">
+          <option value="">すべてのエリア</option>
+        </select>
+        <button type="submit">検索</button>
+      </form>
+    </div>
+  </header>
+
+  <main class="container">
+    <div style="margin: 20px 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+      <h1 style="margin: 0; font-size: 1.5rem;">イベント一覧</h1>
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <button id="map-toggle" class="map-toggle" onclick="toggleMap()">マップ表示</button>
+        <button id="filter-trigger" class="filter-reset" style="display: none;" onclick="BottomSheet.open()">フィルタ</button>
+      </div>
+    </div>
+
+    <!-- フィルタ（デスクトップ） -->
+    <div class="filters" id="desktop-filters">
+      <select id="filter-category" onchange="applyFilters()">
+        <option value="">すべてのカテゴリ</option>
+      </select>
+      <select id="filter-area" onchange="applyFilters()">
+        <option value="">すべてのエリア</option>
+      </select>
+      <select id="filter-weekday" onchange="applyFilters()">
+        <option value="">開催日で絞る</option>
+        <option value="this-weekend">今週末</option>
+        <option value="next-holiday">次の祝日</option>
+      </select>
+      <input type="date" id="filter-date" onchange="applyFilters()">
+      <button class="filter-reset" onclick="resetFilters()">リセット</button>
+    </div>
+
+    <!-- マップ -->
+    <div id="map-container" class="map-container hidden">
+      <button class="map-toggle" onclick="toggleMap()">マップを閉じる</button>
+      <div id="map"></div>
+    </div>
+
+    <!-- 結果表示 -->
+    <div style="display: grid; grid-template-columns: 1fr; gap: 20px;">
+      <div>
+        <div style="margin-bottom: 16px; color: #6c7a72; font-size: 0.9rem;">
+          <span id="result-count">0件</span>のイベントが見つかりました
+        </div>
+        <div class="grid" id="event-list"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ボトムシート（モバイル用） -->
+  <div id="bottom-sheet-overlay" class="bottom-sheet-overlay"></div>
+  <div id="bottom-sheet" class="bottom-sheet">
+    <div class="bottom-sheet-header">
+      <h3 style="margin: 0;">フィルタ</h3>
+      <button id="bottom-sheet-close" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text);">×</button>
+    </div>
+    <div class="bottom-sheet-content">
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; margin-bottom: 8px; font-weight: 600;">カテゴリ</label>
+        <select id="mobile-filter-category" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 10px;">
+          <option value="">すべてのカテゴリ</option>
+        </select>
+      </div>
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; margin-bottom: 8px; font-weight: 600;">エリア</label>
+        <select id="mobile-filter-area" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 10px;">
+          <option value="">すべてのエリア</option>
+        </select>
+      </div>
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; margin-bottom: 8px; font-weight: 600;">開催日</label>
+        <input type="date" id="mobile-filter-date" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 10px;">
+      </div>
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; margin-bottom: 8px; font-weight: 600;">曜日で絞る</label>
+        <select id="mobile-filter-weekday" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 10px;">
+          <option value="">選択しない</option>
+          <option value="this-weekend">今週末</option>
+          <option value="next-holiday">次の祝日</option>
+        </select>
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <button onclick="applyMobileFilters()" style="flex: 1; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 10px; font-weight: 700; cursor: pointer;">適用</button>
+        <button onclick="resetFilters()" style="flex: 1; padding: 12px; background: #f5f5f5; border: 1px solid var(--border); border-radius: 10px; cursor: pointer;">リセット</button>
+      </div>
+    </div>
+  </div>
+
+  <footer style="margin: 44px auto 20px; padding: 0 18px; text-align: center; color: #6c7a72; font-size: 0.92rem;">
+    © 2025 GreenTrails. 自然体験をもっと身近に。
+  </footer>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+  <script>
+    let currentEvents = [];
+    let mapVisible = false;
+
+    // マップ表示切替
+    function toggleMap() {
+      const container = document.getElementById('map-container');
+      const button = document.getElementById('map-toggle');
+      mapVisible = !mapVisible;
+
+      if (mapVisible) {
+        container.classList.remove('hidden');
+        button.textContent = 'マップを閉じる';
+        if (!MapManager.mapInstance) {
+          MapManager.init('map');
+          renderMapMarkers();
+        }
+      } else {
+        container.classList.add('hidden');
+        button.textContent = 'マップ表示';
+      }
+    }
+
+    // マップマーカーの表示
+    function renderMapMarkers() {
+      MapManager.clearMarkers();
+      currentEvents.forEach(event => {
+        if (event.location && event.location.lat) {
+          MapManager.addMarker(event, (eventId) => {
+            MapManager.highlightEvent(eventId);
+          });
+        }
+      });
+    }
+
+    // フィルタ適用
+    function applyFilters() {
+      const params = {
+        q: document.getElementById('search-query')?.value || '',
+        category: document.getElementById('filter-category')?.value || '',
+        area: document.getElementById('filter-area')?.value || '',
+        date: document.getElementById('filter-date')?.value || '',
+        weekday: document.getElementById('filter-weekday')?.value || ''
+      };
+      URLManager.updateParams(params);
+      loadEvents();
+    }
+
+    // モバイルフィルタ適用
+    function applyMobileFilters() {
+      const params = {
+        q: document.getElementById('search-query')?.value || '',
+        category: document.getElementById('mobile-filter-category')?.value || '',
+        area: document.getElementById('mobile-filter-area')?.value || '',
+        date: document.getElementById('mobile-filter-date')?.value || '',
+        weekday: document.getElementById('mobile-filter-weekday')?.value || ''
+      };
+      URLManager.updateParams(params);
+      BottomSheet.close();
+      loadEvents();
+    }
+
+    // フィルタリセット
+    function resetFilters() {
+      URLManager.setParams({});
+      window.location.reload();
+    }
+
+    // 検索処理
+    function handleSearch(event) {
+      event.preventDefault();
+      const formData = new FormData(event.target);
+      const params = {
+        q: formData.get('q') || '',
+        category: formData.get('category') || '',
+        date: formData.get('date') || '',
+        area: formData.get('area') || ''
+      };
+      URLManager.setParams(params);
+      loadEvents();
+    }
+
+    // イベント読み込み
+    function loadEvents() {
+      const params = URLManager.getParams();
+      const urlParams = new URLSearchParams(window.location.search);
+
+      // URLパラメータから特別な条件を取得
+      let events = [...eventData.events];
+
+      if (urlParams.get('recommended') === '1') {
+        events = SearchFilter.getRecommendedEvents(events);
+      } else if (urlParams.get('new') === '1') {
+        events = SearchFilter.getNewEvents(events);
+      } else if (urlParams.get('upcoming') === '1') {
+        events = SearchFilter.getUpcomingEvents(events, 30);
+      }
+
+      // 検索・フィルタ適用
+      currentEvents = SearchFilter.filterEvents(events, params);
+
+      // 結果表示
+      CardRenderer.renderList(currentEvents, 'event-list');
+      document.getElementById('result-count').textContent = currentEvents.length;
+
+      // マップ更新
+      if (mapVisible) {
+        renderMapMarkers();
+      }
+      
+      // カードクリックでマップ連動
+      document.querySelectorAll('.card').forEach(card => {
+        card.addEventListener('click', (e) => {
+          // リンクの遷移は通常通り実行
+          // マップが表示されている場合はハイライト
+          if (mapVisible) {
+            const eventId = card.dataset.eventId;
+            if (eventId) {
+              MapManager.highlightEvent(eventId);
+            }
+          }
+        });
+      });
+
+      // 検索フォームに値を設定
+      document.getElementById('search-query').value = params.q || '';
+      document.getElementById('search-category').value = params.category || '';
+      document.getElementById('search-date').value = params.date || '';
+      document.getElementById('search-area').value = params.area || '';
+      document.getElementById('filter-category').value = params.category || '';
+      document.getElementById('filter-area').value = params.area || '';
+      document.getElementById('filter-date').value = params.date || '';
+      document.getElementById('filter-weekday').value = params.weekday || '';
+      document.getElementById('mobile-filter-category').value = params.category || '';
+      document.getElementById('mobile-filter-area').value = params.area || '';
+      document.getElementById('mobile-filter-date').value = params.date || '';
+      document.getElementById('mobile-filter-weekday').value = params.weekday || '';
+    }
+
+    // カテゴリ・エリアの選択肢を設定
+    function populateOptions() {
+      const selects = [
+        'search-category', 'filter-category', 'mobile-filter-category'
+      ];
+      const areaSelects = [
+        'search-area', 'filter-area', 'mobile-filter-area'
+      ];
+
+      selects.forEach(selectId => {
+        const select = document.getElementById(selectId);
+        if (select) {
+          eventData.categories.forEach(cat => {
+            const option = document.createElement('option');
+            option.value = cat.id;
+            option.textContent = cat.name;
+            select.appendChild(option);
+          });
+        }
+      });
+
+      areaSelects.forEach(selectId => {
+        const select = document.getElementById(selectId);
+        if (select) {
+          eventData.areas.forEach(area => {
+            const option = document.createElement('option');
+            option.value = area;
+            option.textContent = area;
+            select.appendChild(option);
+          });
+        }
+      });
+    }
+
+    // モバイル判定
+    function checkMobile() {
+      const isMobile = window.innerWidth <= 768;
+      document.getElementById('desktop-filters').style.display = isMobile ? 'none' : 'flex';
+      document.getElementById('filter-trigger').style.display = isMobile ? 'block' : 'none';
+    }
+
+    // 初期化
+    document.addEventListener('DOMContentLoaded', () => {
+      populateOptions();
+      checkMobile();
+      loadEvents();
+      window.addEventListener('resize', checkMobile);
+    });
+  </script>
+</body>
+</html>
+

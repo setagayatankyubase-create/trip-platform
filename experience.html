@@ -3,144 +3,411 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>屋久島・苔むす森トレッキング | GreenTrails</title>
+  <meta name="description" content="" id="meta-description">
+  <title>イベント詳細 | GreenTrails</title>
+  <link rel="stylesheet" href="styles.css">
+  <script type="application/ld+json" id="event-structured-data"></script>
   <style>
-    :root {
-      --primary:#0b7a5d;
-      --accent:#f86b40;
-      --bg:#f4f7f4;
-      --card:#ffffff;
-      --text:#1e2a23;
+    .page {
+      max-width: 1180px;
+      margin: 26px auto;
+      padding: 0 18px;
     }
-    *{box-sizing:border-box;margin:0;padding:0;font-family:"Segoe UI","Hiragino Sans",sans-serif;}
-    body{background:var(--bg);color:var(--text);line-height:1.6;}
-    header{background:linear-gradient(135deg,#0b7a5d,#11a381);color:#fff;padding:18px;}
-    .nav{max-width:1180px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;}
-    .nav a{color:#e7fbf3;text-decoration:none;margin-left:14px;font-size:0.95rem;}
-    .page{max-width:1180px;margin:26px auto;padding:0 18px;}
-    .breadcrumbs{color:#6b7b71;font-size:0.9rem;margin-bottom:10px;}
-    .title{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;}
-    .title h1{font-size:1.8rem;}
-    .rating{color:#f5a623;font-weight:800;}
-    .gallery{margin:16px 0;display:grid;grid-template-columns:2fr 1fr;gap:12px;}
-    .gallery .main{height:320px;background:url('https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80') center/cover;border-radius:16px;}
-    .thumbs{display:grid;grid-template-columns:1fr;gap:10px;}
-    .thumb{height:155px;border-radius:12px;background-size:cover;background-position:center;}
-    .grid{display:grid;grid-template-columns:2fr 1fr;gap:18px;margin-top:12px;}
-    .card{background:var(--card);border-radius:14px;box-shadow:0 12px 26px rgba(0,0,0,0.08);padding:16px;}
-    .card h3{margin-bottom:10px;font-size:1.1rem;}
-    ul{padding-left:18px;}
-    .badge{display:inline-block;background:#eaf7f1;color:var(--primary);padding:4px 8px;border-radius:8px;font-size:0.8rem;font-weight:800;}
-    .booking{position:sticky;top:12px;}
-    .price{color:var(--primary);font-weight:800;font-size:1.1rem;}
-    .btn{display:block;text-align:center;background:var(--accent);color:#fff;text-decoration:none;padding:12px;border-radius:10px;font-weight:800;margin-top:12px;}
-    .itinerary li{margin-bottom:6px;}
-    .info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:8px;}
-    .info-box{background:#f0f5f1;border-radius:10px;padding:10px;font-weight:700;}
-    @media(max-width:900px){
-      .gallery{grid-template-columns:1fr;}
-      .grid{grid-template-columns:1fr;}
-      .booking{position:static;}
+    .breadcrumbs {
+      color: #6b7b71;
+      font-size: 0.9rem;
+      margin-bottom: 10px;
+    }
+    .breadcrumbs a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+    .title {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .title h1 {
+      font-size: 1.8rem;
+      margin: 0;
+    }
+    .gallery {
+      margin: 16px 0;
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 12px;
+    }
+    .gallery .main {
+      height: 320px;
+      background-size: cover;
+      background-position: center;
+      border-radius: 16px;
+    }
+    .thumbs {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    .thumb {
+      height: 155px;
+      border-radius: 12px;
+      background-size: cover;
+      background-position: center;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 18px;
+      margin-top: 12px;
+    }
+    .card {
+      background: var(--card);
+      border-radius: 14px;
+      box-shadow: 0 12px 26px var(--shadow);
+      padding: 24px;
+    }
+    .card h3 {
+      margin-bottom: 16px;
+      font-size: 1.2rem;
+      border-bottom: 2px solid var(--primary);
+      padding-bottom: 8px;
+    }
+    ul {
+      padding-left: 20px;
+      margin-bottom: 16px;
+    }
+    ul li {
+      margin-bottom: 8px;
+    }
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin: 16px 0;
+    }
+    .info-box {
+      background: #f0f5f1;
+      border-radius: 10px;
+      padding: 12px;
+      font-weight: 600;
+    }
+    .info-box-label {
+      font-size: 0.85rem;
+      color: #6c7a72;
+      margin-bottom: 4px;
+    }
+    .booking {
+      position: sticky;
+      top: 80px;
+    }
+    .price {
+      color: var(--primary);
+      font-weight: 800;
+      font-size: 1.3rem;
+      margin: 16px 0;
+    }
+    .btn {
+      display: block;
+      text-align: center;
+      background: var(--accent);
+      color: #fff;
+      text-decoration: none;
+      padding: 16px;
+      border-radius: 10px;
+      font-weight: 800;
+      margin-top: 16px;
+      transition: background 0.2s;
+    }
+    .btn:hover {
+      background: #e55a2e;
+    }
+    .btn-secondary {
+      background: var(--primary);
+      margin-top: 12px;
+    }
+    .btn-secondary:hover {
+      background: var(--hover);
+    }
+    .dates-list {
+      list-style: none;
+      padding: 0;
+    }
+    .dates-list li {
+      padding: 8px 12px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .organizer-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 600;
+      margin-top: 12px;
+      transition: opacity 0.2s;
+    }
+    .organizer-link:hover {
+      opacity: 0.8;
+    }
+    @media (max-width: 900px) {
+      .gallery {
+        grid-template-columns: 1fr;
+      }
+      .grid {
+        grid-template-columns: 1fr;
+      }
+      .booking {
+        position: static;
+      }
     }
   </style>
 </head>
 <body>
   <header>
     <div class="nav">
-      <div><strong>GreenTrails</strong></div>
-      <div>
+      <div class="logo">GreenTrails</div>
+      <div class="nav-links">
         <a href="index.html">ホーム</a>
-        <a href="#reviews">レビュー</a>
-        <a href="#faqs">FAQ</a>
+        <a href="list.html">イベント一覧</a>
+        <a href="organizer-list.html">催行会社</a>
       </div>
     </div>
   </header>
 
   <main class="page">
-    <div class="breadcrumbs">九州 > 屋久島 > トレッキング</div>
+    <div id="breadcrumbs" class="breadcrumbs">
+      <a href="index.html">ホーム</a> > <a href="list.html">イベント一覧</a> > <span id="breadcrumb-category"></span>
+    </div>
+
     <div class="title">
       <div>
-        <h1>屋久島・苔むす森トレッキング（ガイド付き・少人数）</h1>
-        <div class="rating">★4.9 (2,104件) · キャンセル無料 · 日本語ガイド</div>
+        <h1 id="event-title"></h1>
+        <div id="event-badges" style="margin-top: 8px;"></div>
       </div>
-      <div class="badge">ベストセラー</div>
     </div>
 
     <div class="gallery">
-      <div class="main" aria-label="苔むす森メイン写真"></div>
+      <div class="main" id="event-main-image"></div>
       <div class="thumbs">
-        <div class="thumb" style="background-image:url('https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=800&q=80');"></div>
-        <div class="thumb" style="background-image:url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80');"></div>
+        <div class="thumb" style="background-image: url('https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=800&q=80');"></div>
+        <div class="thumb" style="background-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80');"></div>
       </div>
     </div>
 
     <div class="grid">
       <div class="card">
         <h3>概要</h3>
-        <p>世界遺産・屋久島の原生林を熟練ガイドと歩く6時間トレイル。混雑を避けた早朝スタートで、苔むす森や屋久杉を少人数でゆったり鑑賞します。</p>
+        <p id="event-description"></p>
 
         <div class="info-grid">
-          <div class="info-box">所要: 約6時間</div>
-          <div class="info-box">集合: 安房エリア</div>
-          <div class="info-box">グループ: 8名まで</div>
-          <div class="info-box">難易度: 中級</div>
+          <div class="info-box">
+            <div class="info-box-label">所要時間</div>
+            <div id="event-duration"></div>
+          </div>
+          <div class="info-box">
+            <div class="info-box-label">集合場所</div>
+            <div id="event-location"></div>
+          </div>
+          <div class="info-box">
+            <div class="info-box-label">対象年齢</div>
+            <div id="event-target-age"></div>
+          </div>
+          <div class="info-box">
+            <div class="info-box-label">価格</div>
+            <div>¥<span id="event-price"></span></div>
+          </div>
         </div>
 
+        <h3>開催日程</h3>
+        <ul class="dates-list" id="event-dates"></ul>
+
         <h3>ハイライト</h3>
-        <ul>
-          <li>苔むす森・屋久杉をガイドが丁寧に案内</li>
-          <li>少人数ツアーで写真タイムも確保</li>
-          <li>レインウェア・トレッキングポール無料レンタル</li>
-          <li>雨天時もコース変更で安全に実施</li>
-        </ul>
+        <ul id="event-highlights"></ul>
 
-        <h3>行程（サンプル）</h3>
-        <ul class="itinerary">
-          <li>06:30 集合・ブリーフィング</li>
-          <li>07:00 トレイル開始（苔むす森へ）</li>
-          <li>09:30 屋久杉ゾーンで休憩と撮影</li>
-          <li>11:30 ランチ（持参）・渓流沿いで休憩</li>
-          <li>13:00 下山、解散</li>
-        </ul>
+        <h3>注意事項</h3>
+        <p id="event-notes"></p>
 
-        <h3>含まれるもの</h3>
-        <ul>
-          <li>認定ガイド同行</li>
-          <li>レインウェア・ポール貸出</li>
-          <li>保険料</li>
-          <li>ホテル送迎（安房エリア）</li>
-        </ul>
-
-        <h3 id="reviews">レビュー抜粋</h3>
-        <ul>
-          <li>「苔の美しさに圧倒。少人数で静かに歩けた」 ★★★★★</li>
-          <li>「装備レンタルが助かった。ガイドが安全重視で安心」 ★★★★☆</li>
-        </ul>
-
-        <h3 id="faqs">よくある質問</h3>
-        <ul>
-          <li>雨でも開催? → 大雨・警報時は中止し全額返金</li>
-          <li>初心者OK? → 6時間歩ける体力があれば参加可能</li>
-          <li>食事は? → ランチは各自持参、飲料水は1.5L目安</li>
-        </ul>
+        <h3>催行会社</h3>
+        <div id="organizer-info"></div>
+        <a href="#" id="organizer-link" class="organizer-link">
+          催行会社の詳細を見る →
+        </a>
       </div>
 
       <div class="card booking">
         <h3>予約</h3>
-        <div class="price">¥12,800 / 人</div>
-        <label>日付
-          <input type="date" style="width:100%;padding:10px;border:1px solid #d9e4dc;border-radius:10px;margin-top:6px;">
-        </label>
-        <label style="display:block;margin-top:10px;">人数
-          <select style="width:100%;padding:10px;border:1px solid #d9e4dc;border-radius:10px;margin-top:6px;">
-            <option>1名</option><option>2名</option><option>3名</option><option>4名</option>
+        <div class="price">¥<span id="booking-price"></span> / 人</div>
+        <label style="display: block; margin-bottom: 8px; font-weight: 600;">
+          日付
+          <select id="booking-date" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 10px; margin-top: 6px;">
+            <option value="">選択してください</option>
           </select>
         </label>
-        <a class="btn" href="javascript:void(0);" onclick="alert('デモ: 予約フォームはダミーです');">空き状況を確認</a>
-        <div style="margin-top:10px;font-size:0.92rem;color:#5b6a62;">キャンセル無料（24時間前まで）。安全装備レンタル込み。</div>
+        <label style="display: block; margin-top: 12px; margin-bottom: 8px; font-weight: 600;">
+          人数
+          <select id="booking-people" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 10px; margin-top: 6px;">
+            <option>1名</option>
+            <option>2名</option>
+            <option>3名</option>
+            <option>4名</option>
+            <option>5名以上</option>
+          </select>
+        </label>
+        <a href="#" id="external-booking-btn" class="btn" target="_blank" rel="noopener">
+          外部サイトで予約する
+        </a>
+        <div style="margin-top: 12px; font-size: 0.92rem; color: #5b6a62;">
+          キャンセル無料（24時間前まで）。安全装備レンタル込み。
+        </div>
       </div>
     </div>
   </main>
+
+  <footer style="margin: 44px auto 20px; padding: 0 18px; text-align: center; color: #6c7a72; font-size: 0.92rem;">
+    © 2025 GreenTrails. 自然体験をもっと身近に。
+  </footer>
+
+  <script src="data.js"></script>
+  <script>
+    // URLパラメータからイベントIDを取得
+    const urlParams = new URLSearchParams(window.location.search);
+    const eventId = urlParams.get('id');
+
+    // イベントデータを取得
+    const event = eventData.events.find(e => e.id === eventId);
+    const organizer = event ? eventData.organizers.find(o => o.id === event.organizerId) : null;
+
+    if (event) {
+      // タイトル
+      document.getElementById('event-title').textContent = event.title;
+      document.title = `${event.title} | GreenTrails`;
+      document.getElementById('meta-description').content = event.description;
+
+      // 構造化データ
+      const structuredData = {
+        "@context": "https://schema.org",
+        "@type": "Event",
+        "name": event.title,
+        "description": event.description,
+        "image": event.image,
+        "startDate": event.dates[0] ? `${event.dates[0].date}T${event.dates[0].time}:00` : "",
+        "location": {
+          "@type": "Place",
+          "name": event.location ? event.location.name : `${event.area}, ${event.prefecture}`,
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": event.area,
+            "addressRegion": event.prefecture
+          }
+        },
+        "offers": {
+          "@type": "Offer",
+          "price": event.price,
+          "priceCurrency": "JPY"
+        }
+      };
+      document.getElementById('event-structured-data').textContent = JSON.stringify(structuredData);
+
+      // バッジ
+      const badgesContainer = document.getElementById('event-badges');
+      const badges = [];
+      if (event.isRecommended) badges.push('<span class="badge recommended">おすすめ</span>');
+      if (event.isNew) badges.push('<span class="badge new">新着</span>');
+      if (event.externalLink) badges.push('<span class="badge external-link">外部申込可</span>');
+      badgesContainer.innerHTML = badges.join('');
+
+      // 画像
+      document.getElementById('event-main-image').style.backgroundImage = `url('${event.image}')`;
+
+      // パンくず
+      const category = eventData.categories.find(c => c.id === event.categoryId);
+      document.getElementById('breadcrumb-category').textContent = category ? category.name : event.category;
+
+      // 説明
+      document.getElementById('event-description').textContent = event.description;
+
+      // 情報
+      document.getElementById('event-duration').textContent = event.duration;
+      document.getElementById('event-location').textContent = event.location ? event.location.name : `${event.area}, ${event.prefecture}`;
+      document.getElementById('event-target-age').textContent = event.targetAge || '全年齢';
+      document.getElementById('event-price').textContent = event.price.toLocaleString();
+      document.getElementById('booking-price').textContent = event.price.toLocaleString();
+
+      // 開催日程
+      const datesList = document.getElementById('event-dates');
+      const bookingDateSelect = document.getElementById('booking-date');
+      event.dates.forEach(d => {
+        const dateObj = new Date(d.date);
+        const dateStr = `${dateObj.getFullYear()}年${dateObj.getMonth() + 1}月${dateObj.getDate()}日`;
+        const weekday = ['日', '月', '火', '水', '木', '金', '土'][dateObj.getDay()];
+
+        const li = document.createElement('li');
+        li.innerHTML = `<span>${dateStr}(${weekday}) ${d.time}</span>`;
+        datesList.appendChild(li);
+
+        const option = document.createElement('option');
+        option.value = d.date;
+        option.textContent = `${dateStr}(${weekday}) ${d.time}`;
+        bookingDateSelect.appendChild(option);
+      });
+
+      // ハイライト
+      const highlightsList = document.getElementById('event-highlights');
+      if (event.highlights && event.highlights.length > 0) {
+        event.highlights.forEach(h => {
+          const li = document.createElement('li');
+          li.textContent = h;
+          highlightsList.appendChild(li);
+        });
+      } else {
+        highlightsList.parentElement.style.display = 'none';
+      }
+
+      // 注意事項
+      document.getElementById('event-notes').textContent = event.notes || '特になし';
+
+      // 催行会社情報
+      if (organizer) {
+        document.getElementById('organizer-info').innerHTML = `
+          <div style="display: flex; gap: 16px; align-items: flex-start;">
+            <img src="${organizer.logo}" alt="${organizer.name}" style="width: 80px; height: 80px; border-radius: 8px; object-fit: cover; background: #f0f0f0;">
+            <div>
+              <h4 style="margin: 0 0 8px 0;">${organizer.name}</h4>
+              <p style="margin: 0; color: #6c7a72; font-size: 0.9rem;">${organizer.description}</p>
+              <div style="margin-top: 8px; font-size: 0.85rem; color: #6c7a72;">
+                設立: ${organizer.establishedYear}年 | 評価: ★${organizer.rating} (${organizer.reviewCount}件)
+              </div>
+            </div>
+          </div>
+        `;
+        document.getElementById('organizer-link').href = `organizer-detail.html?id=${organizer.id}`;
+      }
+
+      // 外部申込ボタン
+      const bookingBtn = document.getElementById('external-booking-btn');
+      if (event.externalLink) {
+        bookingBtn.href = event.externalLink;
+        bookingBtn.textContent = '外部サイトで予約する';
+      } else {
+        bookingBtn.style.display = 'none';
+      }
+    } else {
+      // イベントが見つからない場合
+      document.querySelector('.page').innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">🔍</div>
+          <h2>イベントが見つかりませんでした</h2>
+          <p><a href="list.html">イベント一覧に戻る</a></p>
+        </div>
+      `;
+    }
+  </script>
 </body>
 </html>
-

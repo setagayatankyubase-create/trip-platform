@@ -3,139 +3,163 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Nature Experience Portal</title>
-  <style>
-    :root {
-      --primary:#0b7a5d;
-      --accent:#f86b40;
-      --bg:#f4f7f4;
-      --card:#ffffff;
-      --text:#1e2a23;
-    }
-    *{box-sizing:border-box;margin:0;padding:0;font-family:"Segoe UI","Hiragino Sans",sans-serif;}
-    body{background:var(--bg);color:var(--text);line-height:1.6;}
-    header{background:linear-gradient(135deg,#0b7a5d,#11a381);color:#fff;padding:30px 18px;}
-    .nav{max-width:1180px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;}
-    .logo{font-weight:800;font-size:1.2rem;letter-spacing:0.4px;}
-    .nav a{color:#e7fbf3;text-decoration:none;margin-left:14px;font-size:0.95rem;}
-    .hero{max-width:1180px;margin:32px auto 0;display:grid;grid-template-columns:1.05fr 0.95fr;gap:26px;align-items:center;}
-    .hero h1{font-size:2.1rem;margin-bottom:12px;}
-    .hero p{opacity:0.94;margin-bottom:18px;}
-    .search-box{background:var(--card);padding:16px;border-radius:14px;box-shadow:0 14px 32px rgba(0,0,0,0.10);}
-    .search-box form{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;}
-    .search-box input,.search-box select{padding:12px;border:1px solid #d9e4dc;border-radius:10px;font-size:0.96rem;}
-    .search-box button{padding:12px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer;}
-    .hero-img{height:280px;background:url('https://images.unsplash.com/photo-1476041800959-2f6bb412c8ce?auto=format&fit=crop&w=900&q=80') center/cover;border-radius:18px;box-shadow:0 14px 34px rgba(0,0,0,0.14);}
-    .section{max-width:1180px;margin:42px auto 0;padding:0 18px;}
-    .section h2{font-size:1.45rem;margin-bottom:14px;}
-    .categories{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;}
-    .cat{background:var(--card);padding:14px 12px;border-radius:12px;box-shadow:0 10px 22px rgba(0,0,0,0.06);display:flex;align-items:center;gap:10px;font-weight:700;}
-    .cat span{font-size:1.25rem;}
-    .filters{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0 6px;}
-    .filters select{padding:10px;border:1px solid #d9e4dc;border-radius:10px;}
-    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;}
-    .card{background:var(--card);border-radius:14px;overflow:hidden;box-shadow:0 12px 26px rgba(0,0,0,0.08);display:flex;flex-direction:column;}
-    .card img{width:100%;height:160px;object-fit:cover;}
-    .card .body{padding:14px;flex:1;display:flex;flex-direction:column;gap:8px;}
-    .badge{display:inline-block;background:#eaf7f1;color:var(--primary);padding:4px 8px;border-radius:8px;font-size:0.8rem;font-weight:800;}
-    .price{color:var(--primary);font-weight:800;}
-    .rating{color:#f5a623;font-weight:800;}
-    a.card-link{text-decoration:none;color:inherit;}
-    footer{margin:44px auto 20px;padding:0 18px;text-align:center;color:#6c7a72;font-size:0.92rem;}
-    @media (max-width:768px){.hero{grid-template-columns:1fr;}.hero-img{height:220px;}.search-box form{grid-template-columns:1fr;}.nav{flex-direction:column;align-items:flex-start;gap:8px;}}
-  </style>
+  <meta name="description" content="自然体験・イベントを探して予約できるプラットフォーム。トレッキング、カヤック、星空観察など、あなたにぴったりのアクティビティを見つけよう。">
+  <title>自然体験プラットフォーム | GreenTrails</title>
+  <link rel="stylesheet" href="styles.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "GreenTrails",
+    "description": "自然体験・イベントを探して予約できるプラットフォーム",
+    "url": "https://example.com"
+  }
+  </script>
 </head>
 <body>
   <header>
     <div class="nav">
       <div class="logo">GreenTrails</div>
-      <div class="links">
-        <a href="#categories">カテゴリ</a>
-        <a href="#featured">注目ツアー</a>
-        <a href="#support">サポート</a>
+      <div class="nav-links">
+        <a href="index.html">ホーム</a>
+        <a href="list.html">イベント一覧</a>
+        <a href="organizer-list.html">催行会社</a>
       </div>
     </div>
-    <div class="hero">
-      <div>
-        <h1>自然体験を、かんたん検索＆予約</h1>
-        <p>トレッキング、カヤック、星空観察など。地域と日付を入れて、あなたにぴったりのアクティビティを見つけよう。</p>
-        <div class="search-box">
-          <form onsubmit="event.preventDefault();alert('検索デモ: 結果は静的表示です');">
-            <input type="text" placeholder="行き先 (例: 屋久島, ニセコ)">
-            <input type="date">
-            <select>
-              <option>カテゴリを選択</option>
-              <option>ハイキング/トレッキング</option>
-              <option>カヤック/カヌー</option>
-              <option>サイクリング</option>
-              <option>星空・天体観測</option>
-            </select>
-            <button type="submit">検索する</button>
-          </form>
-        </div>
+    <div class="search-bar">
+      <form class="search-form" id="main-search-form" onsubmit="handleSearch(event)">
+        <input type="text" id="search-query" placeholder="体験名・語句で検索（例: 屋久島、トレッキング）" name="q">
+        <select id="search-category" name="category">
+          <option value="">すべてのカテゴリ</option>
+        </select>
+        <input type="date" id="search-date" name="date">
+        <select id="search-area" name="area">
+          <option value="">すべてのエリア</option>
+        </select>
+        <button type="submit">検索</button>
+      </form>
+      <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
+        <button type="button" onclick="searchByWeekday('this-weekend')" style="padding: 8px 16px; background: #f5f5f5; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; font-size: 0.85rem;">今週末</button>
+        <button type="button" onclick="searchByWeekday('next-holiday')" style="padding: 8px 16px; background: #f5f5f5; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; font-size: 0.85rem;">次の祝日</button>
       </div>
-      <div class="hero-img" aria-hidden="true"></div>
     </div>
   </header>
 
-  <section id="categories" class="section">
-    <h2>人気カテゴリ</h2>
-    <div class="categories">
-      <div class="cat"><span>🏞️</span>ハイキング</div>
-      <div class="cat"><span>🛶</span>カヤック</div>
-      <div class="cat"><span>🌌</span>星空観察</div>
-      <div class="cat"><span>🚴</span>サイクリング</div>
-      <div class="cat"><span>🧗</span>ロッククライミング</div>
-      <div class="cat"><span>♨️</span>温泉リトリート</div>
-    </div>
-  </section>
+  <main>
+    <!-- カテゴリ -->
+    <section id="categories" class="section">
+      <h2>人気カテゴリ</h2>
+      <div class="categories" id="category-list"></div>
+    </section>
 
-  <section id="featured" class="section">
-    <h2>おすすめ自然体験</h2>
-    <div class="filters">
-      <select><option>並び替え: 人気順</option><option>評価順</option><option>価格の安い順</option></select>
-      <select><option>価格帯</option><option>〜¥8,000</option><option>¥8,000〜¥15,000</option></select>
-      <select><option>難易度</option><option>初心者</option><option>中級</option><option>上級</option></select>
-    </div>
-    <div class="grid">
-      <a class="card-link" href="experience.html">
-        <div class="card">
-          <img src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80" alt="屋久島苔むす森トレッキング">
-          <div class="body">
-            <div class="badge">即予約</div>
-            <div>屋久島・苔むす森トレッキング（ガイド付き）</div>
-            <div class="rating">★4.9 (2,104)</div>
-            <div class="price">¥12,800</div>
-          </div>
-        </div>
-      </a>
-      <div class="card">
-        <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=900&q=80" alt="知床カヤック">
-        <div class="body">
-          <div class="badge">キャンセル無料</div>
-          <div>知床・クリアカヤックで海と流氷をクルーズ</div>
-          <div class="rating">★4.8 (987)</div>
-          <div class="price">¥9,400</div>
-        </div>
+    <!-- おすすめイベント -->
+    <section class="section event-block">
+      <div class="event-block-header">
+        <h2>おすすめイベント</h2>
+        <a href="list.html?recommended=1" class="view-all">すべて見る →</a>
       </div>
-      <div class="card">
-        <img src="https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=900&q=80" alt="阿蘇星空キャンプ">
-        <div class="body">
-          <div class="badge">ベストセラー</div>
-          <div>阿蘇高原・星空キャンプ＆焚き火体験</div>
-          <div class="rating">★4.7 (1,432)</div>
-          <div class="price">¥7,200</div>
-        </div>
+      <div class="grid" id="recommended-events"></div>
+    </section>
+
+    <!-- 新着イベント -->
+    <section class="section event-block">
+      <div class="event-block-header">
+        <h2>新着イベント</h2>
+        <a href="list.html?new=1" class="view-all">すべて見る →</a>
       </div>
-    </div>
-  </section>
+      <div class="grid" id="new-events"></div>
+    </section>
 
-  <section id="support" class="section">
-    <h2>サポート</h2>
-    <p>24時間チャット対応、現地ガイドによる安心サポート、雨天時の柔軟な振替オプションを提供しています。</p>
-  </section>
+    <!-- 直近開催イベント -->
+    <section class="section event-block">
+      <div class="event-block-header">
+        <h2>直近開催イベント</h2>
+        <a href="list.html?upcoming=1" class="view-all">すべて見る →</a>
+      </div>
+      <div class="grid" id="upcoming-events"></div>
+    </section>
+  </main>
 
-  <footer>© 2025 GreenTrails. 自然体験をもっと身近に。</footer>
+  <footer style="margin: 44px auto 20px; padding: 0 18px; text-align: center; color: #6c7a72; font-size: 0.92rem;">
+    © 2025 GreenTrails. 自然体験をもっと身近に。
+  </footer>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+  <script>
+    // カテゴリ一覧の表示
+    function renderCategories() {
+      const container = document.getElementById('category-list');
+      if (!container) return;
+
+      container.innerHTML = eventData.categories.map(cat => `
+        <a href="list.html?category=${cat.id}" class="cat">
+          <span>${cat.icon}</span>
+          <span>${cat.name}</span>
+        </a>
+      `).join('');
+    }
+
+    // カテゴリ・エリアの選択肢を設定
+    function populateSearchOptions() {
+      const categorySelect = document.getElementById('search-category');
+      const areaSelect = document.getElementById('search-area');
+
+      if (categorySelect) {
+        eventData.categories.forEach(cat => {
+          const option = document.createElement('option');
+          option.value = cat.id;
+          option.textContent = cat.name;
+          categorySelect.appendChild(option);
+        });
+      }
+
+      if (areaSelect) {
+        eventData.areas.forEach(area => {
+          const option = document.createElement('option');
+          option.value = area;
+          option.textContent = area;
+          areaSelect.appendChild(option);
+        });
+      }
+    }
+
+    // 検索処理
+    function handleSearch(event) {
+      event.preventDefault();
+      const formData = new FormData(event.target);
+      const params = {
+        q: formData.get('q') || '',
+        category: formData.get('category') || '',
+        date: formData.get('date') || '',
+        area: formData.get('area') || ''
+      };
+      URLManager.setParams(params);
+      window.location.href = `list.html?${new URLSearchParams(params).toString()}`;
+    }
+
+    // 曜日検索
+    function searchByWeekday(weekday) {
+      window.location.href = `list.html?weekday=${weekday}`;
+    }
+
+    // イベントブロックの表示
+    function renderEventBlocks() {
+      const recommended = SearchFilter.getRecommendedEvents(eventData.events).slice(0, 3);
+      const newEvents = SearchFilter.getNewEvents(eventData.events).slice(0, 3);
+      const upcoming = SearchFilter.getUpcomingEvents(eventData.events, 7).slice(0, 3);
+
+      CardRenderer.renderList(recommended, 'recommended-events');
+      CardRenderer.renderList(newEvents, 'new-events');
+      CardRenderer.renderList(upcoming, 'upcoming-events');
+    }
+
+    // 初期化
+    document.addEventListener('DOMContentLoaded', () => {
+      renderCategories();
+      populateSearchOptions();
+      renderEventBlocks();
+    });
+  </script>
 </body>
 </html>
-
