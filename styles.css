@@ -277,6 +277,11 @@ body {
   margin-right: auto;
 }
 
+.section.event-block {
+  padding: 0 18px;
+  max-width: 1400px;
+}
+
 .section h2 {
   font-size: 1.8rem;
   margin-bottom: 24px;
@@ -296,10 +301,11 @@ body {
 .card-carousel-wrapper {
   position: relative;
   margin-top: 20px;
-  max-width: 1280px;
+  max-width: 100%;
   margin-left: 0;
   margin-right: auto;
   padding: 0;
+  width: 100%;
 }
 
 .card-carousel {
@@ -320,21 +326,21 @@ body {
   max-width: 300px;
 }
 
-@media (min-width: 1400px) {
+@media (min-width: 1280px) {
   .card-carousel {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(4, 300px);
   }
 }
 
-@media (max-width: 1399px) {
+@media (max-width: 1279px) {
   .card-carousel {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, 300px);
   }
 }
 
 @media (max-width: 1024px) {
   .card-carousel {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, 300px);
   }
 }
 
