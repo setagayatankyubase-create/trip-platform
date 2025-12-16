@@ -19,18 +19,20 @@
 <body>
   <header class="main-header" id="main-header">
     <div class="nav">
-      <div class="logo">GreenTrails</div>
+      <div class="nav-left">
+        <div class="logo">GreenTrails</div>
+        <div class="header-search" id="header-search" style="display: none;">
+          <form class="header-search-form" onsubmit="handleSearch(event)">
+            <input type="text" placeholder="行き先やアクティビティを検索" name="q" class="header-search-input">
+            <button type="submit" class="header-search-button">検索</button>
+          </form>
+        </div>
+      </div>
       <div class="nav-links">
         <a href="index.html">ホーム</a>
         <a href="list.html">イベント一覧</a>
         <a href="organizer-list.html">催行会社</a>
       </div>
-    </div>
-    <div class="header-search" id="header-search" style="display: none;">
-      <form class="header-search-form" onsubmit="handleSearch(event)">
-        <input type="text" placeholder="行き先やアクティビティを検索" name="q" class="header-search-input">
-        <button type="submit" class="header-search-button">検索</button>
-      </form>
     </div>
   </header>
 
