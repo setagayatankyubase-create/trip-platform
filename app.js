@@ -193,27 +193,6 @@ const MapManager = {
 // イベントカードのレンダリング
 const CardRenderer = {
   render(event) {
-    const nearestDate = event.dates[0];
-    const dateObj = new Date(nearestDate.date);
-    const dateStr = `${dateObj.getMonth() + 1}/${dateObj.getDate()}`;
-
-    const badges = [];
-    if (event.isRecommended) badges.push('<span class="badge recommended">おすすめ</span>');
-    if (event.isNew) badges.push('<span class="badge new">新着</span>');
-    if (event.externalLink) badges.push('<span class="badge external-link">外部申込</span>');
-
-    // ダミーの評価とレビュー数（実際のデータがあればそれを使用）
-    const rating = 4.5 + Math.random() * 0.5; // 4.5-5.0の範囲
-    const reviewCount = Math.floor(Math.random() * 5000) + 100;
-    
-    // カテゴリに応じたタイトル
-    let cardType = '1日ツアー';
-    if (event.categoryId === 'stargazing' && event.duration.includes('泊')) {
-      cardType = '宿泊ツアー';
-    } else if (event.categoryId === 'onsen') {
-      cardType = '日帰りツアー';
-    }
-
     return `
       <a href="experience.html?id=${event.id}" class="card-link" data-event-id="${event.id}">
         <div class="card" data-event-id="${event.id}">
@@ -226,14 +205,8 @@ const CardRenderer = {
             </button>
           </div>
           <div class="card-body">
-            <div class="card-type">${cardType}</div>
             <div class="card-title">${event.title}</div>
-            <div class="card-duration">${event.duration}</div>
-            <div class="card-rating">
-              <span class="rating-value">${rating.toFixed(1)}</span>
-              <span class="rating-star">★</span>
-              <span class="rating-count">(${reviewCount.toLocaleString()})</span>
-            </div>
+            <div class="card-location">${event.area}, ${event.prefecture}</div>
             <div class="card-price">¥ ${event.price.toLocaleString()}</div>
           </div>
         </div>

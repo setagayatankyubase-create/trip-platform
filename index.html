@@ -230,9 +230,9 @@
 
     // イベントブロックの表示
     function renderEventBlocks() {
-      const recommended = SearchFilter.getRecommendedEvents(eventData.events);
-      const newEvents = SearchFilter.getNewEvents(eventData.events);
-      const upcoming = SearchFilter.getUpcomingEvents(eventData.events, 30);
+      const recommended = SearchFilter.getRecommendedEvents(eventData.events).slice(0, 4);
+      const newEvents = SearchFilter.getNewEvents(eventData.events).slice(0, 4);
+      const upcoming = SearchFilter.getUpcomingEvents(eventData.events, 30).slice(0, 4);
 
       CardRenderer.renderCarousel(recommended, 'recommended-events');
       CardRenderer.renderCarousel(newEvents, 'new-events');
