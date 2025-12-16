@@ -106,6 +106,9 @@ const EventPageRenderer = {
 
     // 地図
     this.renderMap(event);
+
+    // 関連イベント
+    this.renderRelatedEvents(event);
   },
 
   // 開催日程
@@ -204,6 +207,68 @@ const EventPageRenderer = {
     const src = `https://www.google.com/maps?q=${encodedQuery}&hl=ja&z=13&output=embed`;
 
     mapIframe.src = src;
+  },
+
+  // 関連イベント
+  renderRelatedEvents(event) {
+    const section = document.getElementById('related-events-section');
+    const container = document.getElementById('related-events');
+    if (!section || !container || !eventData?.events) return;
+
+    // 現在のイベント以外を対象
+    const others = eventData.events.filter(e => e.id !== event.id);
+
+    // イベントの最初の日付を取得するヘルパー
+    const getFirstDate = (e) => {
+      if (!e.dates || e.dates.length === 0) return null;
+      const sorted = [...e.dates].sort((a, b) => new Date(a.date) - new Date(b.date));
+      return new Date(sorted[0].date);
+    };
+
+    const baseDate = getFirstDate(event);
+
+    // スコアリングして関連度順にソート
+    const scored = others.map(e => {
+      let score = 0;
+      if (e.categoryId === event.categoryId) score += 5;
+      if (e.area === event.area) score += 3;
+      if (e.prefecture === event.prefecture) score += 1;
+
+      const d = getFirstDate(e);
+      if (baseDate && d) {
+        const diffDays = Math.abs(d - baseDate) / (1000 * 60 * 60 * 24);
+        // 日付が近いほど高スコア（最大 +3）
+        score += Math.max(0, 3 - Math.min(diffDays, 3));
+      }
+
+      return { event: e, score };
+    }).sort((a, b) => b.score - a.score);
+
+    const related = scored
+      .filter(item => item.score > 0)
+      .slice(0, 4)
+      .map(item => item.event);
+
+    if (!related.length) {
+      section.style.display = 'none';
+      return;
+    }
+
+    // カードを描画（トップページと同じシンプルカード）
+    container.innerHTML = related.map(e => `
+      <a href="experience.html?id=${e.id}" class="card-link">
+        <div class="card">
+          <div class="card-image-wrapper">
+            <img src="${e.image}" alt="${e.title}" loading="lazy">
+          </div>
+          <div class="card-body">
+            <div class="card-title">${e.title}</div>
+            <div class="card-location">${e.area}, ${e.prefecture}</div>
+            <div class="card-price">¥ ${e.price.toLocaleString()}</div>
+          </div>
+        </div>
+      </a>
+    `).join('');
   },
 
   // 予約セクション

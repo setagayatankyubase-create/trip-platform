@@ -315,7 +315,7 @@ body {
   gap: 16px;
   overflow-x: auto;
   scroll-behavior: smooth;
-  padding: 10px 18px;
+  padding: 10px 12px;
   scrollbar-width: none;
   -ms-overflow-style: none;
   scroll-snap-type: x mandatory;
@@ -323,10 +323,10 @@ body {
 }
 
 .card-carousel .card {
-  flex: 0 0 280px;
-  width: 280px;
-  min-width: 280px;
-  max-width: 280px;
+  flex: 0 0 270px;
+  width: 270px;
+  min-width: 270px;
+  max-width: 270px;
   scroll-snap-align: start;
 }
 
@@ -337,10 +337,6 @@ body {
 /* カルーセルの青い矢印ボタンは非表示 */
 .carousel-arrow {
   display: none;
-}
-
-.card-carousel .card {
-  width: 100%;
 }
 
 .carousel-arrow {
