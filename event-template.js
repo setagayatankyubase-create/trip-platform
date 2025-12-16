@@ -103,6 +103,9 @@ const EventPageRenderer = {
 
     // 催行会社
     this.renderOrganizer(organizer);
+
+    // 地図
+    this.renderMap(event);
   },
 
   // 開催日程
@@ -180,6 +183,27 @@ const EventPageRenderer = {
     if (organizerLink) {
       organizerLink.href = `organizer-detail.html?id=${organizer.id}`;
     }
+  },
+
+  // Googleマップ埋め込み
+  renderMap(event) {
+    const mapIframe = document.getElementById('event-map');
+    if (!mapIframe) return;
+
+    // lat/lng がある場合はそれを優先して使用
+    let mapQuery = '';
+    if (event.location && event.location.lat && event.location.lng) {
+      mapQuery = `${event.location.lat},${event.location.lng}`;
+    } else if (event.location && event.location.name) {
+      mapQuery = `${event.location.name} ${event.prefecture || ''}`;
+    } else {
+      mapQuery = `${event.area || ''} ${event.prefecture || ''}`;
+    }
+
+    const encodedQuery = encodeURIComponent(mapQuery.trim());
+    const src = `https://www.google.com/maps?q=${encodedQuery}&hl=ja&z=13&output=embed`;
+
+    mapIframe.src = src;
   },
 
   // 予約セクション
