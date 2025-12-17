@@ -813,6 +813,22 @@ body {
   align-items: stretch;
   width: max-content;
   margin: 0 auto;
+  transition: transform 0.3s ease-in-out;
+}
+
+.week-calendar-sliding .week-calendar-list {
+  animation: slideWeek 0.3s ease-in-out;
+}
+
+@keyframes slideWeek {
+  0% {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 /* 今週のイベントのスクロールバーを非表示 */

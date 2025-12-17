@@ -163,26 +163,22 @@
     // 週のオフセット（0=今週、1=次週、-1=先週など）
     let weekOffset = 0;
 
-    // 今週〜翌週までのカレンダー表示（自動で今日基準に更新）
+    // 当日始まりの1週間分を表示（次週ボタンでスライド入れ替え）
     function renderWeekCalendar(offset = 0) {
       const container = document.getElementById('week-calendar');
       if (!container) return;
 
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const dayOfWeek = today.getDay(); // 0=日曜日, 6=土曜日
       
-      // 月曜日始まりに調整（月曜日=1なので、1を引いて0にする）
-      const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // 日曜日の場合は6日戻す
-      
-      const startOfWeek = new Date(today);
-      startOfWeek.setDate(today.getDate() - daysFromMonday + (offset * 7)); // 月曜日を起点に、オフセット分の週を加算
+      // 当日始まりの1週間分を取得（offset=0なら今日から7日間、offset=1なら8日目から14日間）
+      const startDate = new Date(today);
+      startDate.setDate(today.getDate() + (offset * 7));
 
-      // 今週（月〜日）＋翌週（月〜日）の14日間を取得
       const weekDays = [];
-      for (let i = 0; i < 14; i++) {
-        const date = new Date(startOfWeek);
-        date.setDate(startOfWeek.getDate() + i);
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(startDate);
+        date.setDate(startDate.getDate() + i);
         weekDays.push(date);
       }
 
@@ -199,8 +195,8 @@
       // 今日の日付文字列
       const todayStr = today.toISOString().split('T')[0];
 
-      // 曜日名（月曜日始まり）
-      const weekDayNames = ['月', '火', '水', '木', '金', '土', '日'];
+      // 曜日名
+      const weekDayNames = ['日', '月', '火', '水', '木', '金', '土'];
 
       // リスト生成
       let html = '<div class="week-calendar-list">';
@@ -209,7 +205,7 @@
         const dateStr = date.toISOString().split('T')[0];
         const month = date.getMonth() + 1;
         const day = date.getDate();
-        const dayIndex = date.getDay() === 0 ? 6 : date.getDay() - 1; // 月曜日始まりのインデックス
+        const dayIndex = date.getDay(); // 0=日曜日, 1=月曜日, ..., 6=土曜日
         const dayName = weekDayNames[dayIndex];
         const count = eventCounts[dateStr] || 0;
         const isToday = dateStr === todayStr;
@@ -229,6 +225,13 @@
       });
 
       html += '</div>';
+      
+      // スライドアニメーション用のクラスを追加
+      container.classList.add('week-calendar-sliding');
+      setTimeout(() => {
+        container.classList.remove('week-calendar-sliding');
+      }, 300);
+      
       container.innerHTML = html;
 
       // 次週ボタンの表示を更新
@@ -236,7 +239,7 @@
       if (nextWeekBtn) {
         if (offset === 0) {
           nextWeekBtn.textContent = '次週 →';
-          nextWeekBtn.style.display = 'block';
+          nextWeekBtn.onclick = () => showNextWeek();
         } else {
           nextWeekBtn.textContent = '今週 ←';
           nextWeekBtn.onclick = () => showThisWeek();
