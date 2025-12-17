@@ -285,16 +285,53 @@ const EventPageRenderer = {
 
   // 予約セクション
   renderBooking(event) {
+    // 価格（最優先・固定）
     const bookingPrice = document.getElementById('booking-price');
+    const bookingPriceMeta = document.getElementById('booking-price-meta');
     if (bookingPrice) {
       bookingPrice.textContent = event.price.toLocaleString();
+    }
+    if (bookingPriceMeta) {
+      // 単位（人 / 組 / 家族など）があれば表示、なければ「人」
+      const unit = event.priceUnit || '人';
+      const suffix = event.priceSuffix || '税込';
+      bookingPriceMeta.textContent = ` / ${unit}（${suffix}）`;
+    }
+
+    // 開催日：プルダウン + 直近開催表示
+    const dateSelect = document.getElementById('booking-date');
+    const nextDateWrap = document.getElementById('booking-next-date');
+    const nextDateText = document.getElementById('booking-next-date-text');
+
+    if (dateSelect && Array.isArray(event.dates)) {
+      // 一旦クリア
+      dateSelect.innerHTML = '<option value="">日付を選択してください</option>';
+
+      event.dates.forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d.date;
+        const dateObj = new Date(d.date);
+        const month = dateObj.getMonth() + 1;
+        const day = dateObj.getDate();
+        opt.textContent = `${month}月${day}日 (${d.time})`;
+        dateSelect.appendChild(opt);
+      });
+
+      if (event.dates.length > 0 && nextDateWrap && nextDateText) {
+        const first = event.dates[0];
+        const firstDate = new Date(first.date);
+        const month = firstDate.getMonth() + 1;
+        const day = firstDate.getDate();
+        nextDateText.textContent = `${month}月${day}日`;
+        nextDateWrap.style.display = 'block';
+      }
     }
 
     const bookingBtn = document.getElementById('external-booking-btn');
     if (bookingBtn) {
       if (event.externalLink) {
         bookingBtn.href = event.externalLink;
-        bookingBtn.textContent = '外部サイトで予約する';
+        bookingBtn.textContent = '提供元の公式サイトで予約する';
         bookingBtn.style.display = 'block';
       } else {
         bookingBtn.style.display = 'none';

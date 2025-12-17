@@ -259,14 +259,22 @@
       </div>
 
       <div class="card booking">
-        <h3>予約</h3>
-        <div class="price">¥<span id="booking-price"></span> / 人</div>
-        <label style="display: block; margin-bottom: 8px; font-weight: 600;">
-          日付
-          <select id="booking-date" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 10px; margin-top: 6px;">
-            <option value="">選択してください</option>
-          </select>
-        </label>
+        <h3>提供元の公式サイトへ</h3>
+        <div class="price" id="booking-price-line">
+          <span class="price-amount">¥<span id="booking-price"></span></span>
+          <span class="price-meta" id="booking-price-meta"> / 人（税込）</span>
+        </div>
+        <div style="margin-top: 16px;">
+          <label style="display: block; margin-bottom: 8px; font-weight: 600;">
+            開催日
+            <select id="booking-date" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 10px; margin-top: 6px;">
+              <option value="">日付を選択してください</option>
+            </select>
+            <div id="booking-next-date" style="margin-top: 6px; font-size: 0.9rem; color: #5b6a62; display: none;">
+              直近開催：<span id="booking-next-date-text"></span>
+            </div>
+          </label>
+        </div>
         <label style="display: block; margin-top: 12px; margin-bottom: 8px; font-weight: 600;">
           人数
           <select id="booking-people" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 10px; margin-top: 6px;">
@@ -280,9 +288,6 @@
         <a href="#" id="external-booking-btn" class="btn" target="_blank" rel="noopener">
           外部サイトで予約する
         </a>
-        <div style="margin-top: 12px; font-size: 0.92rem; color: #5b6a62;">
-          キャンセル無料（24時間前まで）。安全装備レンタル込み。
-        </div>
       </div>
     </div>
 
