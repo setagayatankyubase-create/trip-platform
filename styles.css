@@ -55,9 +55,10 @@ body {
 }
 
 .logo {
-  font-weight: 800;
-  font-size: 1.3rem;
-  letter-spacing: 0.4px;
+  font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+  font-weight: 700;
+  font-size: 1.5rem;
+  letter-spacing: 0.05em;
   color: var(--primary);
   white-space: nowrap;
   text-decoration: none;
