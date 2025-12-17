@@ -374,10 +374,18 @@
         const gasUrl = 'https://script.google.com/macros/s/AKfycbw7G7Rf3wK2o8eS9V9VgNHtQvrTdMnhpoHxkXIR7Om9YdOLTP9nAjcdX4uN4xoEHkVHJw/exec';
         
         try {
-          // navigator.sendBeacon で計測データを送信
-          const jsonData = JSON.stringify(measurementData);
-          const blob = new Blob([jsonData], { type: 'application/json' });
-          navigator.sendBeacon(gasUrl, blob);
+          // fetch API で計測データを送信（keepalive: true でページ遷移後も送信される）
+          fetch(gasUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(measurementData),
+            keepalive: true
+          }).catch(function(error) {
+            // エラーは無視（遷移は実行される）
+            console.warn('計測処理でエラーが発生しました:', error);
+          });
         } catch (error) {
           // 計測処理が失敗してもエラーを出さず、遷移は実行
           console.warn('計測処理でエラーが発生しました:', error);
