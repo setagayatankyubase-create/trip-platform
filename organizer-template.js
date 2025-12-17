@@ -17,7 +17,7 @@ const OrganizerPageRenderer = {
 
   // ヘッダー情報
   renderHeader(organizer) {
-    document.title = `${organizer.name} | GreenTrails`;
+    document.title = `${organizer.name} | そとび`;
   },
 
   // パンくずリスト

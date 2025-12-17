@@ -19,7 +19,7 @@ const EventPageRenderer = {
 
   // ヘッダー情報
   renderHeader(event) {
-    document.title = `${event.title} | GreenTrails`;
+    document.title = `${event.title} | そとび`;
     const metaDesc = document.getElementById('meta-description');
     if (metaDesc) {
       metaDesc.content = event.description;
