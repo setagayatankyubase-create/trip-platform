@@ -249,8 +249,10 @@ const CardRenderer = {
             </button>
           </div>
           <div class="card-body">
-            ${badgesHtml ? `<div class="card-badges">${badgesHtml}</div>` : ''}
-            ${this.getRatingHtml(event)}
+            <div class="card-badges-rating">
+              ${badgesHtml ? `<div class="card-badges">${badgesHtml}</div>` : ''}
+              ${this.getRatingHtml(event)}
+            </div>
             <div class="card-title">${event.title}</div>
             <div class="card-location">${event.area}, ${event.prefecture}</div>
             <div class="card-price">¥ ${event.price.toLocaleString()}</div>
