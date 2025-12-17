@@ -67,12 +67,12 @@ body {
 
 .logo-image {
   display: block;
-  height: 32px;
+  height: 44px;
 }
 
 @media (max-width: 768px) {
   .logo-image {
-    height: 26px;
+    height: 34px;
   }
 }
 
