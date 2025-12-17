@@ -244,56 +244,37 @@
         zeroSuggestContainer.innerHTML = '';
 
         if (currentEvents.length === 0) {
-          const categories = (eventData.categories || []).slice(0, 6);
-          const recommended = SearchFilter.getRecommendedEvents
-            ? SearchFilter.getRecommendedEvents(eventData.events || []).slice(0, 4)
+          // 検索条件に近いおすすめイベントを最大8件取得
+          let similar = SearchFilter.getSimilarEvents
+            ? SearchFilter.getSimilarEvents(params, 8)
             : [];
-          const upcoming = (SearchFilter.getUpcomingEvents
-            ? SearchFilter.getUpcomingEvents(eventData.events || [], 4)
-            : (eventData.events || []).slice(0, 4));
 
-          let html = '<div class="empty-suggestions">';
+          // それでも足りない場合は、おすすめイベントで補完
+          if (similar.length < 8 && SearchFilter.getRecommendedEvents) {
+            const recommendedAll = SearchFilter.getRecommendedEvents(eventData.events || []);
+            for (const ev of recommendedAll) {
+              if (!similar.find(s => s.id === ev.id)) {
+                similar.push(ev);
+                if (similar.length >= 8) break;
+              }
+            }
+          }
 
-          if (recommended && recommended.length) {
-            html += `
+          if (similar.length) {
+            // 4枚表示＋横スクロールになるよう、トップページと同じカードレイアウトを利用
+            let html = `
               <section class="empty-suggestions-section">
-                <h4>おすすめイベント</h4>
-                <div class="empty-suggestions-events">
-                  ${recommended.map(ev => CardRenderer.render(ev)).join('')}
+                <h4>検索条件に近いおすすめイベント</h4>
+                <div class="card-carousel-wrapper">
+                  <div class="card-carousel">
+                    ${similar.map(ev => CardRenderer.render(ev)).join('')}
+                  </div>
                 </div>
               </section>
             `;
-          }
 
-          if (categories && categories.length) {
-            html += `
-              <section class="empty-suggestions-section">
-                <h4>人気カテゴリから探す</h4>
-                <div class="empty-suggestions-categories">
-                  ${categories.map(cat => `
-                    <a href="list.html?category=${encodeURIComponent(cat.id)}" class="empty-suggestion-chip">
-                      <span class="empty-suggestion-icon">${cat.icon || ''}</span>
-                      <span>${cat.name}</span>
-                    </a>
-                  `).join('')}
-                </div>
-              </section>
-            `;
+            zeroSuggestContainer.innerHTML = html;
           }
-
-          if (upcoming && upcoming.length) {
-            html += `
-              <section class="empty-suggestions-section">
-                <h4>近日開催のイベント</h4>
-                <div class="empty-suggestions-events">
-                  ${upcoming.map(ev => CardRenderer.render(ev)).join('')}
-                </div>
-              </section>
-            `;
-          }
-
-          html += '</div>';
-          zeroSuggestContainer.innerHTML = html;
         }
       }
 
