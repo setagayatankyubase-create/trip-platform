@@ -8,9 +8,17 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <header>
+  <header class="main-header" id="main-header">
     <div class="nav">
-      <a href="index.html" class="logo">GreenTrails</a>
+      <div class="nav-left">
+        <a href="index.html" class="logo">GreenTrails</a>
+        <div class="header-search" id="header-search" style="display: none;">
+          <form class="header-search-form" onsubmit="handleSearch(event)">
+            <input type="text" placeholder="行き先やアクティビティを検索" name="q" class="header-search-input">
+            <button type="submit" class="header-search-button">検索</button>
+          </form>
+        </div>
+      </div>
       <div class="nav-links">
         <a href="list.html">イベント一覧</a>
         <a href="organizer-list.html">催行会社</a>
@@ -79,8 +87,27 @@
       }).join('');
     }
 
+    // ヘッダーのスクロール検知
+    function handleScroll() {
+      const header = document.getElementById('main-header');
+      const headerSearch = document.getElementById('header-search');
+      
+      if (window.scrollY > 100) {
+        if (header) header.classList.add('scrolled');
+        if (headerSearch) {
+          headerSearch.style.display = 'block';
+        }
+      } else {
+        if (header) header.classList.remove('scrolled');
+        if (headerSearch) {
+          headerSearch.style.display = 'none';
+        }
+      }
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       renderOrganizers();
+      window.addEventListener('scroll', handleScroll);
     });
   </script>
 </body>
