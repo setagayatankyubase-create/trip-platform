@@ -175,7 +175,7 @@ const eventData = {
       organizerId: 'org-005',
       isRecommended: false,
       isNew: false,
-      publishedAt: '2024-11-01',
+      publishedAt: '2026-11-01',
       externalLink: 'https://example.com/book/evt-006',
       targetAge: '全年齢',
       notes: '温泉入浴料込み。タオル持参。',
