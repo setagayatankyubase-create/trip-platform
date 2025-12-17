@@ -1251,6 +1251,14 @@ body {
   color: #ccc;
 }
 
+.footer-logo {
+  font-size: 1.1rem;
+  font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+  font-weight: 700;
+  color: var(--primary);
+  letter-spacing: 0.05em;
+}
+
 .footer-social {
   display: flex;
   gap: 16px;
