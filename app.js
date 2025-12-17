@@ -71,39 +71,31 @@ const SearchFilter = {
       );
     }
 
-    // 曜日検索
+    // 曜日検索（今週 / 来週）
     if (params.weekday) {
       const today = new Date();
-      let targetDates = [];
+      today.setHours(0, 0, 0, 0);
 
-      if (params.weekday === 'this-weekend') {
-        // 今週末（土日）
-        const dayOfWeek = today.getDay();
-        const daysUntilSaturday = (6 - dayOfWeek + 7) % 7 || 7;
-        const saturday = new Date(today);
-        saturday.setDate(today.getDate() + daysUntilSaturday);
-        const sunday = new Date(saturday);
-        sunday.setDate(saturday.getDate() + 1);
-        targetDates = [saturday, sunday];
-      } else if (params.weekday === 'next-weekend') {
-        // 来週末（土日）
-        const dayOfWeek = today.getDay();
-        const daysUntilSaturday = (6 - dayOfWeek + 7) % 7 || 7;
-        const thisSaturday = new Date(today);
-        thisSaturday.setDate(today.getDate() + daysUntilSaturday);
-        const nextSaturday = new Date(thisSaturday);
-        nextSaturday.setDate(thisSaturday.getDate() + 7);
-        const nextSunday = new Date(nextSaturday);
-        nextSunday.setDate(nextSaturday.getDate() + 1);
-        targetDates = [nextSaturday, nextSunday];
+      // 月曜日始まりの「今週」「来週」を定義
+      const dayOfWeek = today.getDay(); // 0=日,1=月,...6=土
+      const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+
+      let startOfWeek = new Date(today);
+      startOfWeek.setDate(today.getDate() - daysFromMonday);
+
+      if (params.weekday === 'next-week') {
+        // 来週は今週の1週間後
+        startOfWeek.setDate(startOfWeek.getDate() + 7);
       }
+
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 6);
 
       filtered = filtered.filter(event =>
         event.dates.some(d => {
           const eventDate = new Date(d.date);
-          return targetDates.some(target =>
-            eventDate.toDateString() === target.toDateString()
-          );
+          eventDate.setHours(0, 0, 0, 0);
+          return eventDate >= startOfWeek && eventDate <= endOfWeek;
         })
       );
     }
