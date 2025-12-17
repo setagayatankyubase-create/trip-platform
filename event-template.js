@@ -331,7 +331,7 @@ const EventPageRenderer = {
     if (bookingBtn) {
       if (event.externalLink) {
         bookingBtn.href = event.externalLink;
-        bookingBtn.textContent = '提供元の公式サイトで予約する';
+        bookingBtn.textContent = '公式サイトへ進む';
         bookingBtn.style.display = 'block';
       } else {
         bookingBtn.style.display = 'none';
