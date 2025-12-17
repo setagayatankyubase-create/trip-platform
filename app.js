@@ -408,8 +408,6 @@ const CardRenderer = {
 
     if (events.length === 0) {
       // 検索結果0件時の表示
-      // イベント一覧ページ（containerId === 'event-list'）では
-      // 「おすすめイベント」「人気カテゴリ」「近日開催イベント」を表示する
       if (containerId === 'event-list' && window.eventData) {
         const categories = (eventData.categories || []).slice(0, 6);
         const recommended = SearchFilter.getRecommendedEvents
@@ -419,57 +417,61 @@ const CardRenderer = {
           ? SearchFilter.getUpcomingEvents(eventData.events || [], 4)
           : (eventData.events || []).slice(0, 4));
 
-        console.log('renderList: 0 events, showing suggestions', { recommended, categories, upcoming });
-
-        let html = `
+        // メインの0件メッセージは event-list 側に表示
+        container.innerHTML = `
           <div class="empty-state">
             <div class="empty-state-icon">🔍</div>
             <h3>該当するイベントが見つかりませんでした</h3>
             <p>条件を少しゆるめるか、別の切り口から探してみましょう。</p>
           </div>
-          <div class="empty-suggestions" id="event-zero-suggestions">
         `;
 
-        if (recommended && recommended.length) {
-          html += `
-            <section class="empty-suggestions-section">
-              <h4>おすすめイベント</h4>
-              <div class="empty-suggestions-events">
-                ${recommended.map(ev => this.render(ev)).join('')}
-              </div>
-            </section>
-          `;
-        }
+        // おすすめ表示用の別コンテナに挿入
+        const suggestContainer = document.getElementById('event-zero-suggestions');
+        if (suggestContainer) {
+          let html = `<div class="empty-suggestions">`;
 
-        if (categories.length) {
-          html += `
-            <section class="empty-suggestions-section">
-              <h4>人気カテゴリから探す</h4>
-              <div class="empty-suggestions-categories">
-                ${categories.map(cat => `
-                  <a href="list.html?category=${encodeURIComponent(cat.id)}" class="empty-suggestion-chip">
-                    <span class="empty-suggestion-icon">${cat.icon || ''}</span>
-                    <span>${cat.name}</span>
-                  </a>
-                `).join('')}
-              </div>
-            </section>
-          `;
-        }
+          if (recommended && recommended.length) {
+            html += `
+              <section class="empty-suggestions-section">
+                <h4>おすすめイベント</h4>
+                <div class="empty-suggestions-events">
+                  ${recommended.map(ev => this.render(ev)).join('')}
+                </div>
+              </section>
+            `;
+          }
 
-        if (upcoming && upcoming.length) {
-          html += `
-            <section class="empty-suggestions-section">
-              <h4>近日開催のイベント</h4>
-              <div class="empty-suggestions-events">
-                ${upcoming.map(ev => this.render(ev)).join('')}
-              </div>
-            </section>
-          `;
-        }
+          if (categories.length) {
+            html += `
+              <section class="empty-suggestions-section">
+                <h4>人気カテゴリから探す</h4>
+                <div class="empty-suggestions-categories">
+                  ${categories.map(cat => `
+                    <a href="list.html?category=${encodeURIComponent(cat.id)}" class="empty-suggestion-chip">
+                      <span class="empty-suggestion-icon">${cat.icon || ''}</span>
+                      <span>${cat.name}</span>
+                    </a>
+                  `).join('')}
+                </div>
+              </section>
+            `;
+          }
 
-        html += `</div>`;
-        container.innerHTML = html;
+          if (upcoming && upcoming.length) {
+            html += `
+              <section class="empty-suggestions-section">
+                <h4>近日開催のイベント</h4>
+                <div class="empty-suggestions-events">
+                  ${upcoming.map(ev => this.render(ev)).join('')}
+                </div>
+              </section>
+            `;
+          }
+
+          html += `</div>`;
+          suggestContainer.innerHTML = html;
+        }
       } else {
         // その他のリスト（主催者ページなど）は従来通りのメッセージのみ
         container.innerHTML = `
