@@ -59,9 +59,11 @@
     <section class="section event-block">
       <div class="week-event-header">
         <h2>今週のイベント</h2>
-        <button id="next-week-btn" class="week-nav-button" onclick="showNextWeek()">次週 →</button>
       </div>
-      <div class="week-calendar" id="week-calendar"></div>
+      <div class="week-calendar-wrapper">
+        <div class="week-calendar" id="week-calendar"></div>
+        <button id="next-week-btn" class="week-nav-arrow" onclick="showNextWeek()">→</button>
+      </div>
     </section>
 
     <!-- 人気イベント -->
@@ -238,10 +240,10 @@
       const nextWeekBtn = document.getElementById('next-week-btn');
       if (nextWeekBtn) {
         if (offset === 0) {
-          nextWeekBtn.textContent = '次週 →';
+          nextWeekBtn.textContent = '→';
           nextWeekBtn.onclick = () => showNextWeek();
         } else {
-          nextWeekBtn.textContent = '今週 ←';
+          nextWeekBtn.textContent = '←';
           nextWeekBtn.onclick = () => showThisWeek();
         }
       }
