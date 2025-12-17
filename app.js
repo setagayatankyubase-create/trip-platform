@@ -187,6 +187,32 @@ const MapManager = {
 
 // イベントカードのレンダリング
 const CardRenderer = {
+  getRatingHtml(event) {
+    // イベントに評価がある場合はそれを使い、なければ催行会社の評価を使う
+    let rating = event.rating;
+    let reviewCount = event.reviewCount;
+    
+    if (!rating || !reviewCount) {
+      const organizer = eventData.organizers.find(o => o.id === event.organizerId);
+      if (organizer) {
+        rating = organizer.rating;
+        reviewCount = organizer.reviewCount;
+      } else {
+        // デフォルト値
+        rating = 4.5;
+        reviewCount = 10;
+      }
+    }
+    
+    return `
+      <div class="card-rating">
+        <span class="rating-star">⭐</span>
+        <span class="rating-value">${rating.toFixed(2)}</span>
+        <span class="rating-count">(${reviewCount}件)</span>
+      </div>
+    `;
+  },
+
   render(event) {
     // バッジ判定
     const today = new Date();
@@ -224,6 +250,7 @@ const CardRenderer = {
           </div>
           <div class="card-body">
             ${badgesHtml ? `<div class="card-badges">${badgesHtml}</div>` : ''}
+            ${this.getRatingHtml(event)}
             <div class="card-title">${event.title}</div>
             <div class="card-location">${event.area}, ${event.prefecture}</div>
             <div class="card-price">¥ ${event.price.toLocaleString()}</div>
