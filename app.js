@@ -419,13 +419,15 @@ const CardRenderer = {
           ? SearchFilter.getUpcomingEvents(eventData.events || [], 4)
           : (eventData.events || []).slice(0, 4));
 
+        console.log('renderList: 0 events, showing suggestions', { recommended, categories, upcoming });
+
         let html = `
           <div class="empty-state">
             <div class="empty-state-icon">🔍</div>
             <h3>該当するイベントが見つかりませんでした</h3>
             <p>条件を少しゆるめるか、別の切り口から探してみましょう。</p>
           </div>
-          <div class="empty-suggestions">
+          <div class="empty-suggestions" id="event-zero-suggestions">
         `;
 
         if (recommended && recommended.length) {
