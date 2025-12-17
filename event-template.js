@@ -19,7 +19,7 @@ const EventPageRenderer = {
 
   // ヘッダー情報
   renderHeader(event) {
-    document.title = `${event.title} | そとび`;
+    document.title = `${event.title} | そとなび`;
     const metaDesc = document.getElementById('meta-description');
     if (metaDesc) {
       metaDesc.content = event.description;
