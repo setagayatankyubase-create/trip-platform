@@ -359,6 +359,34 @@
     
     // スクロールイベントリスナーを追加
     window.addEventListener('scroll', handleScroll);
+    
+    // 予約ボタンのクリック処理（計測処理追加）
+    const bookingBtn = document.getElementById('external-booking-btn');
+    if (bookingBtn && event && organizer) {
+      bookingBtn.addEventListener('click', function(e) {
+        // 計測処理（失敗しても遷移は実行）
+        const measurementData = {
+          token: 'ここに秘密鍵',
+          event_id: event.id,
+          organizer_id: organizer.id
+        };
+        
+        const gasUrl = 'https://script.google.com/macros/s/AKfycbxFvNu-29S5TOcfA7BMdigQafQ1Hsc-UD2rNyndSUqdPEf0anXSpa68dS9casCdE_Y9/exec';
+        
+        try {
+          // navigator.sendBeacon で計測データを送信
+          const jsonData = JSON.stringify(measurementData);
+          const blob = new Blob([jsonData], { type: 'application/json' });
+          navigator.sendBeacon(gasUrl, blob);
+        } catch (error) {
+          // 計測処理が失敗してもエラーを出さず、遷移は実行
+          console.warn('計測処理でエラーが発生しました:', error);
+        }
+        
+        // 既存の遷移処理はそのまま実行（<a>タグのデフォルト動作）
+        // preventDefault はしないので、通常通り外部サイトに遷移する
+      });
+    }
   </script>
 </body>
 </html>
