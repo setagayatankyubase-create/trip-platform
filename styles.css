@@ -1048,7 +1048,7 @@ body {
 .empty-suggestions-section h4 {
   font-size: 1.1rem;
   margin-bottom: 12px;
-  color: #fff;
+  color: var(--text);
 }
 
 .empty-suggestions-categories {
@@ -1063,17 +1063,17 @@ body {
   gap: 6px;
   padding: 8px 12px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-  color: #fff;
+  background: #f5f5f5;
+  color: var(--text);
   font-size: 0.85rem;
   text-decoration: none;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid var(--border);
   transition: background 0.2s, border-color 0.2s;
 }
 
 .empty-suggestion-chip:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.3);
+  background: #e9f3ef;
+  border-color: var(--primary);
 }
 
 .empty-suggestion-icon {
