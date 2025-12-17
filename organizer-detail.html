@@ -145,11 +145,11 @@
   <script src="app.js"></script>
   <script src="organizer-template.js"></script>
   <script>
-    // URLパラメータから催行会社IDを取得
+    // URLパラメータから提供元IDを取得
     const urlParams = new URLSearchParams(window.location.search);
     const organizerId = urlParams.get('id');
 
-    // 催行会社データを取得
+    // 提供元データを取得
     const organizer = eventData.organizers.find(o => o.id === organizerId);
     const events = eventData.events.filter(e => e.organizerId === organizerId);
 

@@ -256,7 +256,7 @@ const FavoriteManager = {
 // イベントカードのレンダリング
 const CardRenderer = {
   getRatingHtml(event) {
-    // イベントに評価がある場合はそれを使い、なければ催行会社の評価を使う
+    // イベントに評価がある場合はそれを使い、なければ提供元の評価を使う
     let rating = event.rating;
     let reviewCount = event.reviewCount;
     

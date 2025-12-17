@@ -120,8 +120,8 @@ const OrganizerPageRenderer = {
       page.innerHTML = `
         <div class="empty-state">
           <div class="empty-state-icon">🔍</div>
-          <h2>催行会社が見つかりませんでした</h2>
-          <p><a href="organizer-list.html">催行会社一覧に戻る</a></p>
+          <h2>提供元が見つかりませんでした</h2>
+          <p><a href="organizer-list.html">提供元一覧に戻る</a></p>
         </div>
       `;
     }

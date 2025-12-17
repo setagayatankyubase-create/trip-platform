@@ -14,7 +14,7 @@
         <a href="index.html" class="logo">そとなび</a>
         <div class="header-search" id="header-search" style="display: none;">
           <form class="header-search-form" onsubmit="handleSearch(event)">
-            <input type="text" placeholder="行き先やアクティビティを検索" name="q" class="header-search-input">
+            <input type="text" placeholder="行きたい自然体験・場所を探す" name="q" class="header-search-input">
             <button type="submit" class="header-search-button">検索</button>
           </form>
         </div>
@@ -65,7 +65,7 @@
         container.innerHTML = `
           <div class="empty-state">
             <div class="empty-state-icon">🏢</div>
-            <h3>催行会社が見つかりませんでした</h3>
+          <h3>提供元が見つかりませんでした</h3>
           </div>
         `;
         return;

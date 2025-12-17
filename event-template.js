@@ -101,7 +101,7 @@ const EventPageRenderer = {
       notesEl.textContent = event.notes || '特になし';
     }
 
-    // 催行会社
+    // 提供元
     this.renderOrganizer(organizer);
 
     // 地図
@@ -161,7 +161,7 @@ const EventPageRenderer = {
     }
   },
 
-  // 催行会社
+  // 提供元
   renderOrganizer(organizer) {
     const organizerInfo = document.getElementById('organizer-info');
     const organizerLink = document.getElementById('organizer-link');
