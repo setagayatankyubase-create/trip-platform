@@ -126,6 +126,44 @@ const SearchFilter = {
 
   getRecommendedEvents(events) {
     return events.filter(event => event.isRecommended);
+  },
+
+  // 検索条件に近いイベントをスコアリングして取得
+  getSimilarEvents(params, limit = 4) {
+    if (!window.eventData || !eventData.events) return [];
+
+    const events = eventData.events;
+    const q = (params.q || '').toLowerCase();
+    const categoryId = params.category || '';
+    const area = params.area || '';
+
+    return events
+      .map(event => {
+        let score = 0;
+
+        // カテゴリ一致
+        if (categoryId && event.categoryId === categoryId) {
+          score += 5;
+        }
+
+        // エリア一致（エリア or 都道府県）
+        if (area) {
+          if (event.area === area) score += 3;
+          if (event.prefecture === area) score += 2;
+        }
+
+        // キーワード一致（タイトル・説明）
+        if (q) {
+          const text = `${event.title} ${event.description}`.toLowerCase();
+          if (text.includes(q)) score += 4;
+        }
+
+        return { event, score };
+      })
+      .filter(item => item.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit)
+      .map(item => item.event);
   }
 };
 
@@ -304,9 +342,13 @@ const CardRenderer = {
     if (events.length === 0) {
       // 検索結果0件時の表示
       // イベント一覧ページ（containerId === 'event-list'）では
-      // 人気カテゴリと近日開催イベントへの導線を表示する
+      // 「検索条件に近いイベント」「人気カテゴリ」「近日開催イベント」を表示する
       if (containerId === 'event-list' && window.eventData) {
+        const params = URLManager?.getParams ? URLManager.getParams() : {};
         const categories = (eventData.categories || []).slice(0, 6);
+        const similar = SearchFilter.getSimilarEvents
+          ? SearchFilter.getSimilarEvents(params, 4)
+          : [];
         const upcoming = (SearchFilter.getUpcomingEvents
           ? SearchFilter.getUpcomingEvents(eventData.events || [], 4)
           : (eventData.events || []).slice(0, 4));
@@ -319,6 +361,17 @@ const CardRenderer = {
           </div>
           <div class="empty-suggestions">
         `;
+
+        if (similar && similar.length) {
+          html += `
+            <section class="empty-suggestions-section">
+              <h4>検索条件に近いおすすめイベント</h4>
+              <div class="empty-suggestions-events">
+                ${similar.map(ev => this.render(ev)).join('')}
+              </div>
+            </section>
+          `;
+        }
 
         if (categories.length) {
           html += `
