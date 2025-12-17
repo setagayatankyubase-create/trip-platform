@@ -130,7 +130,8 @@ const SearchFilter = {
 
   // 検索条件に近いイベントをスコアリングして取得
   getSimilarEvents(params, limit = 4) {
-    if (!window.eventData || !eventData.events) return [];
+    // data.js で定義したグローバルな eventData を直接参照する
+    if (typeof eventData === 'undefined' || !eventData.events) return [];
 
     const events = eventData.events;
     const q = (params.q || '').toLowerCase();
