@@ -83,9 +83,19 @@
   </style>
 </head>
 <body>
-  <header>
+  <header class="main-header" id="main-header">
     <div class="nav">
-      <a href="index.html" class="logo">そとなび</a>
+      <div class="nav-left">
+        <a href="index.html" class="logo">
+          <img src="assets/sotonavi-logo.png" alt="そとなび" class="logo-image">
+        </a>
+        <div class="header-search" id="header-search" style="display: none;">
+          <form class="header-search-form" onsubmit="handleSearch(event)">
+            <input type="text" placeholder="行きたい自然体験・場所を探す" name="q" class="header-search-input">
+            <button type="submit" class="header-search-button">検索</button>
+          </form>
+        </div>
+      </div>
       <div class="nav-links">
         <a href="list.html">イベント一覧</a>
         <a href="organizer-list.html">提供元</a>
