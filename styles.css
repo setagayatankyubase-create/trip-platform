@@ -60,6 +60,13 @@ body {
   letter-spacing: 0.4px;
   color: var(--primary);
   white-space: nowrap;
+  text-decoration: none;
+  display: inline-block;
+  transition: opacity 0.2s;
+}
+
+.logo:hover {
+  opacity: 0.8;
 }
 
 .nav-links {
