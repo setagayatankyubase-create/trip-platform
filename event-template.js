@@ -254,21 +254,12 @@ const EventPageRenderer = {
       return;
     }
 
-    // カードを描画（トップページと同じシンプルカード）
-    container.innerHTML = related.map(e => `
-      <a href="experience.html?id=${e.id}" class="card-link">
-        <div class="card">
-          <div class="card-image-wrapper">
-            <img src="${e.image}" alt="${e.title}" loading="lazy">
-          </div>
-          <div class="card-body">
-            <div class="card-title">${e.title}</div>
-            <div class="card-location">${e.area}, ${e.prefecture}</div>
-            <div class="card-price">¥ ${e.price.toLocaleString()}</div>
-          </div>
-        </div>
-      </a>
-    `).join('');
+    // 4カード横並びで表示（最大4件）
+    const displayEvents = related.slice(0, 4);
+    container.innerHTML = displayEvents.map(e => CardRenderer.render(e)).join('');
+    
+    // 4カード横並びのスタイルを適用
+    container.className = 'related-events-grid';
   },
 
   // 予約セクション

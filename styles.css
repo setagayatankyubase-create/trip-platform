@@ -299,6 +299,30 @@ body {
   margin-top: 20px;
 }
 
+.related-events-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 1024px) {
+  .related-events-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .related-events-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .related-events-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Card Carousel */
 .card-carousel-wrapper {
   position: relative;
