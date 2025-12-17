@@ -56,7 +56,12 @@ const eventData = {
       publishedAt: '2024-11-15',
       externalLink: 'https://example.com/book/evt-002',
       targetAge: '8歳以上',
-      notes: '水着・タオル持参。悪天候時は中止の可能性あり。'
+      notes: '水着・タオル持参。悪天候時は中止の可能性あり。',
+      highlights: [
+        '透明なクリアカヤックで海中の様子も楽しめる',
+        '流氷シーズンには氷の間を進む特別コース',
+        '少人数制でガイドが丁寧にサポート'
+      ]
     },
     {
       id: 'evt-003',
@@ -81,7 +86,12 @@ const eventData = {
       publishedAt: '2025-01-10',
       externalLink: 'https://example.com/book/evt-003',
       targetAge: '全年齢',
-      notes: 'テント・寝袋レンタル可能（別途料金）。'
+      notes: 'テント・寝袋レンタル可能（別途料金）。',
+      highlights: [
+        '星空観察用の双眼鏡・望遠鏡を完備',
+        '焚き火を囲んで夜の団らんタイム',
+        'キャンプ初心者でも安心のサポート体制'
+      ]
     },
     {
       id: 'evt-004',
@@ -107,7 +117,12 @@ const eventData = {
       publishedAt: '2025-01-05',
       externalLink: 'https://example.com/book/evt-004',
       targetAge: '12歳以上',
-      notes: '自転車レンタル込み。ヘルメット必須。'
+      notes: '自転車レンタル込み。ヘルメット必須。',
+      highlights: [
+        '富士山を望む絶景ビュースポットを巡る',
+        '交通量の少ないコースで初心者も安心',
+        'カフェ立ち寄りなどゆったりペースの行程'
+      ]
     },
     {
       id: 'evt-005',
@@ -132,7 +147,12 @@ const eventData = {
       publishedAt: '2024-12-20',
       externalLink: 'https://example.com/book/evt-005',
       targetAge: '10歳以上',
-      notes: '装備一式レンタル込み。経験者向けコースもあり。'
+      notes: '装備一式レンタル込み。経験者向けコースもあり。',
+      highlights: [
+        'プロガイドが安全管理を徹底',
+        'クライミング専用シューズなど装備レンタル込み',
+        '岩場からの雄大な山岳風景を満喫'
+      ]
     },
     {
       id: 'evt-006',
@@ -156,9 +176,14 @@ const eventData = {
       isRecommended: false,
       isNew: false,
       publishedAt: '2024-11-01',
-      externalLink: null,
+      externalLink: 'https://example.com/book/evt-006',
       targetAge: '全年齢',
-      notes: '温泉入浴料込み。タオル持参。'
+      notes: '温泉入浴料込み。タオル持参。',
+      highlights: [
+        '森林浴ハイキングと温泉入浴がセットになったリトリート',
+        '地元食材を使った軽食付きプラン',
+        '家族や友人同士でも参加しやすいゆったりスケジュール'
+      ]
     },
     {
       id: 'evt-007',
@@ -183,7 +208,12 @@ const eventData = {
       publishedAt: '2024-12-10',
       externalLink: 'https://example.com/book/evt-007',
       targetAge: '8歳以上',
-      notes: '歩きやすい靴必須。雨天時は中止。'
+      notes: '歩きやすい靴必須。雨天時は中止。',
+      highlights: [
+        '東京から電車でアクセスしやすい奥多摩エリア',
+        '初心者向けコースでトレッキングデビューに最適',
+        '渓谷や吊り橋など写真映えスポット多数'
+      ]
     },
     {
       id: 'evt-008',
@@ -209,7 +239,12 @@ const eventData = {
       publishedAt: '2025-01-08',
       externalLink: 'https://example.com/book/evt-008',
       targetAge: '6歳以上',
-      notes: '水着・タオル持参。ライフジャケット貸出あり。'
+      notes: '水着・タオル持参。ライフジャケット貸出あり。',
+      highlights: [
+        '波の穏やかなエリアで安心して楽しめる',
+        'ガイドが海の生き物や地形を解説',
+        '家族連れに人気のショートコース'
+      ]
     },
     {
       id: 'evt-009',
@@ -234,7 +269,12 @@ const eventData = {
       publishedAt: '2024-11-20',
       externalLink: 'https://example.com/book/evt-009',
       targetAge: '全年齢',
-      notes: '防寒着持参。雨天・曇天時は中止。'
+      notes: '防寒着持参。雨天・曇天時は中止。',
+      highlights: [
+        '光害の少ない高原エリアで満天の星空',
+        '星座や宇宙の話が楽しいガイド付き解説',
+        '寝転んで星空を眺められるマットを用意'
+      ]
     },
     {
       id: 'evt-010',
@@ -260,7 +300,12 @@ const eventData = {
       publishedAt: '2024-12-05',
       externalLink: 'https://example.com/book/evt-010',
       targetAge: '10歳以上',
-      notes: '自転車レンタル込み。'
+      notes: '自転車レンタル込み。',
+      highlights: [
+        '江ノ島と湘南海岸を一度に楽しめるコース',
+        '海辺のカフェでの休憩タイム付き',
+        '坂道少なめで初心者でも走りやすい'
+      ]
     },
     {
       id: 'evt-011',
@@ -285,7 +330,12 @@ const eventData = {
       publishedAt: '2025-01-03',
       externalLink: 'https://example.com/book/evt-011',
       targetAge: '12歳以上',
-      notes: '装備レンタル込み。'
+      notes: '装備レンタル込み。',
+      highlights: [
+        '新宿から電車一本で行ける好アクセス',
+        '岩場デビューに最適な短めルート中心',
+        'クライミング後は温泉施設への立ち寄りも可能（任意）'
+      ]
     },
     {
       id: 'evt-012',
@@ -309,9 +359,14 @@ const eventData = {
       isRecommended: false,
       isNew: false,
       publishedAt: '2024-11-15',
-      externalLink: null,
+      externalLink: 'https://example.com/book/evt-012',
       targetAge: '全年齢',
-      notes: '温泉入浴料込み。'
+      notes: '温泉入浴料込み。',
+      highlights: [
+        '草津名物の湯畑エリアも自由散策可能',
+        '往復交通付きで移動もラクラク',
+        '日帰りでもしっかりと湯治気分を味わえる'
+      ]
     },
     {
       id: 'evt-013',
@@ -336,7 +391,12 @@ const eventData = {
       publishedAt: '2024-12-12',
       externalLink: 'https://example.com/book/evt-013',
       targetAge: '8歳以上',
-      notes: 'ランチ込み。歩きやすい靴必須。'
+      notes: 'ランチ込み。歩きやすい靴必須。',
+      highlights: [
+        '海沿いのハイキングと海鮮ランチがセット',
+        'アップダウン少なめで初心者も参加しやすい',
+        '地元の漁港で水揚げされた海鮮を味わえる'
+      ]
     },
     {
       id: 'evt-014',
@@ -362,7 +422,12 @@ const eventData = {
       publishedAt: '2025-01-06',
       externalLink: 'https://example.com/book/evt-014',
       targetAge: '8歳以上',
-      notes: '水着・タオル持参。'
+      notes: '水着・タオル持参。',
+      highlights: [
+        '都心からのアクセスが良い多摩川エリア',
+        '流れの穏やかな区間で安心して練習できる',
+        '親子参加にちょうど良いコンパクトな内容'
+      ]
     },
     {
       id: 'evt-015',
@@ -387,7 +452,12 @@ const eventData = {
       publishedAt: '2024-12-08',
       externalLink: 'https://example.com/book/evt-015',
       targetAge: '全年齢',
-      notes: 'テント・寝袋レンタル込み。'
+      notes: 'テント・寝袋レンタル込み。',
+      highlights: [
+        '街の明かりから離れた静かなキャンプ場',
+        'キャンプファイヤーと星空観察の二本立て',
+        '食材付きのBBQプランもオプションで追加可能'
+      ]
     },
     {
       id: 'evt-016',
@@ -413,7 +483,12 @@ const eventData = {
       publishedAt: '2025-01-04',
       externalLink: 'https://example.com/book/evt-016',
       targetAge: '10歳以上',
-      notes: '自転車レンタル込み。'
+      notes: '自転車レンタル込み。',
+      highlights: [
+        '横浜の代表的な観光スポットを効率よく周遊',
+        'フォトジェニックな海辺エリアで写真撮影タイム',
+        'ナイトライドへのアップグレードも相談可能'
+      ]
     },
     {
       id: 'evt-017',
@@ -438,7 +513,12 @@ const eventData = {
       publishedAt: '2024-12-15',
       externalLink: 'https://example.com/book/evt-017',
       targetAge: '14歳以上',
-      notes: '経験者向け。装備レンタル込み。'
+      notes: '経験者向け。装備レンタル込み。',
+      highlights: [
+        'リードクライミングにも挑戦できる中級コース',
+        '少人数制で技術指導をじっくり受けられる',
+        '標高感のあるルートでスリルと達成感を味わえる'
+      ]
     },
     {
       id: 'evt-018',
@@ -462,9 +542,14 @@ const eventData = {
       isRecommended: false,
       isNew: false,
       publishedAt: '2024-11-25',
-      externalLink: null,
+      externalLink: 'https://example.com/book/evt-018',
       targetAge: '全年齢',
-      notes: '温泉入浴料込み。'
+      notes: '温泉入浴料込み。',
+      highlights: [
+        '海を望む露天風呂で非日常のひととき',
+        'ランチやスイーツが付いたお得なセットプラン',
+        '駅から徒歩圏内で移動もスムーズ'
+      ]
     },
     {
       id: 'evt-019',
@@ -489,7 +574,12 @@ const eventData = {
       publishedAt: '2024-12-18',
       externalLink: 'https://example.com/book/evt-019',
       targetAge: '8歳以上',
-      notes: '歩きやすい靴必須。'
+      notes: '歩きやすい靴必須。',
+      highlights: [
+        '紅葉の名所として人気の高尾山をガイド付きで散策',
+        '混雑を避けた時間帯・ルートを選定',
+        '山頂からのパノラマビューを満喫'
+      ]
     },
     {
       id: 'evt-020',
@@ -515,7 +605,12 @@ const eventData = {
       publishedAt: '2025-01-07',
       externalLink: 'https://example.com/book/evt-020',
       targetAge: '8歳以上',
-      notes: '水着・タオル持参。ライフジャケット貸出あり。'
+      notes: '水着・タオル持参。ライフジャケット貸出あり。',
+      highlights: [
+        'レインボーブリッジや高層ビル群を海上から眺める',
+        '穏やかな湾内コースで初心者でも安心',
+        'サンセット便など時間帯によって違う景色を楽しめる'
+      ]
     }
   ],
   organizers: [
