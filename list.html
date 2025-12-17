@@ -237,6 +237,66 @@
       CardRenderer.renderList(currentEvents, 'event-list');
       document.getElementById('result-count').textContent = currentEvents.length;
 
+      // 0件時のおすすめ導線（保険としてここでも描画する）
+      const zeroSuggestContainer = document.getElementById('event-zero-suggestions');
+      if (zeroSuggestContainer) {
+        // 一度クリア
+        zeroSuggestContainer.innerHTML = '';
+
+        if (currentEvents.length === 0 && window.eventData) {
+          const categories = (eventData.categories || []).slice(0, 6);
+          const recommended = SearchFilter.getRecommendedEvents
+            ? SearchFilter.getRecommendedEvents(eventData.events || []).slice(0, 4)
+            : [];
+          const upcoming = (SearchFilter.getUpcomingEvents
+            ? SearchFilter.getUpcomingEvents(eventData.events || [], 4)
+            : (eventData.events || []).slice(0, 4));
+
+          let html = '<div class="empty-suggestions">';
+
+          if (recommended && recommended.length) {
+            html += `
+              <section class="empty-suggestions-section">
+                <h4>おすすめイベント</h4>
+                <div class="empty-suggestions-events">
+                  ${recommended.map(ev => CardRenderer.render(ev)).join('')}
+                </div>
+              </section>
+            `;
+          }
+
+          if (categories && categories.length) {
+            html += `
+              <section class="empty-suggestions-section">
+                <h4>人気カテゴリから探す</h4>
+                <div class="empty-suggestions-categories">
+                  ${categories.map(cat => `
+                    <a href="list.html?category=${encodeURIComponent(cat.id)}" class="empty-suggestion-chip">
+                      <span class="empty-suggestion-icon">${cat.icon || ''}</span>
+                      <span>${cat.name}</span>
+                    </a>
+                  `).join('')}
+                </div>
+              </section>
+            `;
+          }
+
+          if (upcoming && upcoming.length) {
+            html += `
+              <section class="empty-suggestions-section">
+                <h4>近日開催のイベント</h4>
+                <div class="empty-suggestions-events">
+                  ${upcoming.map(ev => CardRenderer.render(ev)).join('')}
+                </div>
+              </section>
+            `;
+          }
+
+          html += '</div>';
+          zeroSuggestContainer.innerHTML = html;
+        }
+      }
+
       // マップ更新
       if (mapVisible) {
         renderMapMarkers();
