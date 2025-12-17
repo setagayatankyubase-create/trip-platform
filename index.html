@@ -220,7 +220,8 @@
         if (hasEvents) itemClass += ' has-events';
 
         html += `<div class="${itemClass}" onclick="goToDateEvents('${dateStr}')">`;
-        html += `<span class="week-day-date">${month}/${day}(${dayName})</span>`;
+        html += `<span class="week-day-date">${month}/${day}</span>`;
+        html += `<span class="week-day-name">${dayName}</span>`;
         if (hasEvents) {
           html += `<span class="week-day-count">${count}件</span>`;
         }

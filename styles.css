@@ -476,6 +476,7 @@ body {
   margin-bottom: 4px;
   text-align: center;
   width: 100%;
+  min-height: 2.66rem; /* 2行分の高さを確保 (0.95rem * 1.4 * 2) */
 }
 
 .card-duration {
@@ -514,6 +515,8 @@ body {
   margin-bottom: 8px;
   text-align: left;
   width: 100%;
+  min-height: 1.2rem; /* 場所の高さを統一 */
+  line-height: 1.2rem;
 }
 
 .card-price {
@@ -869,8 +872,16 @@ body {
 
 .week-day-date {
   display: block;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
   line-height: 1.4;
+  font-weight: 600;
+}
+
+.week-day-name {
+  display: block;
+  font-size: 0.85rem;
+  color: #666;
+  line-height: 1.2;
 }
 
 .week-day-count {
