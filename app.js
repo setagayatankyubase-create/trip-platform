@@ -196,16 +196,18 @@ const FavoriteManager = {
   toggleFavorite(eventId) {
     const favorites = this.getFavorites();
     const index = favorites.indexOf(eventId);
-    
-    if (index > -1) {
+    const wasFavorite = index > -1;
+
+    if (wasFavorite) {
       favorites.splice(index, 1);
     } else {
       favorites.push(eventId);
     }
-    
+
     try {
       localStorage.setItem('sotobina_favorites', JSON.stringify(favorites));
-      return !this.isFavorite(eventId);
+      // 追加後の状態（true: お気に入りになった / false: 外した）を返す
+      return !wasFavorite;
     } catch (e) {
       console.error('Failed to save favorite:', e);
       return false;
