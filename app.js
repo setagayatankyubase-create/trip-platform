@@ -409,14 +409,10 @@ const CardRenderer = {
     if (events.length === 0) {
       // 検索結果0件時の表示
       // イベント一覧ページ（containerId === 'event-list'）では
-      // 「検索条件に近いイベント」「人気カテゴリ」「近日開催イベント」を表示する
+      // 「おすすめイベント」「人気カテゴリ」「近日開催イベント」を表示する
       if (containerId === 'event-list' && window.eventData) {
-        const params = URLManager?.getParams ? URLManager.getParams() : {};
         const categories = (eventData.categories || []).slice(0, 6);
-        const similar = SearchFilter.getSimilarEvents
-          ? SearchFilter.getSimilarEvents(params, 4)
-          : [];
-        const fallbackRecommended = (!similar || !similar.length) && SearchFilter.getRecommendedEvents
+        const recommended = SearchFilter.getRecommendedEvents
           ? SearchFilter.getRecommendedEvents(eventData.events || []).slice(0, 4)
           : [];
         const upcoming = (SearchFilter.getUpcomingEvents
@@ -432,21 +428,12 @@ const CardRenderer = {
           <div class="empty-suggestions">
         `;
 
-        if (similar && similar.length) {
-          html += `
-            <section class="empty-suggestions-section">
-              <h4>検索条件に近いおすすめイベント</h4>
-              <div class="empty-suggestions-events">
-                ${similar.map(ev => this.render(ev)).join('')}
-              </div>
-            </section>
-          `;
-        } else if (fallbackRecommended && fallbackRecommended.length) {
+        if (recommended && recommended.length) {
           html += `
             <section class="empty-suggestions-section">
               <h4>おすすめイベント</h4>
               <div class="empty-suggestions-events">
-                ${fallbackRecommended.map(ev => this.render(ev)).join('')}
+                ${recommended.map(ev => this.render(ev)).join('')}
               </div>
             </section>
           `;
