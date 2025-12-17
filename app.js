@@ -185,6 +185,42 @@ const MapManager = {
   }
 };
 
+// お気に入り管理（localStorage使用）
+const FavoriteManager = {
+  getFavorites() {
+    try {
+      const favorites = localStorage.getItem('sotobina_favorites');
+      return favorites ? JSON.parse(favorites) : [];
+    } catch (e) {
+      return [];
+    }
+  },
+
+  isFavorite(eventId) {
+    const favorites = this.getFavorites();
+    return favorites.includes(eventId);
+  },
+
+  toggleFavorite(eventId) {
+    const favorites = this.getFavorites();
+    const index = favorites.indexOf(eventId);
+    
+    if (index > -1) {
+      favorites.splice(index, 1);
+    } else {
+      favorites.push(eventId);
+    }
+    
+    try {
+      localStorage.setItem('sotobina_favorites', JSON.stringify(favorites));
+      return !this.isFavorite(eventId);
+    } catch (e) {
+      console.error('Failed to save favorite:', e);
+      return false;
+    }
+  }
+};
+
 // イベントカードのレンダリング
 const CardRenderer = {
   getRatingHtml(event) {
@@ -237,13 +273,18 @@ const CardRenderer = {
       badgesHtml += '<span class="badge upcoming">直近開催</span>';
     }
 
+    const isFavorite = FavoriteManager.isFavorite(event.id);
+    const favoriteClass = isFavorite ? 'card-favorite active' : 'card-favorite';
+    const favoriteTitle = isFavorite ? 'お気に入りから削除' : 'お気に入りに追加';
+    const favoriteFill = isFavorite ? 'currentColor' : 'none';
+
     return `
       <a href="experience.html?id=${event.id}" class="card-link" data-event-id="${event.id}">
         <div class="card" data-event-id="${event.id}">
           <div class="card-image-wrapper">
             <img src="${event.image}" alt="${event.title}" loading="lazy">
-            <button class="card-favorite" onclick="event.preventDefault(); event.stopPropagation();" title="お気に入りに追加">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button class="${favoriteClass}" onclick="toggleFavorite('${event.id}', event)" title="${favoriteTitle}">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="${favoriteFill}" stroke="currentColor" stroke-width="2">
                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
               </svg>
             </button>
@@ -330,6 +371,35 @@ const BottomSheet = {
     document.body.style.overflow = '';
   }
 };
+
+// お気に入りトグル関数（グローバルスコープ）
+function toggleFavorite(eventId, e) {
+  if (e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+  
+  const isNowFavorite = FavoriteManager.toggleFavorite(eventId);
+  const button = e?.target.closest('.card-favorite');
+  
+  if (button) {
+    if (isNowFavorite) {
+      button.classList.add('active');
+      button.title = 'お気に入りから削除';
+      const svg = button.querySelector('svg');
+      if (svg) {
+        svg.setAttribute('fill', 'currentColor');
+      }
+    } else {
+      button.classList.remove('active');
+      button.title = 'お気に入りに追加';
+      const svg = button.querySelector('svg');
+      if (svg) {
+        svg.setAttribute('fill', 'none');
+      }
+    }
+  }
+}
 
 // 初期化
 document.addEventListener('DOMContentLoaded', () => {

@@ -466,6 +466,14 @@ body {
   transform: scale(1.05);
 }
 
+.card-favorite.active {
+  color: #e74c3c;
+}
+
+.card-favorite.active svg {
+  fill: currentColor;
+}
+
 .card-favorite svg {
   width: 18px;
   height: 18px;
