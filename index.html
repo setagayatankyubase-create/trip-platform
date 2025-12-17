@@ -261,9 +261,16 @@
 
     // イベントブロックの表示
     function renderEventBlocks() {
-      const recommended = SearchFilter.getRecommendedEvents(eventData.events);
-      const newEvents = SearchFilter.getNewEvents(eventData.events);
-      const upcoming = SearchFilter.getUpcomingEvents(eventData.events, 30);
+      const MAX_HOME_EVENTS = 8;
+
+      const recommended = SearchFilter
+        .getRecommendedEvents(eventData.events)
+        .slice(0, MAX_HOME_EVENTS);
+      const newEvents = SearchFilter
+        .getNewEvents(eventData.events)
+        .slice(0, MAX_HOME_EVENTS);
+      const upcoming = SearchFilter
+        .getUpcomingEvents(eventData.events, MAX_HOME_EVENTS);
 
       CardRenderer.renderCarousel(recommended, 'recommended-events');
       CardRenderer.renderCarousel(newEvents, 'new-events');
