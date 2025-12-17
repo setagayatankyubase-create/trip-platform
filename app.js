@@ -408,7 +408,7 @@ const CardRenderer = {
 
     if (events.length === 0) {
       // 検索結果0件時の表示
-      if (containerId === 'event-list' && window.eventData) {
+      if (containerId === 'event-list') {
         console.log('[CardRenderer.renderList] 0件ヒット。おすすめ導線描画を試みます。');
         const categories = (eventData.categories || []).slice(0, 6);
         const recommended = SearchFilter.getRecommendedEvents

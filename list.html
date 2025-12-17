@@ -243,7 +243,7 @@
         // 一度クリア
         zeroSuggestContainer.innerHTML = '';
 
-        if (currentEvents.length === 0 && window.eventData) {
+        if (currentEvents.length === 0) {
           const categories = (eventData.categories || []).slice(0, 6);
           const recommended = SearchFilter.getRecommendedEvents
             ? SearchFilter.getRecommendedEvents(eventData.events || []).slice(0, 4)
