@@ -56,9 +56,9 @@ body {
 
 .logo {
   font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
-  font-weight: 800;
-  font-size: 1.6rem;
-  letter-spacing: 0.08em;
+  font-weight: 900;
+  font-size: 1.8rem;
+  letter-spacing: 0.1em;
   color: var(--primary);
   white-space: nowrap;
   text-decoration: none;
@@ -1035,11 +1035,11 @@ body {
   }
 
   .logo {
-    font-size: 1.4rem;
+    font-size: 1.5rem;
     font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
-    font-weight: 800;
+    font-weight: 900;
     color: var(--primary);
-    letter-spacing: 0.08em;
+    letter-spacing: 0.1em;
   }
 
   .nav-links {
