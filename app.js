@@ -163,7 +163,7 @@ const SearchFilter = {
       targetEnd.setDate(targetStart.getDate() + 6);
     }
 
-    return events
+    const scored = events
       .map(event => {
         let score = 0;
 
@@ -207,9 +207,30 @@ const SearchFilter = {
         return { event, score };
       })
       .filter(item => item.score > 0)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, limit)
-      .map(item => item.event);
+      .sort((a, b) => b.score - a.score);
+
+    let result = scored.slice(0, limit).map(item => item.event);
+
+    // スコア付き候補がない場合でも、日程が近いイベントを必ず返す
+    if (result.length === 0 && (dateParam || weekdayParam) && targetStart) {
+      const center = targetStart && targetEnd
+        ? new Date((targetStart.getTime() + targetEnd.getTime()) / 2)
+        : targetStart;
+
+      result = events
+        .filter(e => e.dates && e.dates.length > 0)
+        .map(e => {
+          const d = new Date(e.dates[0].date);
+          d.setHours(0, 0, 0, 0);
+          const diffDays = Math.abs(d - center) / (1000 * 60 * 60 * 24);
+          return { event: e, diffDays };
+        })
+        .sort((a, b) => a.diffDays - b.diffDays)
+        .slice(0, limit)
+        .map(item => item.event);
+    }
+
+    return result;
   }
 };
 
