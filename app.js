@@ -136,6 +136,32 @@ const SearchFilter = {
     const q = (params.q || '').toLowerCase();
     const categoryId = params.category || '';
     const area = params.area || '';
+    const dateParam = params.date || '';
+    const weekdayParam = params.weekday || '';
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    let targetStart = null;
+    let targetEnd = null;
+
+    // 日付指定があればその日を中心に、なければ「今週/来週」の範囲をターゲットにする
+    if (dateParam) {
+      const d = new Date(dateParam);
+      d.setHours(0, 0, 0, 0);
+      targetStart = new Date(d);
+      targetEnd = new Date(d);
+    } else if (weekdayParam === 'this-week' || weekdayParam === 'next-week') {
+      const dayOfWeek = today.getDay(); // 0=日,1=月,...6=土
+      const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      targetStart = new Date(today);
+      targetStart.setDate(today.getDate() - daysFromMonday);
+      if (weekdayParam === 'next-week') {
+        targetStart.setDate(targetStart.getDate() + 7);
+      }
+      targetEnd = new Date(targetStart);
+      targetEnd.setDate(targetStart.getDate() + 6);
+    }
 
     return events
       .map(event => {
@@ -156,6 +182,26 @@ const SearchFilter = {
         if (q) {
           const text = `${event.title} ${event.description}`.toLowerCase();
           if (text.includes(q)) score += 4;
+        }
+
+        // 日程の近さ（ターゲット日程が指定されている場合）
+        if (targetStart && targetEnd && event.dates && event.dates.length > 0) {
+          // イベントの最初の開催日
+          const firstDate = new Date(event.dates[0].date);
+          firstDate.setHours(0, 0, 0, 0);
+
+          // 範囲内であれば高スコア、少し外れていても距離に応じて減点しながら加点
+          if (firstDate >= targetStart && firstDate <= targetEnd) {
+            score += 5;
+          } else {
+            const center = targetStart && targetEnd
+              ? new Date((targetStart.getTime() + targetEnd.getTime()) / 2)
+              : targetStart;
+            const diffDays = Math.abs(firstDate - center) / (1000 * 60 * 60 * 24);
+            if (diffDays <= 7) {
+              score += Math.max(1, 4 - Math.floor(diffDays)); // 0〜7日差なら 1〜4点
+            }
+          }
         }
 
         return { event, score };
