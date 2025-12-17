@@ -409,6 +409,7 @@ const CardRenderer = {
     if (events.length === 0) {
       // 検索結果0件時の表示
       if (containerId === 'event-list' && window.eventData) {
+        console.log('[CardRenderer.renderList] 0件ヒット。おすすめ導線描画を試みます。');
         const categories = (eventData.categories || []).slice(0, 6);
         const recommended = SearchFilter.getRecommendedEvents
           ? SearchFilter.getRecommendedEvents(eventData.events || []).slice(0, 4)
@@ -471,6 +472,7 @@ const CardRenderer = {
 
           html += `</div>`;
           suggestContainer.innerHTML = html;
+          console.log('[CardRenderer.renderList] おすすめ導線HTML length:', html.length);
         }
       } else {
         // その他のリスト（主催者ページなど）は従来通りのメッセージのみ
