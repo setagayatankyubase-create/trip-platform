@@ -213,10 +213,25 @@ const EventPageRenderer = {
   renderRelatedEvents(event) {
     const section = document.getElementById('related-events-section');
     const container = document.getElementById('related-events');
-    if (!section || !container || !eventData?.events) return;
+    
+    if (!section || !container) {
+      console.warn('関連イベントセクションまたはコンテナが見つかりません');
+      return;
+    }
+    
+    if (!eventData || !eventData.events) {
+      console.warn('eventDataが見つかりません');
+      section.style.display = 'none';
+      return;
+    }
 
     // 現在のイベント以外を対象
     const others = eventData.events.filter(e => e.id !== event.id);
+    
+    if (others.length === 0) {
+      section.style.display = 'none';
+      return;
+    }
 
     // イベントの最初の日付を取得するヘルパー
     const getFirstDate = (e) => {
@@ -244,8 +259,8 @@ const EventPageRenderer = {
       return { event: e, score };
     }).sort((a, b) => b.score - a.score);
 
+    // スコアが0以上なら表示（スコアが0でも最大4件表示）
     const related = scored
-      .filter(item => item.score > 0)
       .slice(0, 4)
       .map(item => item.event);
 
@@ -255,11 +270,17 @@ const EventPageRenderer = {
     }
 
     // 4カード横並びで表示（最大4件）
-    const displayEvents = related.slice(0, 4);
-    container.innerHTML = displayEvents.map(e => CardRenderer.render(e)).join('');
+    if (typeof CardRenderer === 'undefined' || !CardRenderer.render) {
+      console.error('CardRendererが見つかりません');
+      section.style.display = 'none';
+      return;
+    }
+
+    container.innerHTML = related.map(e => CardRenderer.render(e)).join('');
     
     // 4カード横並びのスタイルを適用
     container.className = 'related-events-grid';
+    section.style.display = 'block';
   },
 
   // 予約セクション
