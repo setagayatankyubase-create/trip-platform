@@ -416,6 +416,9 @@ const CardRenderer = {
         const similar = SearchFilter.getSimilarEvents
           ? SearchFilter.getSimilarEvents(params, 4)
           : [];
+        const fallbackRecommended = (!similar || !similar.length) && SearchFilter.getRecommendedEvents
+          ? SearchFilter.getRecommendedEvents(eventData.events || []).slice(0, 4)
+          : [];
         const upcoming = (SearchFilter.getUpcomingEvents
           ? SearchFilter.getUpcomingEvents(eventData.events || [], 4)
           : (eventData.events || []).slice(0, 4));
@@ -435,6 +438,15 @@ const CardRenderer = {
               <h4>検索条件に近いおすすめイベント</h4>
               <div class="empty-suggestions-events">
                 ${similar.map(ev => this.render(ev)).join('')}
+              </div>
+            </section>
+          `;
+        } else if (fallbackRecommended && fallbackRecommended.length) {
+          html += `
+            <section class="empty-suggestions-section">
+              <h4>おすすめイベント</h4>
+              <div class="empty-suggestions-events">
+                ${fallbackRecommended.map(ev => this.render(ev)).join('')}
               </div>
             </section>
           `;
