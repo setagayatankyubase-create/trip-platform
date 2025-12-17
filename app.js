@@ -300,13 +300,63 @@ const CardRenderer = {
     if (!container) return;
 
     if (events.length === 0) {
-      container.innerHTML = `
-        <div class="empty-state">
-          <div class="empty-state-icon">🔍</div>
-          <h3>該当するイベントが見つかりませんでした</h3>
-          <p>検索条件を変更してお試しください</p>
-        </div>
-      `;
+      // 検索結果0件時の表示
+      // イベント一覧ページ（containerId === 'event-list'）では
+      // 人気カテゴリと近日開催イベントへの導線を表示する
+      if (containerId === 'event-list' && window.eventData) {
+        const categories = (eventData.categories || []).slice(0, 6);
+        const upcoming = (SearchFilter.getUpcomingEvents
+          ? SearchFilter.getUpcomingEvents(eventData.events || [], 4)
+          : (eventData.events || []).slice(0, 4));
+
+        let html = `
+          <div class="empty-state">
+            <div class="empty-state-icon">🔍</div>
+            <h3>該当するイベントが見つかりませんでした</h3>
+            <p>条件を少しゆるめるか、別の切り口から探してみましょう。</p>
+          </div>
+          <div class="empty-suggestions">
+        `;
+
+        if (categories.length) {
+          html += `
+            <section class="empty-suggestions-section">
+              <h4>人気カテゴリから探す</h4>
+              <div class="empty-suggestions-categories">
+                ${categories.map(cat => `
+                  <a href="list.html?category=${encodeURIComponent(cat.id)}" class="empty-suggestion-chip">
+                    <span class="empty-suggestion-icon">${cat.icon || ''}</span>
+                    <span>${cat.name}</span>
+                  </a>
+                `).join('')}
+              </div>
+            </section>
+          `;
+        }
+
+        if (upcoming && upcoming.length) {
+          html += `
+            <section class="empty-suggestions-section">
+              <h4>近日開催のイベント</h4>
+              <div class="empty-suggestions-events">
+                ${upcoming.map(ev => this.render(ev)).join('')}
+              </div>
+            </section>
+          `;
+        }
+
+        html += `</div>`;
+        container.innerHTML = html;
+      } else {
+        // その他のリスト（主催者ページなど）は従来通りのメッセージのみ
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">🔍</div>
+            <h3>該当するイベントが見つかりませんでした</h3>
+            <p>検索条件を変更してお試しください</p>
+          </div>
+        `;
+      }
       return;
     }
 
