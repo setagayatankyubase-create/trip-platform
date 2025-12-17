@@ -121,10 +121,19 @@
     </div>
     <div class="footer-bottom">
       <div class="footer-copyright">
-        © 2008 - 2025 そとび. 製作 東京&横浜.
+        © 2008 - <span id="current-year"></span> そとび. 製作 東京&横浜.
       </div>
     </div>
   </footer>
+  <script>
+    // 現在の年を設定
+    document.addEventListener('DOMContentLoaded', () => {
+      const yearElement = document.getElementById('current-year');
+      if (yearElement) {
+        yearElement.textContent = new Date().getFullYear();
+      }
+    });
+  </script>
 </body>
 </html>
 
