@@ -324,16 +324,20 @@
   <script>
     (async () => {
       try {
-        // APIからイベント・提供元データを読み込み
-        await loadEventData();
-
         // URLパラメータからイベントIDを取得
         const urlParams = new URLSearchParams(window.location.search);
         const eventId = urlParams.get('id');
 
-        // イベントデータを取得
-        const event = eventData.events.find(e => e.id === eventId);
-        const organizer = event ? eventData.organizers.find(o => o.id === event.organizerId) : null;
+        // 1件分のイベント詳細＋メタデータのみ読み込み（軽量）
+        const [event, meta] = await Promise.all([
+          loadEventDetail(eventId),
+          loadEventMeta()
+        ]);
+
+        const organizers = meta && meta.organizers ? meta.organizers : [];
+        const organizer = event
+          ? organizers.find(o => o.id === event.organizerId)
+          : null;
 
         // テンプレートを使用してページをレンダリング
         EventPageRenderer.render(event, organizer);

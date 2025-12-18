@@ -443,13 +443,19 @@ const CardRenderer = {
   },
 
   render(event) {
+    // dates が無いインデックスデータにも対応するための日付配列
+    let dates = Array.isArray(event.dates) ? event.dates : [];
+    if ((!dates || dates.length === 0) && event.next_date) {
+      dates = [{ date: event.next_date }];
+    }
+
     // バッジ判定
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const upcomingLimit = new Date(today);
     upcomingLimit.setDate(today.getDate() + 7);
 
-    const isUpcoming = event.dates.some(d => {
+    const isUpcoming = dates.some(d => {
       const eventDate = new Date(d.date);
       eventDate.setHours(0, 0, 0, 0);
       return eventDate >= today && eventDate <= upcomingLimit;
@@ -473,6 +479,9 @@ const CardRenderer = {
 
     const optimizedImage = this.optimizeImageUrl(event.image);
 
+    // インデックスデータでは city が area 相当として使われる
+    const area = event.area || event.city || "";
+
     return `
       <a href="experience.html?id=${event.id}" class="card-link" data-event-id="${event.id}">
         <div class="card" data-event-id="${event.id}">
@@ -490,7 +499,7 @@ const CardRenderer = {
               ${this.getRatingHtml(event)}
             </div>
             <div class="card-title">${event.title}</div>
-            <div class="card-location">${event.area}, ${event.prefecture}</div>
+            <div class="card-location">${area}, ${event.prefecture || ''}</div>
             <div class="card-price">¥ ${event.price.toLocaleString()}</div>
           </div>
         </div>

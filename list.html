@@ -217,24 +217,105 @@
       loadEvents();
     }
 
-    // イベント読み込み
+    // 一覧用フィルタ処理（events_index を前提に軽量実装）
+    function filterIndexEvents(events, params, urlParams) {
+      let filtered = [...events];
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      // URLパラメータによる事前フィルタ（recommended / new / upcoming）
+      if (urlParams.get('recommended') === '1') {
+        filtered = filtered.filter(e => e.isRecommended);
+      } else if (urlParams.get('new') === '1') {
+        filtered = filtered.filter(e => e.isNew);
+      } else if (urlParams.get('upcoming') === '1') {
+        filtered = filtered.filter(e => {
+          if (!e.next_date) return false;
+          const d = new Date(e.next_date);
+          d.setHours(0, 0, 0, 0);
+          return d >= today;
+        });
+      }
+
+      // フリーワード検索
+      if (params.q) {
+        const q = params.q.toLowerCase();
+        filtered = filtered.filter(e => {
+          const texts = [
+            e.title,
+            e.city,
+            e.prefecture
+          ];
+          return texts.some(t => typeof t === 'string' && t.toLowerCase().includes(q));
+        });
+      }
+
+      // カテゴリ
+      if (params.category) {
+        filtered = filtered.filter(e => String(e.categoryId || '') === String(params.category));
+      }
+
+      // エリア（city / prefecture ベースの簡易実装）
+      if (params.area) {
+        filtered = filtered.filter(e => {
+          const v = String(params.area);
+          return e.city === v || e.prefecture === v || e.area === v;
+        });
+      }
+
+      // 日付（単日）
+      if (params.date) {
+        const target = new Date(params.date);
+        target.setHours(0, 0, 0, 0);
+        filtered = filtered.filter(e => {
+          const next = e.next_date ? new Date(e.next_date) : null;
+          if (next) {
+            next.setHours(0, 0, 0, 0);
+            if (next.getTime() === target.getTime()) return true;
+          }
+          const min = e.date_min ? new Date(e.date_min) : null;
+          const max = e.date_max ? new Date(e.date_max) : null;
+          if (min && max) {
+            min.setHours(0, 0, 0, 0);
+            max.setHours(0, 0, 0, 0);
+            return target >= min && target <= max;
+          }
+          return false;
+        });
+      }
+
+      // 開催週（今週 / 来週）
+      if (params.weekday === 'this-week' || params.weekday === 'next-week') {
+        const dayOfWeek = today.getDay(); // 0=日
+        const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+        const startOfWeek = new Date(today);
+        startOfWeek.setDate(today.getDate() - daysFromMonday + (params.weekday === 'next-week' ? 7 : 0));
+        startOfWeek.setHours(0, 0, 0, 0);
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+
+        filtered = filtered.filter(e => {
+          const next = e.next_date ? new Date(e.next_date) : null;
+          if (!next) return false;
+          next.setHours(0, 0, 0, 0);
+          return next >= startOfWeek && next <= endOfWeek;
+        });
+      }
+
+      return filtered;
+    }
+
+    // イベント読み込み（events_index ベース）
     function loadEvents() {
       const params = URLManager.getParams();
       const urlParams = new URLSearchParams(window.location.search);
 
-      // URLパラメータから特別な条件を取得
-      let events = [...eventData.events];
-
-      if (urlParams.get('recommended') === '1') {
-        events = SearchFilter.getRecommendedEvents(events);
-      } else if (urlParams.get('new') === '1') {
-        events = SearchFilter.getNewEvents(events);
-      } else if (urlParams.get('upcoming') === '1') {
-        events = SearchFilter.getUpcomingEvents(events, 30);
-      }
+      // events_index が前提
+      const index = Array.isArray(window.eventIndex) ? window.eventIndex : [];
 
       // 検索・フィルタ適用
-      currentEvents = SearchFilter.filterEvents(events, params);
+      currentEvents = filterIndexEvents(index, params, urlParams);
 
       // 結果表示
       CardRenderer.renderList(currentEvents, 'event-list');
@@ -253,45 +334,10 @@
         }
       }
 
-      // 0件時のおすすめ導線（保険としてここでも描画する）
+      // 0件時のおすすめ導線は、index ベースでは重くなるため一旦メッセージのみとする
       const zeroSuggestContainer = document.getElementById('event-zero-suggestions');
       if (zeroSuggestContainer) {
-        // 一度クリア
         zeroSuggestContainer.innerHTML = '';
-
-        if (currentEvents.length === 0) {
-          // 検索条件に近いおすすめイベントを最大8件取得
-          let similar = SearchFilter.getSimilarEvents
-            ? SearchFilter.getSimilarEvents(params, 8)
-            : [];
-
-          // それでも足りない場合は、おすすめイベントで補完
-          if (similar.length < 8 && SearchFilter.getRecommendedEvents) {
-            const recommendedAll = SearchFilter.getRecommendedEvents(eventData.events || []);
-            for (const ev of recommendedAll) {
-              if (!similar.find(s => s.id === ev.id)) {
-                similar.push(ev);
-                if (similar.length >= 8) break;
-              }
-            }
-          }
-
-          if (similar.length) {
-            // 4枚表示＋横スクロールになるよう、トップページと同じカードレイアウトを利用
-            let html = `
-              <section class="empty-suggestions-section">
-                <h4>検索条件に近いおすすめイベント</h4>
-                <div class="card-carousel-wrapper">
-                  <div class="card-carousel">
-                    ${similar.map(ev => CardRenderer.render(ev)).join('')}
-                  </div>
-                </div>
-              </section>
-            `;
-
-            zeroSuggestContainer.innerHTML = html;
-          }
-        }
       }
 
       // マップ更新
@@ -311,7 +357,7 @@
       document.getElementById('mobile-filter-weekday').value = params.weekday || '';
     }
 
-    // カテゴリ・エリアの選択肢を設定
+    // カテゴリ・エリアの選択肢を設定（eventMeta / eventIndex ベース）
     function populateOptions() {
       const selects = [
         'search-category', 'mobile-filter-category'
@@ -320,8 +366,10 @@
         'search-area', 'mobile-filter-area'
       ];
 
-      const categories = (eventData && eventData.categories) ? eventData.categories : [];
-      let areas = (eventData && eventData.areas) ? eventData.areas : [];
+      const categories = (window.eventMeta && window.eventMeta.categories)
+        ? window.eventMeta.categories
+        : (window.eventData && window.eventData.categories) ? window.eventData.categories : [];
+      let areas = [];
 
       // カテゴリ: 単純に id / name で表示
       selects.forEach(selectId => {
@@ -336,31 +384,18 @@
         }
       });
 
-      // エリアマスタが無い場合は、イベントから動的にエリア候補を生成
-      if (!areas || !areas.length) {
-        const areaMap = {};
-        if (eventData && Array.isArray(eventData.events)) {
-          eventData.events.forEach(ev => {
-            const id =
-              ev.area_id ||
-              ev.areaId ||
-              (ev.area && ev.area.id) ||
-              ev.area_slug ||
-              ev.area ||
-              ev.prefecture;
-            const name =
-              ev.area_name ||
-              (ev.area && ev.area.name) ||
-              ev.area ||
-              ev.prefecture ||
-              id;
-            if (id && !areaMap[id]) {
-              areaMap[id] = { id, name };
-            }
-          });
-        }
-        areas = Object.values(areaMap);
+      // イベントインデックスからエリア候補を生成
+      const areaMap = {};
+      if (Array.isArray(window.eventIndex)) {
+        window.eventIndex.forEach(ev => {
+          const id = ev.area || ev.city || ev.prefecture;
+          const name = ev.area || ev.city || ev.prefecture;
+          if (id && !areaMap[id]) {
+            areaMap[id] = { id, name };
+          }
+        });
       }
+      areas = Object.values(areaMap);
 
       // エリア: 文字列配列 or オブジェクト配列の両方に対応
       if (areas && areas.length) {
@@ -419,8 +454,8 @@
     // 初期化
     document.addEventListener('DOMContentLoaded', async () => {
       try {
-        // APIからイベントデータを読み込み
-        await loadEventData();
+        // 一覧用インデックス＋メタデータのみを読み込み
+        await Promise.all([loadEventIndex(), loadEventMeta()]);
 
         const yearElement = document.getElementById('current-year');
         if (yearElement) {
