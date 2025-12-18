@@ -337,6 +337,20 @@ const EventPageRenderer = {
         // クリックイベントリスナーを登録（計測処理）
         if (organizer) {
           bookingBtn.addEventListener('click', function(e) {
+            // 連打防止：同じイベントIDは1回だけ送信（localStorageで管理）
+            const storageKey = `sotonavi_clicked_${event.id}`;
+            try {
+              const alreadySent = localStorage.getItem(storageKey);
+              if (alreadySent) {
+                console.log('このイベントは既に計測済みです:', event.id);
+                // 計測はスキップするが、遷移は実行される
+                return;
+              }
+            } catch (storageError) {
+              // localStorageが使えない環境でも計測は続行
+              console.warn('localStorageエラー（計測は続行）:', storageError);
+            }
+            
             // 計測処理（失敗しても遷移は実行）
             const measurementData = {
               token: 'sotonavi_click_9F2kA8R7mQX3LZpD5YwE1H',
@@ -364,6 +378,13 @@ const EventPageRenderer = {
                 }).catch(function(err) {
                   console.warn('保険fetchも失敗:', err);
                 });
+              }
+              
+              // 送信済みフラグを保存（送信成功・失敗に関わらず記録）
+              try {
+                localStorage.setItem(storageKey, Date.now().toString());
+              } catch (storageError) {
+                // localStorage保存失敗は無視
               }
             } catch (error) {
               // 計測処理が失敗してもエラーを出さず、遷移は実行
