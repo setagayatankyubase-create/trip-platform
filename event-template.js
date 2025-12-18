@@ -336,27 +336,26 @@ const EventPageRenderer = {
         
         // クリックイベントリスナーを登録（計測処理）
         if (organizer) {
-          bookingBtn.addEventListener('click', () => {
-            const payload = {
+          bookingBtn.addEventListener('click', function(e) {
+            // 計測処理（失敗しても遷移は実行）
+            const measurementData = {
               token: 'sotonavi_click_9F2kA8R7mQX3LZpD5YwE1H',
               event_id: event.id,
               organizer_id: organizer.id
             };
-
-            fetch(
-              'https://script.google.com/macros/s/AKfycbw7G7Rf3wK2o8eS9V9VgNHtQvrTdMnhpoHxkXlR7Om9YdOLTP9nAjcdX4uN4xOeHKVHJw/exec',
-              {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload),
-                keepalive: true
-              }
-            )
-            .then(res => res.text())
-            .then(text => console.log('GAS response:', text))
-            .catch(err => console.error('GAS error:', err));
+            
+            const gasUrl = 'https://script.google.com/macros/s/AKfycbw7G7Rf3wK2o8eS9V9VgNHtQvrTdMnhpoHxkXlR7Om9YdOLTP9nAjcdX4uN4xOeHKVHJw/exec';
+            
+            try {
+              // navigator.sendBeacon で計測データを送信
+              const jsonData = JSON.stringify(measurementData);
+              const blob = new Blob([jsonData], { type: 'text/plain;charset=utf-8' });
+              const queued = navigator.sendBeacon(gasUrl, blob);
+              console.log("beacon queued:", queued, measurementData);
+            } catch (error) {
+              // 計測処理が失敗してもエラーを出さず、遷移は実行
+              console.warn('計測処理でエラーが発生しました:', error);
+            }
             
             // 既存の遷移処理はそのまま実行（<a>タグのデフォルト動作）
             // preventDefault はしないので、通常通り外部サイトに遷移する
