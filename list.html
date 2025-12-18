@@ -306,8 +306,119 @@
       return filtered;
     }
 
+    // 検索条件に近いおすすめイベントを取得（events_index ベース）
+    function getSimilarIndexEvents(events, params, limit = 8) {
+      if (!Array.isArray(events) || events.length === 0) return [];
+
+      const q = (params.q || '').toLowerCase();
+      const categoryId = params.category || '';
+      const areaParam = params.area || '';
+      const dateParam = params.date || '';
+      const weekdayParam = params.weekday || '';
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      let targetStart = null;
+      let targetEnd = null;
+
+      // 日付指定 or 今週/来週 をターゲット期間として使う
+      if (dateParam) {
+        const d = new Date(dateParam);
+        d.setHours(0, 0, 0, 0);
+        targetStart = new Date(d);
+        targetEnd = new Date(d);
+      } else if (weekdayParam === 'this-week' || weekdayParam === 'next-week') {
+        const dayOfWeek = today.getDay(); // 0=日
+        const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+        targetStart = new Date(today);
+        targetStart.setDate(today.getDate() - daysFromMonday + (weekdayParam === 'next-week' ? 7 : 0));
+        targetStart.setHours(0, 0, 0, 0);
+        targetEnd = new Date(targetStart);
+        targetEnd.setDate(targetStart.getDate() + 6);
+      }
+
+      const scored = events
+        .map(event => {
+          let score = 0;
+
+          // カテゴリ一致
+          if (categoryId) {
+            if (String(event.categoryId || '') === String(categoryId)) {
+              score += 5;
+            }
+          }
+
+          // エリア一致（city / prefecture / area）
+          if (areaParam) {
+            if (event.city === areaParam) score += 4;
+            if (event.prefecture === areaParam) score += 3;
+            if (event.area === areaParam) score += 2;
+          }
+
+          // キーワード一致（タイトル・エリア）
+          if (q) {
+            const text = `${event.title || ''} ${event.city || ''} ${event.prefecture || ''}`.toLowerCase();
+            if (text.includes(q)) score += 4;
+          }
+
+          // 日程の近さ（next_date / date_min / date_max）
+          if (targetStart && targetEnd) {
+            let base = null;
+            if (event.next_date) {
+              base = new Date(event.next_date);
+            } else if (event.date_min) {
+              base = new Date(event.date_min);
+            }
+
+            if (base) {
+              base.setHours(0, 0, 0, 0);
+              if (base >= targetStart && base <= targetEnd) {
+                score += 5;
+              } else {
+                const center = new Date((targetStart.getTime() + targetEnd.getTime()) / 2);
+                const diffDays = Math.abs(base - center) / (1000 * 60 * 60 * 24);
+                if (diffDays <= 7) {
+                  score += Math.max(1, 4 - Math.floor(diffDays)); // 0〜7日差なら 1〜4点
+                }
+              }
+            }
+          }
+
+          return { event, score };
+        })
+        .filter(item => item.score > 0)
+        .sort((a, b) => b.score - a.score);
+
+      let result = scored.slice(0, limit).map(item => item.event);
+
+      // それでも空なら、単純におすすめフラグ付き or 直近開催から埋める
+      if (result.length === 0) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const recommended = events.filter(e => e.isRecommended);
+        if (recommended.length) {
+          result = recommended.slice(0, limit);
+        } else {
+          result = events
+            .map(e => {
+              const d = e.next_date ? new Date(e.next_date) : today;
+              d.setHours(0, 0, 0, 0);
+              const diff = Math.abs(d - today) / (1000 * 60 * 60 * 24);
+              return { event: e, diff };
+            })
+            .sort((a, b) => a.diff - b.diff)
+            .slice(0, limit)
+            .map(item => item.event);
+        }
+      }
+
+      return result;
+    }
+
     // イベント読み込み（events_index ベース）
-    function loadEvents() {
+    async function loadEvents() {
       const params = URLManager.getParams();
       const urlParams = new URLSearchParams(window.location.search);
 
@@ -334,10 +445,40 @@
         }
       }
 
-      // 0件時のおすすめ導線は、index ベースでは重くなるため一旦メッセージのみとする
+      // 0件時のおすすめ導線（検索条件に近いイベントを表示）
       const zeroSuggestContainer = document.getElementById('event-zero-suggestions');
       if (zeroSuggestContainer) {
         zeroSuggestContainer.innerHTML = '';
+
+        if (currentEvents.length === 0) {
+          let similar = getSimilarIndexEvents(index, params, 8);
+
+          // index ベースで出せなかった場合は、従来どおり full データ＋SearchFilter でフォールバック
+          if ((!similar || similar.length === 0) && typeof SearchFilter !== 'undefined' && typeof loadEventData === 'function') {
+            try {
+              await loadEventData(); // 重いが、0件時のみのフォールバック
+              if (typeof SearchFilter.getSimilarEvents === 'function' && window.eventData && Array.isArray(window.eventData.events)) {
+                similar = SearchFilter.getSimilarEvents(params, 8);
+              }
+            } catch (e) {
+              console.warn('fallback getSimilarEvents failed:', e);
+            }
+          }
+
+          if (similar.length) {
+            const html = `
+              <section class="empty-suggestions-section">
+                <h4>検索条件に近いおすすめイベント</h4>
+                <div class="card-carousel-wrapper">
+                  <div class="card-carousel">
+                    ${similar.map(ev => CardRenderer.render(ev)).join('')}
+                  </div>
+                </div>
+              </section>
+            `;
+            zeroSuggestContainer.innerHTML = html;
+          }
+        }
       }
 
       // マップ更新
