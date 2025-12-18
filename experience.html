@@ -328,11 +328,12 @@
         const urlParams = new URLSearchParams(window.location.search);
         const eventId = urlParams.get('id');
 
-        // 1件分のイベント詳細＋メタデータのみ読み込み（軽量）
-        const [event, meta] = await Promise.all([
-          loadEventDetail(eventId),
-          loadEventMeta()
-        ]);
+      // 1件分のイベント詳細＋メタデータ＋インデックス（関連イベント用）を読み込み
+      const [event, meta, index] = await Promise.all([
+        loadEventDetail(eventId),
+        loadEventMeta(),
+        loadEventIndex() // 関連イベント表示用
+      ]);
 
         const organizers = meta && meta.organizers ? meta.organizers : [];
         const organizer = event

@@ -209,7 +209,7 @@ const EventPageRenderer = {
     mapIframe.src = src;
   },
 
-  // 関連イベント
+  // 関連イベント（eventIndex ベース）
   renderRelatedEvents(event) {
     const section = document.getElementById('related-events-section');
     const container = document.getElementById('related-events');
@@ -219,34 +219,47 @@ const EventPageRenderer = {
       return;
     }
     
-    if (!eventData || !eventData.events) {
-      console.warn('eventDataが見つかりません');
-      section.style.display = 'none';
-      return;
-    }
-
-    // 現在のイベント以外を対象
-    const others = eventData.events.filter(e => e.id !== event.id);
+    // eventIndex を優先、なければ eventData にフォールバック
+    const index = Array.isArray(window.eventIndex) ? window.eventIndex : [];
+    const others = index.filter(e => e.id !== event.id);
     
     if (others.length === 0) {
       section.style.display = 'none';
       return;
     }
 
-    // イベントの最初の日付を取得するヘルパー
+    // イベントの最初の日付を取得するヘルパー（index用）
     const getFirstDate = (e) => {
-      if (!e.dates || e.dates.length === 0) return null;
-      const sorted = [...e.dates].sort((a, b) => new Date(a.date) - new Date(b.date));
-      return new Date(sorted[0].date);
+      if (e.next_date) {
+        return new Date(e.next_date);
+      }
+      if (e.date_min) {
+        return new Date(e.date_min);
+      }
+      // フォールバック：eventData の dates を使う
+      if (eventData && eventData.events) {
+        const full = eventData.events.find(ev => ev.id === e.id);
+        if (full && full.dates && full.dates.length > 0) {
+          const sorted = [...full.dates].sort((a, b) => new Date(a.date) - new Date(b.date));
+          return new Date(sorted[0].date);
+        }
+      }
+      return null;
     };
 
-    const baseDate = getFirstDate(event);
+    const baseDate = event.next_date 
+      ? new Date(event.next_date)
+      : (event.dates && event.dates.length > 0)
+        ? new Date(event.dates[0].date)
+        : null;
 
     // スコアリングして関連度順にソート
     const scored = others.map(e => {
       let score = 0;
       if (e.categoryId === event.categoryId) score += 5;
-      if (e.area === event.area) score += 3;
+      const eArea = e.area || e.city;
+      const eventArea = event.area || event.city;
+      if (eArea === eventArea) score += 3;
       if (e.prefecture === event.prefecture) score += 1;
 
       const d = getFirstDate(e);

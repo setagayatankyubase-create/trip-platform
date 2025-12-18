@@ -124,12 +124,16 @@
   <script src="data.js"></script>
   <script src="app.js"></script>
   <script>
-    // カテゴリ一覧の表示
+    // カテゴリ一覧の表示（eventMeta ベース）
     function renderCategories() {
       const container = document.getElementById('category-list');
       if (!container) return;
 
-      container.innerHTML = eventData.categories.map(cat => `
+      const categories = (window.eventMeta && window.eventMeta.categories)
+        ? window.eventMeta.categories
+        : (window.eventData && window.eventData.categories) ? window.eventData.categories : [];
+
+      container.innerHTML = categories.map(cat => `
         <a href="list.html?category=${cat.id}" class="cat">
           <span>${cat.icon}</span>
           <span>${cat.name}</span>
@@ -179,13 +183,25 @@
         weekDays.push(date);
       }
 
-      // 各日のイベント数をカウント
+      // 各日のイベント数をカウント（eventIndex ベース）
       const eventCounts = {};
+      const index = Array.isArray(window.eventIndex) ? window.eventIndex : [];
       weekDays.forEach(date => {
         const dateStr = date.toISOString().split('T')[0];
-        const count = eventData.events.filter(event =>
-          event.dates.some(d => d.date === dateStr)
-        ).length;
+        const count = index.filter(event => {
+          // next_date がその日と同じか、date_min <= dateStr <= date_max の範囲内
+          if (event.next_date) {
+            const next = new Date(event.next_date);
+            next.setHours(0, 0, 0, 0);
+            const target = new Date(dateStr);
+            target.setHours(0, 0, 0, 0);
+            return next.getTime() === target.getTime();
+          }
+          if (event.date_min && event.date_max) {
+            return dateStr >= event.date_min && dateStr <= event.date_max;
+          }
+          return false;
+        }).length;
         eventCounts[dateStr] = count;
       });
 
@@ -261,18 +277,35 @@
       window.location.href = `list.html?date=${dateStr}`;
     }
 
-    // イベントブロックの表示
+    // イベントブロックの表示（eventIndex ベース）
     function renderEventBlocks() {
       const MAX_HOME_EVENTS = 8;
+      const index = Array.isArray(window.eventIndex) ? window.eventIndex : [];
 
-      const recommended = SearchFilter
-        .getRecommendedEvents(eventData.events)
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      // おすすめ：isRecommended でフィルタ
+      const recommended = index
+        .filter(e => e.isRecommended)
         .slice(0, MAX_HOME_EVENTS);
-      const newEvents = SearchFilter
-        .getNewEvents(eventData.events)
+
+      // 新着：isNew でフィルタ
+      const newEvents = index
+        .filter(e => e.isNew)
         .slice(0, MAX_HOME_EVENTS);
-      const upcoming = SearchFilter
-        .getUpcomingEvents(eventData.events, MAX_HOME_EVENTS);
+
+      // 直近開催：next_date >= today でフィルタ
+      const upcoming = index
+        .filter(e => {
+          if (!e.next_date) return false;
+          const next = new Date(e.next_date);
+          next.setHours(0, 0, 0, 0);
+          const limit = new Date(today);
+          limit.setDate(today.getDate() + 7);
+          return next >= today && next <= limit;
+        })
+        .slice(0, MAX_HOME_EVENTS);
 
       CardRenderer.renderCarousel(recommended, 'recommended-events');
       CardRenderer.renderCarousel(newEvents, 'new-events');
@@ -296,11 +329,11 @@
       });
     }
 
-    // 初期化（イベントデータ読み込み → 描画）
+    // 初期化（イベントインデックス＋メタデータ読み込み → 描画）
     document.addEventListener('DOMContentLoaded', async () => {
       try {
-        // APIからイベントデータを読み込み（data.js で定義）
-        await loadEventData();
+        // 一覧用インデックス＋メタデータのみを読み込み（軽量）
+        await Promise.all([loadEventIndex(), loadEventMeta()]);
 
         const yearElement = document.getElementById('current-year');
         if (yearElement) {
