@@ -12,6 +12,28 @@ window.loadEventData = function loadEventData() {
   // 読み込み中なら同じ Promise を使い回す
   if (_eventDataLoadingPromise) return _eventDataLoadingPromise;
 
+  const STORAGE_KEY = "sotonavi_eventData_v1";
+  const CACHE_TTL_MS = 10 * 60 * 1000; // 10分
+
+  // 1) localStorage キャッシュを試す
+  try {
+    const cached = localStorage.getItem(STORAGE_KEY);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (parsed && parsed.timestamp && parsed.data) {
+        const age = Date.now() - parsed.timestamp;
+        if (age < CACHE_TTL_MS) {
+          window.eventData = parsed.data;
+          return Promise.resolve(window.eventData);
+        }
+      }
+    }
+  } catch (e) {
+    // localStorage が使えなくても処理は続行
+    console.warn("eventData cache read error:", e);
+  }
+
+  // 2) キャッシュが無ければ API から取得
   _eventDataLoadingPromise = fetch(EVENTS_API_URL, { cache: "no-store" })
     .then((res) => {
       if (!res.ok) {
@@ -21,6 +43,18 @@ window.loadEventData = function loadEventData() {
     })
     .then((json) => {
       window.eventData = json;
+
+      // 取得結果を localStorage にキャッシュ
+      try {
+        const payload = {
+          timestamp: Date.now(),
+          data: json,
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+      } catch (e) {
+        console.warn("eventData cache write error:", e);
+      }
+
       return window.eventData;
     })
     .finally(() => {

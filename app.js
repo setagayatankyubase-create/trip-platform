@@ -323,6 +323,29 @@ const FavoriteManager = {
 
 // イベントカードのレンダリング
 const CardRenderer = {
+  // 画像URLを一覧表示向けに軽量化（主に Unsplash 想定）
+  optimizeImageUrl(url) {
+    if (!url || typeof url !== 'string') return url;
+
+    try {
+      const u = new URL(url);
+      // Unsplash など images.unsplash.com の場合はパラメータで圧縮
+      if (u.hostname.includes('images.unsplash.com')) {
+        // 既存クエリを維持しつつ、必要なパラメータだけ上書き
+        u.searchParams.set('auto', 'format');
+        u.searchParams.set('fit', 'crop');
+        u.searchParams.set('w', '600');
+        u.searchParams.set('q', '70');
+        return u.toString();
+      }
+    } catch {
+      // URLパースに失敗した場合はそのまま返す
+      return url;
+    }
+
+    return url;
+  },
+
   getRatingHtml(event) {
     // イベントに評価がある場合はそれを使い、なければ提供元の評価を使う
     let rating = event.rating;
@@ -385,11 +408,13 @@ const CardRenderer = {
     const favoriteTitle = isFavorite ? 'お気に入りから削除' : 'お気に入りに追加';
     const favoriteFill = isFavorite ? 'currentColor' : 'none';
 
+    const optimizedImage = this.optimizeImageUrl(event.image);
+
     return `
       <a href="experience.html?id=${event.id}" class="card-link" data-event-id="${event.id}">
         <div class="card" data-event-id="${event.id}">
           <div class="card-image-wrapper">
-            <img src="${event.image}" alt="${event.title}" loading="lazy">
+            <img src="${optimizedImage}" alt="${event.title}" loading="lazy">
             <button class="${favoriteClass}" onclick="toggleFavorite('${event.id}', event)" title="${favoriteTitle}">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="${favoriteFill}" stroke="currentColor" stroke-width="2">
                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
