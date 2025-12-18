@@ -437,7 +437,34 @@
       }
 
       // events_index が前提
-      const index = Array.isArray(window.eventIndex) ? window.eventIndex : [];
+      let index = Array.isArray(window.eventIndex) ? window.eventIndex : [];
+
+      // カテゴリ検索で categoryId が無い場合、詳細JSONから補完
+      if (params.category && index.length > 0 && !index[0].categoryId && !index[0].category_id) {
+        try {
+          // 最初の数件だけ詳細を読み込んで categoryId を補完
+          const sampleIds = index.slice(0, 10).map(e => e.id).filter(Boolean);
+          const detailPromises = sampleIds.map(id => 
+            loadEventDetail(id).catch(() => null)
+          );
+          const details = await Promise.all(detailPromises);
+          const detailMap = {};
+          details.forEach(d => {
+            if (d && d.id) detailMap[d.id] = d;
+          });
+          
+          // index に categoryId を補完
+          index = index.map(item => {
+            const detail = detailMap[item.id];
+            if (detail && detail.categoryId) {
+              return { ...item, categoryId: detail.categoryId };
+            }
+            return item;
+          });
+        } catch (e) {
+          console.warn('Failed to enrich categoryId:', e);
+        }
+      }
 
       // 検索・フィルタ適用
       currentEvents = filterIndexEvents(index, params, urlParams);
