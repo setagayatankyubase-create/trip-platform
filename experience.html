@@ -377,6 +377,24 @@
         // 初期位置に応じて一度判定
         handleScroll();
         
+        // 検索処理（ヘッダー検索欄用）
+        window.handleSearch = function handleSearch(event) {
+          event.preventDefault();
+          const formData = new FormData(event.target);
+          const params = {
+            q: formData.get('q') || '',
+            category: formData.get('category') || '',
+            date: formData.get('date') || '',
+            area: formData.get('area') || ''
+          };
+          // URLパラメータを構築して list.html に遷移
+          const urlParams = new URLSearchParams();
+          Object.keys(params).forEach(key => {
+            if (params[key]) urlParams.set(key, params[key]);
+          });
+          window.location.href = `list.html?${urlParams.toString()}`;
+        };
+        
         // 予約ボタンのクリック処理（計測処理）は event-template.js の renderBooking 内で登録される
       } catch (e) {
         console.error(e);

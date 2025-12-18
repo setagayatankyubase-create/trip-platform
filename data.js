@@ -52,22 +52,38 @@ window.loadEventData = function loadEventData() {
     .then(async ([index, meta]) => {
       // events_index から最小限の events 配列を構築（index.html 互換用）
       // 詳細は必要になったら loadEventDetail() で個別に取得
-      const events = Array.isArray(index) ? index.map(item => ({
-        id: item.id,
-        title: item.title,
-        image: item.image || item.thumb,
-        area: item.area || item.city,
-        prefecture: item.prefecture,
-        price: item.price,
-        isRecommended: item.isRecommended,
-        isNew: item.isNew,
-        rating: item.rating,
-        reviewCount: item.reviewCount,
-        categoryId: item.categoryId,
-        // dates は next_date から生成
-        dates: item.next_date ? [{ date: item.next_date }] : [],
-        publishedAt: item.publishedAt || new Date().toISOString(),
-      })) : [];
+      const events = Array.isArray(index) ? index.map(item => {
+        // dates は next_date から生成（getUpcomingEvents が dates[0].date を参照するため）
+        let dates = [];
+        if (item.next_date) {
+          // next_date が ISO 文字列か Date オブジェクトか確認
+          const dateStr = typeof item.next_date === 'string' 
+            ? item.next_date 
+            : item.next_date instanceof Date 
+              ? item.next_date.toISOString()
+              : null;
+          if (dateStr) {
+            dates = [{ date: dateStr }];
+          }
+        }
+        
+        return {
+          id: item.id,
+          title: item.title,
+          image: item.image || item.thumb,
+          area: item.area || item.city,
+          prefecture: item.prefecture,
+          price: item.price,
+          isRecommended: item.isRecommended || false,
+          isNew: item.isNew || false,
+          rating: item.rating,
+          reviewCount: item.reviewCount,
+          categoryId: item.categoryId,
+          dates: dates,
+          // publishedAt は必須（getNewEvents が参照）
+          publishedAt: item.publishedAt || item.published_at || new Date().toISOString(),
+        };
+      }) : [];
 
       window.eventData = {
         events,
