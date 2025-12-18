@@ -5,7 +5,7 @@
 //   - type=meta             ... organizers / categories だけ
 //   - type=full             ... 互換用のフルデータ（既存ページ用・重い）
 const EVENTS_API_BASE =
-  "https://script.google.com/macros/s/AKfycbwR6elgN0XtjKCqjqhcVLDf-RdcMFfcaHZGdWGrAWUzW67jzRMrJXY25oTgJJYEYLi2QQ/exec";
+  "https://script.google.com/macros/s/AKfycbwxeBSXOIksbSH3joSK9Zj6KEQ0gauLAxWk_xAP6EoD39paSgVKXBPlxIFAYjq3Q-8HUA/exec";
 const EVENTS_API_URL = `${EVENTS_API_BASE}?type=full`;
 
 // キャッシュ無効化用バージョン（シート構造やレスポンス形式を変えたら更新）
