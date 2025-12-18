@@ -314,16 +314,26 @@
       }
     }
 
-    // 現在の年を設定
-    document.addEventListener('DOMContentLoaded', () => {
-      const yearElement = document.getElementById('current-year');
-      if (yearElement) {
-        yearElement.textContent = new Date().getFullYear();
+    // 初期化（イベントデータ読み込み → 描画）
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        // APIからイベントデータを読み込み（data.js で定義）
+        await loadEventData();
+
+        const yearElement = document.getElementById('current-year');
+        if (yearElement) {
+          yearElement.textContent = new Date().getFullYear();
+        }
+
+        renderCategories();
+        renderWeekCalendar();
+        renderEventBlocks();
+        window.addEventListener('scroll', handleScroll);
+      } catch (e) {
+        console.error(e);
+        const el = document.getElementById('error');
+        if (el) el.textContent = 'データの読み込みに失敗しました';
       }
-      renderCategories();
-      renderWeekCalendar();
-      renderEventBlocks();
-      window.addEventListener('scroll', handleScroll);
     });
   </script>
 </body>

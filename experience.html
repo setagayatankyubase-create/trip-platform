@@ -322,45 +322,56 @@
   <script src="app.js"></script>
   <script src="event-template.js"></script>
   <script>
-    // URLパラメータからイベントIDを取得
-    const urlParams = new URLSearchParams(window.location.search);
-    const eventId = urlParams.get('id');
+    (async () => {
+      try {
+        // APIからイベント・提供元データを読み込み
+        await loadEventData();
 
-    // イベントデータを取得
-    const event = eventData.events.find(e => e.id === eventId);
-    const organizer = event ? eventData.organizers.find(o => o.id === event.organizerId) : null;
+        // URLパラメータからイベントIDを取得
+        const urlParams = new URLSearchParams(window.location.search);
+        const eventId = urlParams.get('id');
 
-    // テンプレートを使用してページをレンダリング
-    EventPageRenderer.render(event, organizer);
-    
-    // 現在の年を設定
-    const yearElement = document.getElementById('current-year');
-    if (yearElement) {
-      yearElement.textContent = new Date().getFullYear();
-    }
-    
-    // ヘッダーのスクロール検知
-    function handleScroll() {
-      const header = document.getElementById('main-header');
-      const headerSearch = document.getElementById('header-search');
-      
-      if (window.scrollY > 100) {
-        header.classList.add('scrolled');
-        if (headerSearch) {
-          headerSearch.style.display = 'block';
+        // イベントデータを取得
+        const event = eventData.events.find(e => e.id === eventId);
+        const organizer = event ? eventData.organizers.find(o => o.id === event.organizerId) : null;
+
+        // テンプレートを使用してページをレンダリング
+        EventPageRenderer.render(event, organizer);
+        
+        // 現在の年を設定
+        const yearElement = document.getElementById('current-year');
+        if (yearElement) {
+          yearElement.textContent = new Date().getFullYear();
         }
-      } else {
-        header.classList.remove('scrolled');
-        if (headerSearch) {
-          headerSearch.style.display = 'none';
+        
+        // ヘッダーのスクロール検知
+        function handleScroll() {
+          const header = document.getElementById('main-header');
+          const headerSearch = document.getElementById('header-search');
+          
+          if (window.scrollY > 100) {
+            header.classList.add('scrolled');
+            if (headerSearch) {
+              headerSearch.style.display = 'block';
+            }
+          } else {
+            header.classList.remove('scrolled');
+            if (headerSearch) {
+              headerSearch.style.display = 'none';
+            }
+          }
         }
+        
+        // スクロールイベントリスナーを追加
+        window.addEventListener('scroll', handleScroll);
+        
+        // 予約ボタンのクリック処理（計測処理）は event-template.js の renderBooking 内で登録される
+      } catch (e) {
+        console.error(e);
+        const el = document.getElementById('error');
+        if (el) el.textContent = 'データの読み込みに失敗しました';
       }
-    }
-    
-    // スクロールイベントリスナーを追加
-    window.addEventListener('scroll', handleScroll);
-    
-    // 予約ボタンのクリック処理（計測処理）は event-template.js の renderBooking 内で登録される
+    })();
   </script>
 </body>
 </html>

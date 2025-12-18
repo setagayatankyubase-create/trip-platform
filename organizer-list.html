@@ -123,13 +123,22 @@
       }
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      const yearElement = document.getElementById('current-year');
-      if (yearElement) {
-        yearElement.textContent = new Date().getFullYear();
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        // APIからイベント・提供元データを読み込み
+        await loadEventData();
+
+        const yearElement = document.getElementById('current-year');
+        if (yearElement) {
+          yearElement.textContent = new Date().getFullYear();
+        }
+        renderOrganizers();
+        window.addEventListener('scroll', handleScroll);
+      } catch (e) {
+        console.error(e);
+        const el = document.getElementById('error');
+        if (el) el.textContent = 'データの読み込みに失敗しました';
       }
-      renderOrganizers();
-      window.addEventListener('scroll', handleScroll);
     });
   </script>
 </body>

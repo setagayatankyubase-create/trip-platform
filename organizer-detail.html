@@ -155,22 +155,33 @@
   <script src="app.js"></script>
   <script src="organizer-template.js"></script>
   <script>
-    // URLパラメータから提供元IDを取得
-    const urlParams = new URLSearchParams(window.location.search);
-    const organizerId = urlParams.get('id');
+    (async () => {
+      try {
+        // APIからイベント・提供元データを読み込み
+        await loadEventData();
 
-    // 提供元データを取得
-    const organizer = eventData.organizers.find(o => o.id === organizerId);
-    const events = eventData.events.filter(e => e.organizerId === organizerId);
+        // URLパラメータから提供元IDを取得
+        const urlParams = new URLSearchParams(window.location.search);
+        const organizerId = urlParams.get('id');
 
-    // テンプレートを使用してページをレンダリング
-    OrganizerPageRenderer.render(organizer, events);
-    
-    // 現在の年を設定
-    const yearElement = document.getElementById('current-year');
-    if (yearElement) {
-      yearElement.textContent = new Date().getFullYear();
-    }
+        // 提供元データを取得
+        const organizer = eventData.organizers.find(o => o.id === organizerId);
+        const events = eventData.events.filter(e => e.organizerId === organizerId);
+
+        // テンプレートを使用してページをレンダリング
+        OrganizerPageRenderer.render(organizer, events);
+        
+        // 現在の年を設定
+        const yearElement = document.getElementById('current-year');
+        if (yearElement) {
+          yearElement.textContent = new Date().getFullYear();
+        }
+      } catch (e) {
+        console.error(e);
+        const el = document.getElementById('error');
+        if (el) el.textContent = 'データの読み込みに失敗しました';
+      }
+    })();
   </script>
 </body>
 </html>
