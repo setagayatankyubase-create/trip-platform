@@ -1,14 +1,21 @@
 // イベント・提供元データを API から読み込む
+// ※GAS側で type パラメータによりモードを切り替えられるが、
+//   ここでは従来互換の「full」モードを使って一括読み込みしている
 const EVENTS_API_URL =
-  "https://script.google.com/macros/s/AKfycbxB8qi3BsvmHUOkWup6lA-pdMTf7RuWgFu0xov3TexLyO9MPM3b5ND7RF0xqauMS_Q0KA/exec";
+  "https://script.google.com/macros/s/AKfycbwR6elgN0XtjKCqjqhcVLDf-RdcMFfcaHZGdWGrAWUzW67jzRMrJXY25oTgJJYEYLi2QQ/exec?type=full";
 
 // グローバルに公開しておく（他のスクリプトから必ず参照できるようにする）
+// eventData: 従来どおりのフルデータ（events / organizers / categories）
+// eventIndex: 一覧表示用の軽量データ（events_index）
 window.eventData = null;
+window.eventIndex = null;
 let _eventDataLoadingPromise = null;
 
 window.loadEventData = function loadEventData() {
   // すでに読み込み済みなら即座に解決
-  if (window.eventData) return Promise.resolve(window.eventData);
+  if (window.eventData && window.eventIndex) {
+    return Promise.resolve(window.eventData);
+  }
   // 読み込み中なら同じ Promise を使い回す
   if (_eventDataLoadingPromise) return _eventDataLoadingPromise;
 
@@ -42,7 +49,12 @@ window.loadEventData = function loadEventData() {
       return res.json();
     })
     .then((json) => {
+      // フルデータ
       window.eventData = json;
+      // 一覧用のインデックス（なければ空配列でフォールバック）
+      window.eventIndex = Array.isArray(json.events_index)
+        ? json.events_index
+        : [];
 
       // 取得結果を localStorage にキャッシュ
       try {
