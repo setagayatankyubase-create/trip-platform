@@ -253,9 +253,12 @@
         });
       }
 
-      // カテゴリ
+      // カテゴリ（categoryId が無い場合はスキップ）
       if (params.category) {
-        filtered = filtered.filter(e => String(e.categoryId || '') === String(params.category));
+        filtered = filtered.filter(e => {
+          const catId = e.categoryId || e.category_id || '';
+          return String(catId) === String(params.category);
+        });
       }
 
       // エリア（city / prefecture ベースの簡易実装）

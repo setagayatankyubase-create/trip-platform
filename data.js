@@ -50,14 +50,24 @@ window.loadEventData = function loadEventData() {
   // 2) キャッシュが無ければ static JSON から組み立て
   _eventDataLoadingPromise = Promise.all([loadEventIndex(), loadEventMeta()])
     .then(async ([index, meta]) => {
-      const ids = Array.isArray(index) ? index.map(e => e.id).filter(Boolean) : [];
-
-      // 各イベントの詳細JSONをまとめて取得
-      const detailPromises = ids.map(id =>
-        loadEventDetail(id).catch(() => null)
-      );
-      const details = await Promise.all(detailPromises);
-      const events = details.filter(ev => ev);
+      // events_index から最小限の events 配列を構築（index.html 互換用）
+      // 詳細は必要になったら loadEventDetail() で個別に取得
+      const events = Array.isArray(index) ? index.map(item => ({
+        id: item.id,
+        title: item.title,
+        image: item.image || item.thumb,
+        area: item.area || item.city,
+        prefecture: item.prefecture,
+        price: item.price,
+        isRecommended: item.isRecommended,
+        isNew: item.isNew,
+        rating: item.rating,
+        reviewCount: item.reviewCount,
+        categoryId: item.categoryId,
+        // dates は next_date から生成
+        dates: item.next_date ? [{ date: item.next_date }] : [],
+        publishedAt: item.publishedAt || new Date().toISOString(),
+      })) : [];
 
       window.eventData = {
         events,
@@ -77,6 +87,16 @@ window.loadEventData = function loadEventData() {
         console.warn("eventData cache write error:", e);
       }
 
+      return window.eventData;
+    })
+    .catch(err => {
+      console.error("loadEventData failed:", err);
+      // エラー時も空データで続行
+      window.eventData = {
+        events: [],
+        organizers: [],
+        categories: [],
+      };
       return window.eventData;
     })
     .finally(() => {
