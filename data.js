@@ -49,37 +49,15 @@ window.loadEventData = function loadEventData() {
 
   // 2) キャッシュが無ければ static JSON から組み立て
   _eventDataLoadingPromise = Promise.all([loadEventIndex(), loadEventMeta()])
-    .then(([index, meta]) => {
-      const events = (index || []).map((e) => {
-        // dates を next_date / date_min から合成（index.html / SearchFilter 用）
-        let dates = [];
-        if (e.next_date) {
-          dates.push({ date: e.next_date });
-        } else if (e.date_min) {
-          dates.push({ date: e.date_min });
-        }
+    .then(async ([index, meta]) => {
+      const ids = Array.isArray(index) ? index.map(e => e.id).filter(Boolean) : [];
 
-        return {
-          id: e.id,
-          title: e.title,
-          description: e.description || "",
-          image: e.image,
-          area: e.area || e.city || "",
-          prefecture: e.prefecture || "",
-          dates,
-          duration: e.duration || "",
-          price: e.price,
-          targetAge: e.targetAge || "",
-          highlights: e.highlights || [],
-          notes: e.notes || "",
-          organizerId: e.organizerId || "",
-          externalLink: e.externalLink || "",
-          isRecommended: !!e.isRecommended,
-          isNew: !!e.isNew,
-          publishedAt: e.publishedAt || e.next_date || "",
-          categoryId: e.categoryId || "",
-        };
-      });
+      // 各イベントの詳細JSONをまとめて取得
+      const detailPromises = ids.map(id =>
+        loadEventDetail(id).catch(() => null)
+      );
+      const details = await Promise.all(detailPromises);
+      const events = details.filter(ev => ev);
 
       window.eventData = {
         events,
