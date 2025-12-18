@@ -323,6 +323,7 @@
       const categories = (eventData && eventData.categories) ? eventData.categories : [];
       const areas = (eventData && eventData.areas) ? eventData.areas : [];
 
+      // カテゴリ: 単純に id / name で表示
       selects.forEach(selectId => {
         const select = document.getElementById(selectId);
         if (select && categories.length) {
@@ -335,17 +336,51 @@
         }
       });
 
-      areaSelects.forEach(selectId => {
-        const select = document.getElementById(selectId);
-        if (select && areas.length) {
-          areas.forEach(area => {
-            const option = document.createElement('option');
-            option.value = area;
-            option.textContent = area;
-            select.appendChild(option);
+      // エリア: 文字列配列 or オブジェクト配列の両方に対応
+      if (areas.length) {
+        // オブジェクト配列の場合は親子関係を考慮してラベルを作る
+        const first = areas[0];
+        let areaById = {};
+        let isObjectArea = typeof first === 'object';
+
+        if (isObjectArea) {
+          areas.forEach(a => {
+            if (a && a.id) {
+              areaById[a.id] = a;
+            }
           });
         }
-      });
+
+        areaSelects.forEach(selectId => {
+          const select = document.getElementById(selectId);
+          if (select) {
+            areas.forEach(area => {
+              const option = document.createElement('option');
+
+              if (typeof area === 'string') {
+                // 旧: 文字列のエリア名だけを持つ場合
+                option.value = area;
+                option.textContent = area;
+              } else if (area && typeof area === 'object') {
+                // 新: id / name / parent_id を持つオブジェクト
+                const value = area.id || area.slug || area.name;
+                let label = area.name || area.slug || area.id;
+
+                if (area.parent_id && areaById[area.parent_id]) {
+                  const parent = areaById[area.parent_id];
+                  const parentName = parent.name || parent.slug || parent.id;
+                  label = `${parentName} - ${label}`;
+                }
+
+                option.value = value;
+                option.textContent = label;
+              }
+
+              select.appendChild(option);
+            });
+          }
+        });
+      }
     }
 
     // モバイル判定
