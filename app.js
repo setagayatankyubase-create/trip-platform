@@ -339,12 +339,19 @@ const CardRenderer = {
         reviewCount = 10;
       }
     }
-    
+
+    // API側の型や欠損にかかわらず安全に扱えるように数値化＆フォールバック
+    const numericRating = Number(rating);
+    const numericReviewCount = Number(reviewCount);
+
+    const safeRating = Number.isFinite(numericRating) ? numericRating : 4.5;
+    const safeReviewCount = Number.isFinite(numericReviewCount) ? numericReviewCount : 0;
+
     return `
       <div class="card-rating">
         <span class="rating-star">⭐</span>
-        <span class="rating-value">${rating.toFixed(2)}</span>
-        <span class="rating-count">(${reviewCount}件)</span>
+        <span class="rating-value">${safeRating.toFixed(2)}</span>
+        <span class="rating-count">(${safeReviewCount}件)</span>
       </div>
     `;
   },
