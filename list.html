@@ -320,10 +320,13 @@
         'search-area', 'mobile-filter-area'
       ];
 
+      const categories = (eventData && eventData.categories) ? eventData.categories : [];
+      const areas = (eventData && eventData.areas) ? eventData.areas : [];
+
       selects.forEach(selectId => {
         const select = document.getElementById(selectId);
-        if (select) {
-          eventData.categories.forEach(cat => {
+        if (select && categories.length) {
+          categories.forEach(cat => {
             const option = document.createElement('option');
             option.value = cat.id;
             option.textContent = cat.name;
@@ -334,8 +337,8 @@
 
       areaSelects.forEach(selectId => {
         const select = document.getElementById(selectId);
-        if (select) {
-          eventData.areas.forEach(area => {
+        if (select && areas.length) {
+          areas.forEach(area => {
             const option = document.createElement('option');
             option.value = area;
             option.textContent = area;
