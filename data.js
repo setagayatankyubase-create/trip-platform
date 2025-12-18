@@ -179,24 +179,28 @@ window.loadEventMeta = function loadEventMeta() {
 
   const url = `${DATA_BASE}/meta.json`;
   _eventMetaLoadingPromise = fetch(url)
-    .then((res) => {
+    .then(async (res) => {
+      // meta.json が存在しない／エラーでもサイトは止めない
       if (!res.ok) {
-        throw new Error(`Failed to load event meta: ${res.status}`);
+        return { organizers: [], categories: [], areas: [] };
       }
       return res.json();
     })
     .then((json) => {
-      window.eventMeta = {
-        organizers: Array.isArray(json.organizers) ? json.organizers : [],
-        categories: Array.isArray(json.categories) ? json.categories : [],
+      const meta = {
+        organizers: Array.isArray(json?.organizers) ? json.organizers : [],
+        categories: Array.isArray(json?.categories) ? json.categories : [],
+        areas: Array.isArray(json?.areas) ? json.areas : [],
       };
+
+      window.eventMeta = meta;
 
       // 従来の eventData.categories / organizers を期待しているコード向けに最低限マージ
       window.eventData = window.eventData || {};
-      window.eventData.organizers = window.eventMeta.organizers;
-      window.eventData.categories = window.eventMeta.categories;
+      window.eventData.organizers = meta.organizers;
+      window.eventData.categories = meta.categories;
 
-      return window.eventMeta;
+      return meta;
     })
     .finally(() => {
       _eventMetaLoadingPromise = null;
