@@ -335,8 +335,7 @@ const EventPageRenderer = {
         bookingBtn.style.display = 'block';
         
         // クリックイベントリスナーを登録（計測処理）
-        if (organizer) {
-          bookingBtn.addEventListener('click', function(e) {
+        bookingBtn.addEventListener('click', function(e) {
             // 連打防止：同じイベントIDは1回だけ送信（localStorageで管理）
             const storageKey = `sotonavi_clicked_${event.id}`;
             try {
@@ -351,11 +350,18 @@ const EventPageRenderer = {
               console.warn('localStorageエラー（計測は続行）:', storageError);
             }
             
+            // organizer が null の場合でも、event 側の organizerId / organizer_id から拾う
+            const organizerIdForCount =
+              (organizer && organizer.id) ||
+              event.organizerId ||
+              event.organizer_id ||
+              null;
+
             // 計測処理（失敗しても遷移は実行）
             const measurementData = {
               token: 'sotonavi_click_9F2kA8R7mQX3LZpD5YwE1H',
               event_id: event.id,
-              organizer_id: organizer.id,
+              organizer_id: organizerIdForCount,
               origin: window.location.origin // Originチェック用
             };
             
@@ -394,7 +400,6 @@ const EventPageRenderer = {
             // 既存の遷移処理はそのまま実行（<a>タグのデフォルト動作）
             // preventDefault はしないので、通常通り外部サイトに遷移する
           });
-        }
       } else {
         bookingBtn.style.display = 'none';
       }
