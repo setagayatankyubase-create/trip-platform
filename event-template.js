@@ -341,7 +341,8 @@ const EventPageRenderer = {
             const measurementData = {
               token: 'sotonavi_click_9F2kA8R7mQX3LZpD5YwE1H',
               event_id: event.id,
-              organizer_id: organizer.id
+              organizer_id: organizer.id,
+              origin: window.location.origin // Originチェック用
             };
             
             const gasUrl = 'https://script.google.com/macros/s/AKfycbw7G7Rf3wK2o8eS9V9VgNHtQvrTdMnhpoHxkXlR7Om9YdOLTP9nAjcdX4uN4xOeHKVHJw/exec';
@@ -352,6 +353,18 @@ const EventPageRenderer = {
               const blob = new Blob([jsonData], { type: 'text/plain;charset=utf-8' });
               const queued = navigator.sendBeacon(gasUrl, blob);
               console.log("beacon queued:", queued, measurementData);
+              
+              // sendBeaconが失敗した場合の保険としてfetchを使用
+              if (queued === false) {
+                fetch(gasUrl, {
+                  method: 'POST',
+                  body: jsonData,
+                  keepalive: true,
+                  mode: 'no-cors' // レスポンスは読めないが保険として送信
+                }).catch(function(err) {
+                  console.warn('保険fetchも失敗:', err);
+                });
+              }
             } catch (error) {
               // 計測処理が失敗してもエラーを出さず、遷移は実行
               console.warn('計測処理でエラーが発生しました:', error);
