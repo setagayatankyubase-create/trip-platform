@@ -344,26 +344,33 @@
           yearElement.textContent = new Date().getFullYear();
         }
         
-        // ヘッダーのスクロール検知
+        // ヘッダー検索欄の表示切り替え（ヒステリシス付きで点滅を防止）
+        let isHeaderSearchVisible = false;
+        const SHOW_THRESHOLD = 150; // この位置を超えたら表示
+        const HIDE_THRESHOLD = 80;  // この位置より上に戻ったら非表示
+
         function handleScroll() {
           const header = document.getElementById('main-header');
           const headerSearch = document.getElementById('header-search');
-          
-          if (window.scrollY > 100) {
+          if (!header || !headerSearch) return;
+
+          const y = window.scrollY || window.pageYOffset || 0;
+
+          if (!isHeaderSearchVisible && y > SHOW_THRESHOLD) {
+            isHeaderSearchVisible = true;
             header.classList.add('scrolled');
-            if (headerSearch) {
-              headerSearch.style.display = 'block';
-            }
-          } else {
+            headerSearch.style.display = 'block';
+          } else if (isHeaderSearchVisible && y < HIDE_THRESHOLD) {
+            isHeaderSearchVisible = false;
             header.classList.remove('scrolled');
-            if (headerSearch) {
-              headerSearch.style.display = 'none';
-            }
+            headerSearch.style.display = 'none';
           }
         }
         
         // スクロールイベントリスナーを追加
         window.addEventListener('scroll', handleScroll);
+        // 初期位置に応じて一度判定
+        handleScroll();
         
         // 予約ボタンのクリック処理（計測処理）は event-template.js の renderBooking 内で登録される
       } catch (e) {

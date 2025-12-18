@@ -105,24 +105,6 @@
       }).join('');
     }
 
-    // ヘッダーのスクロール検知
-    function handleScroll() {
-      const header = document.getElementById('main-header');
-      const headerSearch = document.getElementById('header-search');
-      
-      if (window.scrollY > 100) {
-        if (header) header.classList.add('scrolled');
-        if (headerSearch) {
-          headerSearch.style.display = 'block';
-        }
-      } else {
-        if (header) header.classList.remove('scrolled');
-        if (headerSearch) {
-          headerSearch.style.display = 'none';
-        }
-      }
-    }
-
     document.addEventListener('DOMContentLoaded', async () => {
       try {
         // APIからイベント・提供元データを読み込み
@@ -133,7 +115,33 @@
           yearElement.textContent = new Date().getFullYear();
         }
         renderOrganizers();
+
+        // ヘッダー検索欄の表示切り替え（ヒステリシス付きで点滅を防止）
+        let isHeaderSearchVisible = false;
+        const SHOW_THRESHOLD = 150; // この位置を超えたら表示
+        const HIDE_THRESHOLD = 80;  // この位置より上に戻ったら非表示
+
+        function handleScroll() {
+          const header = document.getElementById('main-header');
+          const headerSearch = document.getElementById('header-search');
+          if (!header || !headerSearch) return;
+
+          const y = window.scrollY || window.pageYOffset || 0;
+
+          if (!isHeaderSearchVisible && y > SHOW_THRESHOLD) {
+            isHeaderSearchVisible = true;
+            header.classList.add('scrolled');
+            headerSearch.style.display = 'block';
+          } else if (isHeaderSearchVisible && y < HIDE_THRESHOLD) {
+            isHeaderSearchVisible = false;
+            header.classList.remove('scrolled');
+            headerSearch.style.display = 'none';
+          }
+        }
+
         window.addEventListener('scroll', handleScroll);
+        // 初期位置に応じて一度判定
+        handleScroll();
       } catch (e) {
         console.error(e);
         const el = document.getElementById('error');
