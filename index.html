@@ -288,15 +288,35 @@
         })
         .slice(0, MAX_HOME_EVENTS);
 
-      // 直近開催：next_date または dates[0].date が今日から7日以内
+      // 直近開催：next_date または dates[0].date または date_min が今日から7日以内
       const upcoming = source
         .filter(e => {
           let eventDate = null;
+          
+          // 優先順位: next_date > dates[0].date > date_min
           if (e.next_date) {
-            eventDate = new Date(e.next_date);
-          } else if (e.dates && e.dates.length > 0 && e.dates[0].date) {
-            eventDate = new Date(e.dates[0].date);
+            try {
+              eventDate = new Date(e.next_date);
+              if (isNaN(eventDate.getTime())) return false;
+            } catch (err) {
+              return false;
+            }
+          } else if (e.dates && Array.isArray(e.dates) && e.dates.length > 0 && e.dates[0] && e.dates[0].date) {
+            try {
+              eventDate = new Date(e.dates[0].date);
+              if (isNaN(eventDate.getTime())) return false;
+            } catch (err) {
+              return false;
+            }
+          } else if (e.date_min) {
+            try {
+              eventDate = new Date(e.date_min);
+              if (isNaN(eventDate.getTime())) return false;
+            } catch (err) {
+              return false;
+            }
           }
+          
           if (!eventDate) return false;
           
           eventDate.setHours(0, 0, 0, 0);
@@ -305,8 +325,23 @@
           return eventDate >= today && eventDate <= limit;
         })
         .sort((a, b) => {
-          const aDate = a.next_date ? new Date(a.next_date) : (a.dates && a.dates[0] ? new Date(a.dates[0].date) : new Date(9999, 0, 1));
-          const bDate = b.next_date ? new Date(b.next_date) : (b.dates && b.dates[0] ? new Date(b.dates[0].date) : new Date(9999, 0, 1));
+          const getDate = (item) => {
+            if (item.next_date) {
+              const d = new Date(item.next_date);
+              return isNaN(d.getTime()) ? new Date(9999, 0, 1) : d;
+            }
+            if (item.dates && Array.isArray(item.dates) && item.dates.length > 0 && item.dates[0] && item.dates[0].date) {
+              const d = new Date(item.dates[0].date);
+              return isNaN(d.getTime()) ? new Date(9999, 0, 1) : d;
+            }
+            if (item.date_min) {
+              const d = new Date(item.date_min);
+              return isNaN(d.getTime()) ? new Date(9999, 0, 1) : d;
+            }
+            return new Date(9999, 0, 1);
+          };
+          const aDate = getDate(a);
+          const bDate = getDate(b);
           return aDate - bDate; // 早い順
         })
         .slice(0, MAX_HOME_EVENTS);
