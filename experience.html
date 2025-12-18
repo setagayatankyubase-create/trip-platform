@@ -376,8 +376,9 @@
         try {
           // navigator.sendBeacon で計測データを送信
           const jsonData = JSON.stringify(measurementData);
-          const blob = new Blob([jsonData], { type: 'application/json' });
-          navigator.sendBeacon(gasUrl, blob);
+          const blob = new Blob([jsonData], { type: 'text/plain;charset=utf-8' });
+          const queued = navigator.sendBeacon(gasUrl, blob);
+          console.log("beacon queued:", queued, measurementData);
         } catch (error) {
           // 計測処理が失敗してもエラーを出さず、遷移は実行
           console.warn('計測処理でエラーが発生しました:', error);
