@@ -40,12 +40,21 @@ const SearchFilter = {
     // フリーワード検索
     if (params.q) {
       const query = params.q.toLowerCase();
-      filtered = filtered.filter(event =>
-        event.title.toLowerCase().includes(query) ||
-        event.description.toLowerCase().includes(query) ||
-        event.area.toLowerCase().includes(query) ||
-        event.category.toLowerCase().includes(query)
-      );
+      filtered = filtered.filter(event => {
+        const texts = [];
+        if (event.title) texts.push(event.title);
+        if (event.name) texts.push(event.name); // API側で title が name になっている場合に対応
+        if (event.description) texts.push(event.description);
+        if (event.area) texts.push(event.area);
+        if (event.area_name) texts.push(event.area_name);
+        if (event.category) texts.push(event.category);
+        if (event.category_name) texts.push(event.category_name);
+        if (event.category && event.category.name) texts.push(event.category.name);
+
+        return texts.some(text =>
+          typeof text === 'string' && text.toLowerCase().includes(query)
+        );
+      });
     }
 
     // カテゴリ検索
@@ -64,11 +73,25 @@ const SearchFilter = {
       });
     }
 
-    // エリア検索
+    // エリア検索（area_id 前提）
     if (params.area) {
-      filtered = filtered.filter(event =>
-        event.area === params.area || event.prefecture === params.area
-      );
+      const target = params.area;
+      filtered = filtered.filter(event => {
+        const areaId =
+          event.areaId ||
+          event.area_id ||
+          (event.area && event.area.id);
+        const areaSlug = event.area_slug || event.areaSlug;
+        const areaName = event.area || event.area_name;
+        const prefecture = event.prefecture;
+
+        return (
+          (areaId != null && String(areaId) === String(target)) || // id一致（推奨）
+          (areaSlug && String(areaSlug) === String(target)) ||     // slug指定時
+          (areaName && areaName === target) ||                     // 旧実装（エリア名）
+          (prefecture && prefecture === target)                    // 旧実装（都道府県）
+        );
+      });
     }
 
     // 開催日検索
@@ -147,7 +170,7 @@ const SearchFilter = {
     const events = eventData.events;
     const q = (params.q || '').toLowerCase();
     const categoryId = params.category || '';
-    const area = params.area || '';
+    const areaParam = params.area || '';
     const dateParam = params.date || '';
     const weekdayParam = params.weekday || '';
 
@@ -191,10 +214,19 @@ const SearchFilter = {
           }
         }
 
-        // エリア一致（エリア or 都道府県）
-        if (area) {
-          if (event.area === area) score += 3;
-          if (event.prefecture === area) score += 2;
+        // エリア一致（area_id / slug / 名称 / 都道府県）
+        if (areaParam) {
+          const areaId =
+            event.areaId ||
+            event.area_id ||
+            (event.area && event.area.id);
+          const areaSlug = event.area_slug || event.areaSlug;
+          const areaName = event.area || event.area_name;
+
+          if (areaId != null && String(areaId) === String(areaParam)) score += 5;
+          if (areaSlug && String(areaSlug) === String(areaParam)) score += 4;
+          if (areaName && areaName === areaParam) score += 3;
+          if (event.prefecture && event.prefecture === areaParam) score += 2;
         }
 
         // キーワード一致（タイトル・説明）
