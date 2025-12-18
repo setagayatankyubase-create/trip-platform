@@ -50,7 +50,18 @@ const SearchFilter = {
 
     // カテゴリ検索
     if (params.category) {
-      filtered = filtered.filter(event => event.categoryId === params.category);
+      const target = params.category;
+      filtered = filtered.filter(event => {
+        // API / ダミーデータ 両対応のため、複数パターンを許容
+        const id =
+          event.categoryId ||
+          event.category_id ||
+          (event.category && event.category.id) ||
+          (event.categories && event.categories[0] && event.categories[0].id);
+
+        // 文字列として比較（数値IDでもOKにする）
+        return id != null && String(id) === String(target);
+      });
     }
 
     // エリア検索
@@ -169,8 +180,15 @@ const SearchFilter = {
         let score = 0;
 
         // カテゴリ一致
-        if (categoryId && event.categoryId === categoryId) {
-          score += 5;
+        if (categoryId) {
+          const id =
+            event.categoryId ||
+            event.category_id ||
+            (event.category && event.category.id) ||
+            (event.categories && event.categories[0] && event.categories[0].id);
+          if (id != null && String(id) === String(categoryId)) {
+            score += 5;
+          }
         }
 
         // エリア一致（エリア or 都道府県）
