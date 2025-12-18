@@ -171,7 +171,7 @@
     }
 
     // フィルタ適用
-    function applyFilters() {
+    async function applyFilters() {
       const params = {
         q: document.getElementById('search-query')?.value || '',
         category: document.getElementById('search-category')?.value || '',
@@ -180,11 +180,11 @@
         weekday: document.getElementById('filter-weekday')?.value || ''
       };
       URLManager.updateParams(params);
-      loadEvents();
+      await loadEvents();
     }
 
     // モバイルフィルタ適用
-    function applyMobileFilters() {
+    async function applyMobileFilters() {
       const params = {
         q: document.getElementById('search-query')?.value || '',
         category: document.getElementById('mobile-filter-category')?.value || '',
@@ -194,7 +194,7 @@
       };
       URLManager.updateParams(params);
       BottomSheet.close();
-      loadEvents();
+      await loadEvents();
     }
 
     // フィルタリセット
@@ -204,7 +204,7 @@
     }
 
     // 検索処理
-    function handleSearch(event) {
+    async function handleSearch(event) {
       event.preventDefault();
       const formData = new FormData(event.target);
       const params = {
@@ -213,8 +213,10 @@
         date: formData.get('date') || '',
         area: formData.get('area') || ''
       };
+      // URLパラメータを更新
       URLManager.setParams(params);
-      loadEvents();
+      // loadEvents は async なので await する
+      await loadEvents();
     }
 
     // 一覧用フィルタ処理（events_index を前提に軽量実装）
@@ -421,6 +423,15 @@
     async function loadEvents() {
       const params = URLManager.getParams();
       const urlParams = new URLSearchParams(window.location.search);
+
+      // events_index が読み込まれていない場合は待つ
+      if (!Array.isArray(window.eventIndex)) {
+        try {
+          await loadEventIndex();
+        } catch (e) {
+          console.error('Failed to load event index:', e);
+        }
+      }
 
       // events_index が前提
       const index = Array.isArray(window.eventIndex) ? window.eventIndex : [];

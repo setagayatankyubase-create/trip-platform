@@ -1,9 +1,9 @@
-// イベント・提供元データを API から読み込む
-// GAS 側では type パラメータで役割を分けている:
-//   - type=index            ... 一覧用の軽量データ（events_index のみ）
-//   - type=event&id=evt-001 ... 1件分の詳細データ
-//   - type=meta             ... organizers / categories だけ
-//   - type=full             ... 互換用のフルデータ（既存ページ用・重い）
+// データ取得方針
+// - メイン導線: GitHub 上に毎日生成される静的 JSON を /data 配下から読む
+// - 互換用フォールバック: 旧 GAS API（ほぼ使わない・最後の保険）
+const DATA_BASE = "/data";
+
+// 旧APIベースURL（フォールバック用途のみ）
 const EVENTS_API_BASE =
   "https://script.google.com/macros/s/AKfycbwxeBSXOIksbSH3joSK9Zj6KEQ0gauLAxWk_xAP6EoD39paSgVKXBPlxIFAYjq3Q-8HUA/exec";
 const EVENTS_API_URL = `${EVENTS_API_BASE}?type=full`;
@@ -95,7 +95,7 @@ window.loadEventIndex = function loadEventIndex() {
   if (_eventIndexLoadingPromise) return _eventIndexLoadingPromise;
 
   const INDEX_STORAGE_KEY = "sotonavi_eventIndex_v1";
-  const CACHE_TTL_MS = 2 * 60 * 1000; // 2分
+  const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 1日（GitHub 更新が1日1回の想定）
 
   try {
     const cached = localStorage.getItem(INDEX_STORAGE_KEY);
@@ -113,7 +113,7 @@ window.loadEventIndex = function loadEventIndex() {
     console.warn("eventIndex cache read error:", e);
   }
 
-  const url = `${EVENTS_API_BASE}?type=index`;
+  const url = `${DATA_BASE}/events_index.json`;
   _eventIndexLoadingPromise = fetch(url, { cache: "no-store" })
     .then((res) => {
       if (!res.ok) {
@@ -122,9 +122,12 @@ window.loadEventIndex = function loadEventIndex() {
       return res.json();
     })
     .then((json) => {
-      window.eventIndex = Array.isArray(json.events_index)
-        ? json.events_index
+      // ルートが { events_index: [...] } でも単純配列でも対応
+      const index = Array.isArray(json.events_index) ? json.events_index
+        : Array.isArray(json) ? json
         : [];
+
+      window.eventIndex = index;
 
       try {
         const payload = {
@@ -153,7 +156,7 @@ window.loadEventMeta = function loadEventMeta() {
   }
   if (_eventMetaLoadingPromise) return _eventMetaLoadingPromise;
 
-  const url = `${EVENTS_API_BASE}?type=meta`;
+  const url = `${DATA_BASE}/meta.json`;
   _eventMetaLoadingPromise = fetch(url, { cache: "no-store" })
     .then((res) => {
       if (!res.ok) {
@@ -174,6 +177,23 @@ window.loadEventMeta = function loadEventMeta() {
 
       return window.eventMeta;
     })
+    .catch((err) => {
+      console.error("Failed to load meta.json, falling back to API:", err);
+      // 保険として旧APIにフォールバック（あれば）
+      const fallbackUrl = `${EVENTS_API_BASE}?type=meta`;
+      return fetch(fallbackUrl, { cache: "no-store" })
+        .then((res) => res.ok ? res.json() : { organizers: [], categories: [] })
+        .then((json) => {
+          window.eventMeta = {
+            organizers: Array.isArray(json.organizers) ? json.organizers : [],
+            categories: Array.isArray(json.categories) ? json.categories : [],
+          };
+          window.eventData = window.eventData || {};
+          window.eventData.organizers = window.eventMeta.organizers;
+          window.eventData.categories = window.eventMeta.categories;
+          return window.eventMeta;
+        });
+    })
     .finally(() => {
       _eventMetaLoadingPromise = null;
     });
@@ -187,9 +207,7 @@ window.loadEventDetail = function loadEventDetail(eventId) {
     return Promise.reject(new Error("eventId is required"));
   }
 
-  const url = `${EVENTS_API_BASE}?type=event&id=${encodeURIComponent(
-    eventId
-  )}`;
+  const url = `${DATA_BASE}/events/${encodeURIComponent(eventId)}.json`;
 
   return fetch(url, { cache: "no-store" })
     .then((res) => {
@@ -198,7 +216,19 @@ window.loadEventDetail = function loadEventDetail(eventId) {
       }
       return res.json();
     })
-    .then((json) => json.event || null);
+    .then((json) => {
+      // ファイルが { ...event } か { event: {...} } の両方に対応
+      return json && json.event ? json.event : json;
+    });
+};
+
+// ユーザーが使いやすいように、サンプルと同名の関数もエクスポートしておく
+window.fetchEventsIndex = function fetchEventsIndex() {
+  return loadEventIndex();
+};
+
+window.fetchEvent = function fetchEvent(id) {
+  return loadEventDetail(id);
 };
 
 
