@@ -249,6 +249,19 @@ const SearchFilter = {
         .map(item => item.event);
     }
 
+    // それでも空なら「おすすめイベント」か、なければ全体の先頭から埋める
+    if (result.length === 0) {
+      const recommended = SearchFilter.getRecommendedEvents
+        ? SearchFilter.getRecommendedEvents(events).slice(0, limit)
+        : [];
+
+      if (recommended.length) {
+        result = recommended;
+      } else {
+        result = events.slice(0, limit);
+      }
+    }
+
     return result;
   }
 };
