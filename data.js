@@ -1,12 +1,6 @@
 // データ取得方針
 // - メイン導線: GitHub 上に毎日生成される静的 JSON を /data 配下から読む
-// - 互換用フォールバック: 旧 GAS API（ほぼ使わない・最後の保険）
 const DATA_BASE = "/data";
-
-// 旧APIベースURL（フォールバック用途のみ）
-const EVENTS_API_BASE =
-  "https://script.google.com/macros/s/AKfycbwxeBSXOIksbSH3joSK9Zj6KEQ0gauLAxWk_xAP6EoD39paSgVKXBPlxIFAYjq3Q-8HUA/exec";
-const EVENTS_API_URL = `${EVENTS_API_BASE}?type=full`;
 
 // キャッシュ無効化用バージョン（シート構造やレスポンス形式を変えたら更新）
 const EVENT_CACHE_VERSION = "v1_2025-12-18";
@@ -22,15 +16,14 @@ let _eventIndexLoadingPromise = null;
 let _eventMetaLoadingPromise = null;
 
 window.loadEventData = function loadEventData() {
-  // すでに読み込み済みなら即座に解決
+  // すでに構築済みなら即返す
   if (window.eventData && window.eventIndex) {
     return Promise.resolve(window.eventData);
   }
-  // 読み込み中なら同じ Promise を使い回す
   if (_eventDataLoadingPromise) return _eventDataLoadingPromise;
 
   const STORAGE_KEY = "sotonavi_eventData_v1";
-  const CACHE_TTL_MS = 2 * 60 * 1000; // 2分（短めにして「更新されない」沼を避ける）
+  const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 1日
 
   // 1) localStorage キャッシュを試す
   try {
@@ -41,37 +34,65 @@ window.loadEventData = function loadEventData() {
         const age = Date.now() - parsed.timestamp;
         if (age < CACHE_TTL_MS) {
           window.eventData = parsed.data;
+          window.eventIndex = window.eventData.events || [];
+          window.eventMeta = {
+            organizers: window.eventData.organizers || [],
+            categories: window.eventData.categories || [],
+          };
           return Promise.resolve(window.eventData);
         }
       }
     }
   } catch (e) {
-    // localStorage が使えなくても処理は続行
     console.warn("eventData cache read error:", e);
   }
 
-  // 2) キャッシュが無ければ API から取得
-  _eventDataLoadingPromise = fetch(EVENTS_API_URL, { cache: "no-store" })
-    .then((res) => {
-      if (!res.ok) {
-        throw new Error(`Failed to load events: ${res.status}`);
-      }
-      return res.json();
-    })
-    .then((json) => {
-      // フルデータ
-      window.eventData = json;
-      // 一覧用のインデックス（なければ空配列でフォールバック）
-      window.eventIndex = Array.isArray(json.events_index)
-        ? json.events_index
-        : [];
+  // 2) キャッシュが無ければ static JSON から組み立て
+  _eventDataLoadingPromise = Promise.all([loadEventIndex(), loadEventMeta()])
+    .then(([index, meta]) => {
+      const events = (index || []).map((e) => {
+        // dates を next_date / date_min から合成（index.html / SearchFilter 用）
+        let dates = [];
+        if (e.next_date) {
+          dates.push({ date: e.next_date });
+        } else if (e.date_min) {
+          dates.push({ date: e.date_min });
+        }
 
-      // 取得結果を localStorage にキャッシュ
+        return {
+          id: e.id,
+          title: e.title,
+          description: e.description || "",
+          image: e.image,
+          area: e.area || e.city || "",
+          prefecture: e.prefecture || "",
+          dates,
+          duration: e.duration || "",
+          price: e.price,
+          targetAge: e.targetAge || "",
+          highlights: e.highlights || [],
+          notes: e.notes || "",
+          organizerId: e.organizerId || "",
+          externalLink: e.externalLink || "",
+          isRecommended: !!e.isRecommended,
+          isNew: !!e.isNew,
+          publishedAt: e.publishedAt || e.next_date || "",
+          categoryId: e.categoryId || "",
+        };
+      });
+
+      window.eventData = {
+        events,
+        organizers: meta.organizers || [],
+        categories: meta.categories || [],
+      };
+      window.eventIndex = index;
+
       try {
         const payload = {
           timestamp: Date.now(),
           version: EVENT_CACHE_VERSION,
-          data: json,
+          data: window.eventData,
         };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
       } catch (e) {
@@ -114,7 +135,7 @@ window.loadEventIndex = function loadEventIndex() {
   }
 
   const url = `${DATA_BASE}/events_index.json`;
-  _eventIndexLoadingPromise = fetch(url, { cache: "no-store" })
+  _eventIndexLoadingPromise = fetch(url)
     .then((res) => {
       if (!res.ok) {
         throw new Error(`Failed to load event index: ${res.status}`);
@@ -157,7 +178,7 @@ window.loadEventMeta = function loadEventMeta() {
   if (_eventMetaLoadingPromise) return _eventMetaLoadingPromise;
 
   const url = `${DATA_BASE}/meta.json`;
-  _eventMetaLoadingPromise = fetch(url, { cache: "no-store" })
+  _eventMetaLoadingPromise = fetch(url)
     .then((res) => {
       if (!res.ok) {
         throw new Error(`Failed to load event meta: ${res.status}`);
@@ -177,23 +198,6 @@ window.loadEventMeta = function loadEventMeta() {
 
       return window.eventMeta;
     })
-    .catch((err) => {
-      console.error("Failed to load meta.json, falling back to API:", err);
-      // 保険として旧APIにフォールバック（あれば）
-      const fallbackUrl = `${EVENTS_API_BASE}?type=meta`;
-      return fetch(fallbackUrl, { cache: "no-store" })
-        .then((res) => res.ok ? res.json() : { organizers: [], categories: [] })
-        .then((json) => {
-          window.eventMeta = {
-            organizers: Array.isArray(json.organizers) ? json.organizers : [],
-            categories: Array.isArray(json.categories) ? json.categories : [],
-          };
-          window.eventData = window.eventData || {};
-          window.eventData.organizers = window.eventMeta.organizers;
-          window.eventData.categories = window.eventMeta.categories;
-          return window.eventMeta;
-        });
-    })
     .finally(() => {
       _eventMetaLoadingPromise = null;
     });
@@ -209,7 +213,7 @@ window.loadEventDetail = function loadEventDetail(eventId) {
 
   const url = `${DATA_BASE}/events/${encodeURIComponent(eventId)}.json`;
 
-  return fetch(url, { cache: "no-store" })
+  return fetch(url)
     .then((res) => {
       if (!res.ok) {
         throw new Error(`Failed to load event detail: ${res.status}`);
