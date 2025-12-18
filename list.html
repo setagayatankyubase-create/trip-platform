@@ -321,7 +321,7 @@
       ];
 
       const categories = (eventData && eventData.categories) ? eventData.categories : [];
-      const areas = (eventData && eventData.areas) ? eventData.areas : [];
+      let areas = (eventData && eventData.areas) ? eventData.areas : [];
 
       // カテゴリ: 単純に id / name で表示
       selects.forEach(selectId => {
@@ -336,8 +336,34 @@
         }
       });
 
+      // エリアマスタが無い場合は、イベントから動的にエリア候補を生成
+      if (!areas || !areas.length) {
+        const areaMap = {};
+        if (eventData && Array.isArray(eventData.events)) {
+          eventData.events.forEach(ev => {
+            const id =
+              ev.area_id ||
+              ev.areaId ||
+              (ev.area && ev.area.id) ||
+              ev.area_slug ||
+              ev.area ||
+              ev.prefecture;
+            const name =
+              ev.area_name ||
+              (ev.area && ev.area.name) ||
+              ev.area ||
+              ev.prefecture ||
+              id;
+            if (id && !areaMap[id]) {
+              areaMap[id] = { id, name };
+            }
+          });
+        }
+        areas = Object.values(areaMap);
+      }
+
       // エリア: 文字列配列 or オブジェクト配列の両方に対応
-      if (areas.length) {
+      if (areas && areas.length) {
         // オブジェクト配列の場合は親子関係を考慮してラベルを作る
         const first = areas[0];
         let areaById = {};
