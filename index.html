@@ -262,13 +262,45 @@
     }
 
     // イベントブロックの表示（events_index ベース）
-    function renderEventBlocks() {
+    async function renderEventBlocks() {
       const MAX_HOME_EVENTS = 8;
       
       // eventIndex を優先、なければ eventData.events から構築
-      const source = Array.isArray(window.eventIndex) && window.eventIndex.length > 0
+      let source = Array.isArray(window.eventIndex) && window.eventIndex.length > 0
         ? window.eventIndex
         : (Array.isArray(eventData?.events) ? eventData.events : []);
+      
+      // next_date が無い場合、最初の数件の詳細JSONから日付を補完
+      if (source.length > 0 && !source[0].next_date && !source[0].date_min && (!source[0].dates || source[0].dates.length === 0)) {
+        console.log('[renderEventBlocks] next_date not found, enriching from detail JSONs...');
+        try {
+          const sampleIds = source.slice(0, 20).map(e => e.id).filter(Boolean);
+          const detailPromises = sampleIds.map(id => 
+            loadEventDetail(id).catch(() => null)
+          );
+          const details = await Promise.all(detailPromises);
+          const detailMap = {};
+          details.forEach(d => {
+            if (d && d.id) detailMap[d.id] = d;
+          });
+          
+          // source に dates を補完
+          source = source.map(item => {
+            const detail = detailMap[item.id];
+            if (detail && detail.dates && Array.isArray(detail.dates) && detail.dates.length > 0) {
+              return { ...item, dates: detail.dates, next_date: detail.dates[0].date };
+            }
+            return item;
+          });
+        } catch (e) {
+          console.warn('[renderEventBlocks] Failed to enrich dates:', e);
+        }
+      }
+
+      console.log('[renderEventBlocks] source length:', source.length);
+      if (source.length > 0) {
+        console.log('[renderEventBlocks] sample event:', source[0]);
+      }
 
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -289,62 +321,73 @@
         .slice(0, MAX_HOME_EVENTS);
 
       // 直近開催：next_date または dates[0].date または date_min が今日から7日以内
-      const upcoming = source
-        .filter(e => {
+      // まず、日付情報があるイベントを全て取得（フィルタリング条件を緩和）
+      const upcomingCandidates = source.filter(e => {
+        return e.next_date || (e.dates && Array.isArray(e.dates) && e.dates.length > 0) || e.date_min;
+      });
+      
+      console.log('[renderEventBlocks] upcomingCandidates:', upcomingCandidates.length);
+      
+      const upcoming = upcomingCandidates
+        .map(e => {
           let eventDate = null;
+          let dateSource = null;
           
           // 優先順位: next_date > dates[0].date > date_min
           if (e.next_date) {
             try {
               eventDate = new Date(e.next_date);
-              if (isNaN(eventDate.getTime())) return false;
+              if (!isNaN(eventDate.getTime())) {
+                dateSource = 'next_date';
+              }
             } catch (err) {
-              return false;
-            }
-          } else if (e.dates && Array.isArray(e.dates) && e.dates.length > 0 && e.dates[0] && e.dates[0].date) {
-            try {
-              eventDate = new Date(e.dates[0].date);
-              if (isNaN(eventDate.getTime())) return false;
-            } catch (err) {
-              return false;
-            }
-          } else if (e.date_min) {
-            try {
-              eventDate = new Date(e.date_min);
-              if (isNaN(eventDate.getTime())) return false;
-            } catch (err) {
-              return false;
+              // ignore
             }
           }
           
-          if (!eventDate) return false;
+          if (!eventDate && e.dates && Array.isArray(e.dates) && e.dates.length > 0 && e.dates[0] && e.dates[0].date) {
+            try {
+              eventDate = new Date(e.dates[0].date);
+              if (!isNaN(eventDate.getTime())) {
+                dateSource = 'dates[0].date';
+              }
+            } catch (err) {
+              // ignore
+            }
+          }
           
-          eventDate.setHours(0, 0, 0, 0);
+          if (!eventDate && e.date_min) {
+            try {
+              eventDate = new Date(e.date_min);
+              if (!isNaN(eventDate.getTime())) {
+                dateSource = 'date_min';
+              }
+            } catch (err) {
+              // ignore
+            }
+          }
+          
+          return { event: e, eventDate, dateSource };
+        })
+        .filter(item => {
+          if (!item.eventDate) return false;
+          
+          item.eventDate.setHours(0, 0, 0, 0);
           const limit = new Date(today);
           limit.setDate(today.getDate() + 7);
-          return eventDate >= today && eventDate <= limit;
+          const isInRange = item.eventDate >= today && item.eventDate <= limit;
+          
+          if (isInRange) {
+            console.log('[renderEventBlocks] upcoming event:', item.event.title, 'date:', item.eventDate, 'source:', item.dateSource);
+          }
+          
+          return isInRange;
         })
-        .sort((a, b) => {
-          const getDate = (item) => {
-            if (item.next_date) {
-              const d = new Date(item.next_date);
-              return isNaN(d.getTime()) ? new Date(9999, 0, 1) : d;
-            }
-            if (item.dates && Array.isArray(item.dates) && item.dates.length > 0 && item.dates[0] && item.dates[0].date) {
-              const d = new Date(item.dates[0].date);
-              return isNaN(d.getTime()) ? new Date(9999, 0, 1) : d;
-            }
-            if (item.date_min) {
-              const d = new Date(item.date_min);
-              return isNaN(d.getTime()) ? new Date(9999, 0, 1) : d;
-            }
-            return new Date(9999, 0, 1);
-          };
-          const aDate = getDate(a);
-          const bDate = getDate(b);
-          return aDate - bDate; // 早い順
-        })
-        .slice(0, MAX_HOME_EVENTS);
+        .sort((a, b) => a.eventDate - b.eventDate) // 早い順
+        .slice(0, MAX_HOME_EVENTS)
+        .map(item => item.event);
+      
+      console.log('[renderEventBlocks] final upcoming count:', upcoming.length);
 
       CardRenderer.renderCarousel(recommended, 'recommended-events');
       CardRenderer.renderCarousel(newEvents, 'new-events');
@@ -390,7 +433,7 @@
 
         renderCategories();
         renderWeekCalendar();
-        renderEventBlocks();
+        await renderEventBlocks();
 
         // ヘッダー検索欄の表示切り替え（ヒステリシス付きで点滅を防止）
         let isHeaderSearchVisible = false;
