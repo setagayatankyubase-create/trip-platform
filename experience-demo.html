@@ -336,7 +336,13 @@
     </div>
   </footer>
 
-  <script src="data.js"></script>
+  <script>
+    // GitHub raw URL（organizerId が空の場合のフォールバック用）
+    // 例: "https://raw.githubusercontent.com/owner/repo/main"
+    // TODO: 実際のリポジトリ情報に置き換えてください
+    window.GITHUB_RAW_BASE = "https://raw.githubusercontent.com/OWNER/REPO/main";
+  </script>
+  <script src="data.js?v=v3_2025-12-21"></script>
   <script src="app.js"></script>
   <script src="event-template.js"></script>
   <script>

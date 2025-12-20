@@ -1,26 +1,58 @@
 // データ取得方針
-// - メイン導線: GitHub 上に毎日生成される静的 JSON を /data 配下から読む
-// - フォールバック: organizerId が空の場合、GitHub raw から読み込む
+// - メイン導線: GitHub Pages の /data 配下
+// - フォールバック: /data が壊れてる・古い・HTML返す等なら GitHub raw へ
 const DATA_BASE = "/data";
 
-// GitHub raw URL（organizerId が空の場合のフォールバック用）
-// 必要に応じて環境に合わせて設定してください
 // 例: "https://raw.githubusercontent.com/owner/repo/main"
-const GITHUB_RAW_BASE = window.GITHUB_RAW_BASE || "";
+const sanitizeBase = (s) => String(s || "").trim().replace(/\/+$/, "");
+const GITHUB_RAW_BASE = sanitizeBase(window.GITHUB_RAW_BASE || "");
 
-// キャッシュ無効化用バージョン（シート構造やレスポンス形式を変えたら更新）
-const EVENT_CACHE_VERSION = "v3_2025-12-21"; // v3: GitHub raw フォールバック対応
+// キャッシュ無効化用バージョン（構造変えたら必ず上げる）
+const EVENT_CACHE_VERSION = "v3_2025-12-21";
 
 // キャッシュキー（バージョンと連動）
 const STORAGE_KEY_BASE = `sotonavi_eventData_${EVENT_CACHE_VERSION}`;
 const INDEX_STORAGE_KEY_BASE = `sotonavi_eventIndex_${EVENT_CACHE_VERSION}`;
 
-// organizerId正規化ヘルパー（唯一の入口、空文字も殺す）
+// JSONの形を「配列」に正規化（{events_index:[...]} / [...] どっちも対応）
+const toIndexArray = (json) =>
+  Array.isArray(json?.events_index) ? json.events_index :
+  Array.isArray(json) ? json :
+  [];
+
+// organizerId 正規化（空文字を殺す）
 const normalizeId = (v) => {
   if (v === null || v === undefined) return undefined;
   const s = String(v).trim();
   return s.length > 0 ? s : undefined;
 };
+
+// 「IDの健全性」：有効率で判定（some()は危険）
+const organizerIdValidRate = (arr) => {
+  const a = Array.isArray(arr) ? arr : [];
+  const total = a.length || 1;
+  const valid = a.filter(e => String(e?.organizerId || "").trim().length > 0).length;
+  return valid / total;
+};
+
+// fetchして「JSONであること」を保証（404 HTMLを即発見）
+async function fetchJsonStrict_(url) {
+  const res = await fetch(url, { cache: "no-store" });
+  const ct = (res.headers.get("content-type") || "").toLowerCase();
+
+  if (!res.ok) {
+    const head = await res.text().catch(() => "");
+    throw new Error(`[HTTP ${res.status}] ${url} head=${head.slice(0, 160)}`);
+  }
+
+  // GitHub Pages 404などで text/html が返るのを即検知
+  if (!ct.includes("application/json")) {
+    const head = await res.text().catch(() => "");
+    throw new Error(`[NOT JSON] ${ct} ${url} head=${head.slice(0, 160)}`);
+  }
+
+  return await res.json();
+}
 
 // organizerId補完が必要かどうかの判定（organizerId統一対応）
 const needsOrganizerIdLookup = (e) => {
@@ -145,21 +177,22 @@ window.loadEventIndex = function loadEventIndex() {
   if (_eventIndexLoadingPromise) return _eventIndexLoadingPromise;
 
   const INDEX_STORAGE_KEY = INDEX_STORAGE_KEY_BASE;
-  const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 1日（GitHub 更新が1日1回の想定）
+  const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
+  // 1) キャッシュ（ただし organizerId が薄い/空なら捨てる）
   try {
     const cached = localStorage.getItem(INDEX_STORAGE_KEY);
     if (cached) {
       const parsed = JSON.parse(cached);
-      if (parsed && parsed.timestamp && parsed.data && parsed.version === EVENT_CACHE_VERSION) {
+      if (parsed?.timestamp && parsed?.data && parsed?.version === EVENT_CACHE_VERSION) {
         const age = Date.now() - parsed.timestamp;
         if (age < CACHE_TTL_MS) {
-          // ★organizerId が無い index キャッシュは捨てる
-          if (!Array.isArray(parsed.data) || !parsed.data.some(e => String(e?.organizerId || "").trim())) {
-            console.warn("[CACHE] cached eventIndex missing organizerId. Ignore cache and refetch.");
-          } else {
+          const rate = organizerIdValidRate(parsed.data);
+          if (rate >= 0.9) {
             window.eventIndex = parsed.data;
             return Promise.resolve(window.eventIndex);
+          } else {
+            console.warn("[CACHE] eventIndex organizerId rate low. Ignore cache.", rate);
           }
         }
       }
@@ -168,135 +201,125 @@ window.loadEventIndex = function loadEventIndex() {
     console.warn("eventIndex cache read error:", e);
   }
 
-  // まず /data から読み込む
-  const url = `${DATA_BASE}/events_index.json`;
-  _eventIndexLoadingPromise = fetch(url, { cache: "no-store" })
-    .then(async (res) => {
-      console.log("[TRACE] index fetch", res.status, res.url, res.headers.get("content-type"));
-      const txt = await res.text();
-      console.log("[TRACE] index head", txt.slice(0, 120));
-      const json = JSON.parse(txt);
-      console.log("[TRACE] index keys", Object.keys(json));
-      console.log("[TRACE] index length", (json.events_index || []).length);
-      
-      if (!res.ok) {
-        throw new Error(`Failed to load event index: ${res.status}`);
-      }
-      return json;
-    })
-    .then((json) => {
-      // ルートが { events_index: [...] } でも単純配列でも対応
-      const raw = Array.isArray(json.events_index) ? json.events_index
-        : Array.isArray(json) ? json
-        : [];
+  // 2) /data → 壊れてたら raw へ
+  _eventIndexLoadingPromise = (async () => {
+    const primaryUrl = `${DATA_BASE}/events_index.json`;
 
-      // ★根本治療：organizerId が空文字列の場合、GitHub raw にフォールバック
-      const hasValidOrganizerId = raw.some(e => String(e?.organizerId || "").trim().length > 0);
-      
-      if (!hasValidOrganizerId && GITHUB_RAW_BASE) {
-        console.warn("[FALLBACK] organizerId is empty in /data/events_index.json, falling back to GitHub raw");
+    let arr = [];
+    try {
+      const json = await fetchJsonStrict_(primaryUrl);
+      arr = toIndexArray(json);
+    } catch (e) {
+      console.warn("[INDEX] primary failed:", e.message);
+    }
+
+    // /dataが取れても organizerId が薄いなら「壊れてる」とみなす
+    const primaryRate = organizerIdValidRate(arr);
+
+    if (primaryRate < 0.9) {
+      if (!GITHUB_RAW_BASE) {
+        console.warn("[FALLBACK] GITHUB_RAW_BASE not set. Using primary as-is. rate=", primaryRate);
+      } else {
         const fallbackUrl = `${GITHUB_RAW_BASE}/data/events_index.json`;
-        return fetch(fallbackUrl, { cache: "no-store" })
-          .then(async (res) => {
-            if (!res.ok) {
-              throw new Error(`Failed to load event index from GitHub: ${res.status}`);
-            }
-            console.log("[FALLBACK] GitHub raw fetch", res.status, res.url);
-            return res.json();
-          })
-          .then((fallbackJson) => {
-            const fallbackRaw = Array.isArray(fallbackJson.events_index) ? fallbackJson.events_index
-              : Array.isArray(fallbackJson) ? fallbackJson
-              : [];
-            console.log("[FALLBACK] GitHub raw index length", fallbackRaw.length);
-            return fallbackRaw;
-          });
+        console.warn("[FALLBACK] using GitHub raw. primary rate=", primaryRate, fallbackUrl);
+
+        const fbJson = await fetchJsonStrict_(fallbackUrl);
+        const fbArr = toIndexArray(fbJson);
+        const fbRate = organizerIdValidRate(fbArr);
+
+        if (fbArr.length > 0 && fbRate >= primaryRate) {
+          arr = fbArr;
+        } else {
+          console.warn("[FALLBACK] raw not better. fbRate=", fbRate, "primaryRate=", primaryRate);
+        }
       }
-      
-      return raw;
-    })
-    .then((raw) => {
-      // ★最重要：index を「唯一の真実」にするため、ここで正規化
-      const index = raw.map(e => ({
-        ...e,
-        organizerId: normalizeId(e.organizerId)
+    }
+
+    // 3) organizerId 正規化
+    const index = (arr || []).map(e => ({
+      ...e,
+      organizerId: normalizeId(e.organizerId),
+    }));
+
+    // 4) まだ全滅ならエラーを見える化（原因は生成/配信/パス）
+    const finalRate = organizerIdValidRate(index);
+    if (index.length > 0 && finalRate < 0.9) {
+      console.error("[INDEX] organizerId still low after fallback. rate=", finalRate);
+    }
+
+    window.eventIndex = index;
+
+    // 5) キャッシュ
+    try {
+      localStorage.setItem(INDEX_STORAGE_KEY, JSON.stringify({
+        timestamp: Date.now(),
+        version: EVENT_CACHE_VERSION,
+        data: window.eventIndex,
       }));
+    } catch (e) {
+      console.warn("eventIndex cache write error:", e);
+    }
 
-      console.log("[INDEX normalized organizerId sample]",
-        index.slice(0, 5).map(e => e.organizerId)
-      );
-
-      // ★organizerId が空の index は採用しない（フォールバック後でも空ならエラー）
-      if (!index.some(e => e.organizerId)) {
-        console.error("[ERROR] organizerId is still empty after fallback. Data may be corrupted.");
-      }
-
-      window.eventIndex = index;
-
-      // ★注意: window.eventData.events は loadEventData() が設定する
-      // ここでは触らない（上書き競合を防ぐ）
-
-      try {
-        const payload = {
-          timestamp: Date.now(),
-          version: EVENT_CACHE_VERSION,
-          data: window.eventIndex,
-        };
-        localStorage.setItem(INDEX_STORAGE_KEY, JSON.stringify(payload));
-      } catch (e) {
-        console.warn("eventIndex cache write error:", e);
-      }
-
-      return window.eventIndex;
-    })
-    .catch((err) => {
-      console.error("[ERROR] Failed to load event index:", err);
-      // エラー時は空配列を返す
-      window.eventIndex = [];
-      return window.eventIndex;
-    })
-    .finally(() => {
-      _eventIndexLoadingPromise = null;
-    });
+    return window.eventIndex;
+  })()
+  .catch((err) => {
+    console.error("[ERROR] Failed to load event index:", err);
+    window.eventIndex = [];
+    return window.eventIndex;
+  })
+  .finally(() => {
+    _eventIndexLoadingPromise = null;
+  });
 
   return _eventIndexLoadingPromise;
 };
 
 // organizers / categories だけを読み込む
 window.loadEventMeta = function loadEventMeta() {
-  if (window.eventMeta) {
-    return Promise.resolve(window.eventMeta);
-  }
+  if (window.eventMeta) return Promise.resolve(window.eventMeta);
   if (_eventMetaLoadingPromise) return _eventMetaLoadingPromise;
 
-  const url = `${DATA_BASE}/meta.json`;
-  _eventMetaLoadingPromise = fetch(url)
-    .then(async (res) => {
-      // meta.json が存在しない／エラーでもサイトは止めない
-      if (!res.ok) {
-        return { organizers: [], categories: [], areas: [] };
+  _eventMetaLoadingPromise = (async () => {
+    const primaryUrl = `${DATA_BASE}/meta.json`;
+
+    let metaJson = null;
+    try {
+      metaJson = await fetchJsonStrict_(primaryUrl);
+    } catch (e) {
+      console.warn("[META] primary failed:", e.message);
+    }
+
+    let organizers = Array.isArray(metaJson?.organizers) ? metaJson.organizers : [];
+    let categories = Array.isArray(metaJson?.categories) ? metaJson.categories : [];
+    let areas      = Array.isArray(metaJson?.areas) ? metaJson.areas : [];
+
+    // organizers が空なら raw に逃げる（/data が古い・未更新対策）
+    if (organizers.length === 0 && GITHUB_RAW_BASE) {
+      const fallbackUrl = `${GITHUB_RAW_BASE}/data/meta.json`;
+      try {
+        console.warn("[META FALLBACK] using GitHub raw:", fallbackUrl);
+        const fb = await fetchJsonStrict_(fallbackUrl);
+        organizers = Array.isArray(fb?.organizers) ? fb.organizers : organizers;
+        categories = Array.isArray(fb?.categories) ? fb.categories : categories;
+        areas      = Array.isArray(fb?.areas) ? fb.areas : areas;
+      } catch (e) {
+        console.warn("[META FALLBACK] failed:", e.message);
       }
-      return res.json();
-    })
-    .then((json) => {
-      const meta = {
-        organizers: Array.isArray(json?.organizers) ? json.organizers : [],
-        categories: Array.isArray(json?.categories) ? json.categories : [],
-        areas: Array.isArray(json?.areas) ? json.areas : [],
-      };
+    }
 
-      window.eventMeta = meta;
+    const meta = { organizers, categories, areas };
+    window.eventMeta = meta;
 
-      // 従来の eventData.categories / organizers を期待しているコード向けに最低限マージ
-      window.eventData = window.eventData || {};
-      window.eventData.organizers = meta.organizers;
-      window.eventData.categories = meta.categories;
+    // 互換：eventDataにマージ（他ページが参照しても落ちない）
+    window.eventData = window.eventData || {};
+    window.eventData.organizers = organizers;
+    window.eventData.categories = categories;
 
-      return meta;
-    })
-    .finally(() => {
-      _eventMetaLoadingPromise = null;
-    });
+    return meta;
+  })()
+  .finally(() => {
+    _eventMetaLoadingPromise = null;
+  });
 
   return _eventMetaLoadingPromise;
 };
