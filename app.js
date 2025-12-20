@@ -14,6 +14,8 @@ const ClickTracker = {
       let resetCount = 0;
       keys.forEach(key => {
         if (key.startsWith('sotonavi_clicked_')) {
+          const value = localStorage.getItem(key);
+          console.log(`[ClickTracker] Removing: ${key} = ${value}`);
           localStorage.removeItem(key);
           resetCount++;
         }
@@ -23,6 +25,41 @@ const ClickTracker = {
     } catch (e) {
       console.error('[ClickTracker] Reset failed:', e);
       return 0;
+    }
+  },
+
+  // 現在の集計済みデータを確認（開発者コンソールから ClickTracker.status() で実行可能）
+  status() {
+    try {
+      const keys = Object.keys(localStorage);
+      const tracked = [];
+      keys.forEach(key => {
+        if (key.startsWith('sotonavi_clicked_')) {
+          const value = localStorage.getItem(key);
+          try {
+            const parsed = JSON.parse(value);
+            const age = Date.now() - parsed.timestamp;
+            tracked.push({
+              key: key,
+              eventId: parsed.eventId,
+              timestamp: new Date(parsed.timestamp).toISOString(),
+              ageSeconds: Math.round(age / 1000),
+              ageMinutes: Math.round(age / 60000 * 10) / 10
+            });
+          } catch (e) {
+            tracked.push({
+              key: key,
+              value: value,
+              error: 'Invalid format'
+            });
+          }
+        }
+      });
+      console.table(tracked);
+      return tracked;
+    } catch (e) {
+      console.error('[ClickTracker] Status failed:', e);
+      return [];
     }
   },
 
@@ -37,6 +74,7 @@ const ClickTracker = {
     // 連打防止：10分間に1イベント1回まで（同じ人がクリックするのを制限）
     // 別のイベントIDなら別々に記録される（各イベントごとに独立）
     const storageKey = `sotonavi_clicked_${eventId}`; // イベントIDごとに別のキー
+    console.log('[ClickTracker] Using storageKey:', storageKey);
     const RESET_PERIOD_MS = 10 * 60 * 1000; // 10分
     
     try {
@@ -131,10 +169,11 @@ const ClickTracker = {
     // 送信済みフラグを保存（10分間有効、同じ人がクリックするのを制限）
     try {
       const cacheData = {
-        eventId: eventId,
+        eventId: eventId, // 確実にeventIdを含める
         timestamp: Date.now()
       };
       localStorage.setItem(storageKey, JSON.stringify(cacheData));
+      console.log('[ClickTracker] ✅ Saved to localStorage:', storageKey, cacheData);
       // 10分後にフラグを削除（簡易実装）
       setTimeout(() => {
         try {

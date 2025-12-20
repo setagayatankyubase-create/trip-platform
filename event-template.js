@@ -352,6 +352,7 @@ const EventPageRenderer = {
             // 連打防止：10分間に1イベント1回まで（同じ人がクリックするのを制限）
             // 各イベントIDごとに独立して記録される
             const storageKey = `sotonavi_clicked_${event.id}`;
+            console.log('[ClickTracker] Using storageKey:', storageKey);
             const RESET_PERIOD_MS = 10 * 60 * 1000; // 10分
             
             try {
@@ -453,10 +454,11 @@ const EventPageRenderer = {
               // 送信済みフラグを保存（10分間有効、送信成功・失敗に関わらず記録）
               try {
                 const cacheData = {
-                  eventId: event.id,
+                  eventId: event.id, // 確実にeventIdを含める
                   timestamp: Date.now()
                 };
                 localStorage.setItem(storageKey, JSON.stringify(cacheData));
+                console.log('[ClickTracker] ✅ Saved to localStorage:', storageKey, cacheData);
                 // 10分後にフラグを削除（簡易実装）
                 setTimeout(() => {
                   try {
