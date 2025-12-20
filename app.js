@@ -34,10 +34,10 @@ const ClickTracker = {
       return;
     }
     
-    // 連打防止：同一デバイスで1イベントにつき1回まで（1週間でリセット）
+    // 連打防止：10分間に1イベント1回まで（同じ人がクリックするのを制限）
     // 別のイベントIDなら別々に記録される（各イベントごとに独立）
     const storageKey = `sotonavi_clicked_${eventId}`; // イベントIDごとに別のキー
-    const RESET_PERIOD_MS = 7 * 24 * 60 * 60 * 1000; // 1週間
+    const RESET_PERIOD_MS = 10 * 60 * 1000; // 10分
     
     try {
       const cached = localStorage.getItem(storageKey);
@@ -47,10 +47,10 @@ const ClickTracker = {
         if (parsed && parsed.timestamp && parsed.eventId === eventId) {
           const age = Date.now() - parsed.timestamp;
           if (age < RESET_PERIOD_MS) {
-            console.log('[ClickTracker] Already sent within 1 week, skipping:', eventId);
-            return; // このイベントIDは1週間以内に送信済み（別のイベントIDは影響なし）
+            console.log('[ClickTracker] Already sent within 10 minutes, skipping:', eventId);
+            return; // このイベントIDは10分以内に送信済み（別のイベントIDは影響なし）
           }
-          // 1週間経過していれば古いデータを削除（下で新しいデータを保存）
+          // 10分経過していれば古いデータを削除（下で新しいデータを保存）
         }
       }
     } catch (storageError) {
@@ -99,14 +99,14 @@ const ClickTracker = {
       });
     }
 
-    // 送信済みフラグを保存（1週間有効、同一デバイスで1イベントにつき1回まで）
+    // 送信済みフラグを保存（10分間有効、同じ人がクリックするのを制限）
     try {
       const cacheData = {
         eventId: eventId,
         timestamp: Date.now()
       };
       localStorage.setItem(storageKey, JSON.stringify(cacheData));
-      // 1週間後にフラグを削除（簡易実装）
+      // 10分後にフラグを削除（簡易実装）
       setTimeout(() => {
         try {
           localStorage.removeItem(storageKey);
