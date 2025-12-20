@@ -48,9 +48,13 @@ const ClickTracker = {
         try {
           const parsed = JSON.parse(cached);
           if (parsed && typeof parsed === 'object' && parsed.timestamp) {
-            // 新しい形式
+            // 新しい形式：eventIdも確認（念のため）
             if (parsed.eventId === eventId) {
               timestamp = parsed.timestamp;
+            } else {
+              // 異なるeventIdのデータが混入している場合は削除
+              console.warn('[ClickTracker] Stale data for different eventId, removing:', storageKey);
+              localStorage.removeItem(storageKey);
             }
           }
         } catch (e) {
@@ -64,15 +68,20 @@ const ClickTracker = {
         // タイムスタンプがある場合、10分以内かチェック
         if (timestamp) {
           const age = Date.now() - timestamp;
+          console.log(`[ClickTracker] Event ${eventId}: cached age = ${Math.round(age / 1000)} seconds`);
           if (age < RESET_PERIOD_MS) {
-            console.log('[ClickTracker] Already sent within 10 minutes, skipping:', eventId);
+            console.log('[ClickTracker] Already sent within 10 minutes, skipping:', eventId, `(${Math.round(age / 1000)}秒前)`);
             return; // このイベントIDは10分以内に送信済み（別のイベントIDは影響なし）
+          } else {
+            // 10分経過しているので古いデータを削除
+            console.log(`[ClickTracker] Event ${eventId}: cache expired (${Math.round(age / 1000)}秒経過), removing`);
+            localStorage.removeItem(storageKey);
           }
-          // 10分経過していれば古いデータを削除（下で新しいデータを保存）
         }
       }
     } catch (storageError) {
       // localStorageが使えない環境でも計測は続行
+      console.warn('[ClickTracker] localStorage error:', storageError);
     }
 
     // GASにPOSTリクエストを送信（GAS側の実装に合わせる）

@@ -350,6 +350,7 @@ const EventPageRenderer = {
         // クリックイベントリスナーを登録（計測処理）
         bookingBtn.addEventListener('click', function(e) {
             // 連打防止：10分間に1イベント1回まで（同じ人がクリックするのを制限）
+            // 各イベントIDごとに独立して記録される
             const storageKey = `sotonavi_clicked_${event.id}`;
             const RESET_PERIOD_MS = 10 * 60 * 1000; // 10分
             
@@ -362,9 +363,13 @@ const EventPageRenderer = {
                 try {
                   const parsed = JSON.parse(cached);
                   if (parsed && typeof parsed === 'object' && parsed.timestamp) {
-                    // 新しい形式
+                    // 新しい形式：eventIdも確認（念のため）
                     if (parsed.eventId === event.id) {
                       timestamp = parsed.timestamp;
+                    } else {
+                      // 異なるeventIdのデータが混入している場合は削除
+                      console.warn('Stale data for different eventId, removing:', storageKey);
+                      localStorage.removeItem(storageKey);
                     }
                   }
                 } catch (e) {
@@ -378,12 +383,16 @@ const EventPageRenderer = {
                 // タイムスタンプがある場合、10分以内かチェック
                 if (timestamp) {
                   const age = Date.now() - timestamp;
+                  console.log(`[ClickTracker] Event ${event.id}: cached age = ${Math.round(age / 1000)} seconds`);
                   if (age < RESET_PERIOD_MS) {
-                    console.log('このイベントは既に計測済みです（10分以内）:', event.id);
+                    console.log('このイベントは既に計測済みです（10分以内）:', event.id, `(${Math.round(age / 1000)}秒前)`);
                     // 計測はスキップするが、遷移は実行される
                     return;
+                  } else {
+                    // 10分経過しているので古いデータを削除
+                    console.log(`[ClickTracker] Event ${event.id}: cache expired (${Math.round(age / 1000)}秒経過), removing`);
+                    localStorage.removeItem(storageKey);
                   }
-                  // 10分経過していれば古いデータを削除（下で新しいデータを保存）
                 }
               }
             } catch (storageError) {
