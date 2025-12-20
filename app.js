@@ -7,6 +7,25 @@ const CLICK_SECRET = 'sotonavi_click_9F2kA8R7mQX3LZpD5YwE11';
 
 // クリック計測（スプレッドシートに書き込み）
 const ClickTracker = {
+  // 集計済みデータをリセット（開発者コンソールから ClickTracker.reset() で実行可能）
+  reset() {
+    try {
+      const keys = Object.keys(localStorage);
+      let resetCount = 0;
+      keys.forEach(key => {
+        if (key.startsWith('sotonavi_clicked_')) {
+          localStorage.removeItem(key);
+          resetCount++;
+        }
+      });
+      console.log(`[ClickTracker] Reset ${resetCount} tracked events`);
+      return resetCount;
+    } catch (e) {
+      console.error('[ClickTracker] Reset failed:', e);
+      return 0;
+    }
+  },
+
   track(eventId, organizerId) {
     console.log('[ClickTracker] track called:', eventId, organizerId);
     
