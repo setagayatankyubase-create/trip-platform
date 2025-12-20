@@ -3,7 +3,7 @@
 // GAS URL（クリック計測用）
 const CLICK_TRACKING_GAS_URL = 'https://script.google.com/macros/s/AKfycbw7G7Rf3wK2o8eS9V9VgNHtQvrTdMnhpoHxkXlR7Om9YdOLTP9nAjcdX4uN4xOeHKVHJw/exec';
 // クリック計測用の秘密鍵（GAS側のCLICK_SECRETと一致させる必要がある）
-const CLICK_SECRET = 'sotonavi_click_9F2kA8R7mQX3LZpD5YwE1H';
+const CLICK_SECRET = 'sotonavi_click_9F2kA8R7mQX3LZpD5YwE11';
 
 // クリック計測（スプレッドシートに書き込み）
 const ClickTracker = {
