@@ -368,7 +368,8 @@ const EventPageRenderer = {
           }, 1000);
             // 連打防止：10分間に1イベント1回まで（同じ人がクリックするのを制限）
             // 各イベントIDごとに独立して記録される
-            const storageKey = `sotonavi_clicked_${event.id}`;
+            // 「公式サイトへ進む」ボタンは、カードリンクとは別のキーを使用（別々に計測）
+            const storageKey = `sotonavi_clicked_button_${event.id}`; // カードリンクとは別のキー
             console.log('[ClickTracker] [公式サイトボタン] Using storageKey:', storageKey);
             const RESET_PERIOD_MS = 10 * 60 * 1000; // 10分
             const now = Date.now();
