@@ -1,6 +1,12 @@
 // WordPress API連携 - コラム記事管理
+// 
+// 設定手順：
+// 1. WORDPRESS_API_BASE を実際のWordPressサイトのURLに変更
+//    例: 'https://blog.example.com/wp-json/wp/v2'
+// 2. WORDPRESS_COLUMN_CATEGORY_ID をコラム用カテゴリのIDに変更
+//    詳細は WORDPRESS_SETUP.md を参照してください
 
-// WordPress APIのベースURL（設定が必要）
+// WordPress APIのベースURL（実際のWordPressサイトのURLに変更してください）
 const WORDPRESS_API_BASE = 'https://your-wordpress-site.com/wp-json/wp/v2';
 
 // コラム記事の管理
@@ -152,7 +158,9 @@ const ColumnManager = {
   }
 };
 
-// WordPress API設定（実際の値に置き換える必要がある）
-// コラムカテゴリのIDを設定
-const WORDPRESS_COLUMN_CATEGORY_ID = ''; // WordPressのカテゴリIDを設定
+// コラムカテゴリのID（WordPress管理画面で作成したカテゴリのIDを入力）
+// カテゴリIDの確認方法：
+// - WordPress管理画面の「投稿」→「カテゴリ」で、カテゴリ名にマウスをかざすと表示されるURLの最後の数字
+// - または、カテゴリ編集画面のURLの tag_ID= の後の数字
+const WORDPRESS_COLUMN_CATEGORY_ID = ''; // 例: '3' や '5'
 
