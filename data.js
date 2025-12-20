@@ -25,7 +25,9 @@ window.loadEventData = function loadEventData() {
   const STORAGE_KEY = "sotonavi_eventData_v1";
   const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 1日
 
-  // 1) localStorage キャッシュを試す
+  // 1) localStorage キャッシュを試す（一時的に無効化：datesが空になる問題を回避）
+  // TODO: datesが正しく設定されるようになったら、キャッシュを有効化する
+  /*
   try {
     const cached = localStorage.getItem(STORAGE_KEY);
     if (cached) {
@@ -46,6 +48,7 @@ window.loadEventData = function loadEventData() {
   } catch (e) {
     console.warn("eventData cache read error:", e);
   }
+  */
 
   // 2) キャッシュが無ければ static JSON から組み立て
   _eventDataLoadingPromise = Promise.all([loadEventIndex(), loadEventMeta()])
