@@ -1,9 +1,15 @@
 // データ取得方針
 // - メイン導線: GitHub 上に毎日生成される静的 JSON を /data 配下から読む
+// - フォールバック: organizerId が空の場合、GitHub raw から読み込む
 const DATA_BASE = "/data";
 
+// GitHub raw URL（organizerId が空の場合のフォールバック用）
+// 必要に応じて環境に合わせて設定してください
+// 例: "https://raw.githubusercontent.com/owner/repo/main"
+const GITHUB_RAW_BASE = window.GITHUB_RAW_BASE || "";
+
 // キャッシュ無効化用バージョン（シート構造やレスポンス形式を変えたら更新）
-const EVENT_CACHE_VERSION = "v2_2025-12-20"; // v2: organizerId統一対応
+const EVENT_CACHE_VERSION = "v3_2025-12-21"; // v3: GitHub raw フォールバック対応
 
 // キャッシュキー（バージョンと連動）
 const STORAGE_KEY_BASE = `sotonavi_eventData_${EVENT_CACHE_VERSION}`;
@@ -162,6 +168,7 @@ window.loadEventIndex = function loadEventIndex() {
     console.warn("eventIndex cache read error:", e);
   }
 
+  // まず /data から読み込む
   const url = `${DATA_BASE}/events_index.json`;
   _eventIndexLoadingPromise = fetch(url, { cache: "no-store" })
     .then(async (res) => {
@@ -183,6 +190,32 @@ window.loadEventIndex = function loadEventIndex() {
         : Array.isArray(json) ? json
         : [];
 
+      // ★根本治療：organizerId が空文字列の場合、GitHub raw にフォールバック
+      const hasValidOrganizerId = raw.some(e => String(e?.organizerId || "").trim().length > 0);
+      
+      if (!hasValidOrganizerId && GITHUB_RAW_BASE) {
+        console.warn("[FALLBACK] organizerId is empty in /data/events_index.json, falling back to GitHub raw");
+        const fallbackUrl = `${GITHUB_RAW_BASE}/data/events_index.json`;
+        return fetch(fallbackUrl, { cache: "no-store" })
+          .then(async (res) => {
+            if (!res.ok) {
+              throw new Error(`Failed to load event index from GitHub: ${res.status}`);
+            }
+            console.log("[FALLBACK] GitHub raw fetch", res.status, res.url);
+            return res.json();
+          })
+          .then((fallbackJson) => {
+            const fallbackRaw = Array.isArray(fallbackJson.events_index) ? fallbackJson.events_index
+              : Array.isArray(fallbackJson) ? fallbackJson
+              : [];
+            console.log("[FALLBACK] GitHub raw index length", fallbackRaw.length);
+            return fallbackRaw;
+          });
+      }
+      
+      return raw;
+    })
+    .then((raw) => {
       // ★最重要：index を「唯一の真実」にするため、ここで正規化
       const index = raw.map(e => ({
         ...e,
@@ -192,6 +225,11 @@ window.loadEventIndex = function loadEventIndex() {
       console.log("[INDEX normalized organizerId sample]",
         index.slice(0, 5).map(e => e.organizerId)
       );
+
+      // ★organizerId が空の index は採用しない（フォールバック後でも空ならエラー）
+      if (!index.some(e => e.organizerId)) {
+        console.error("[ERROR] organizerId is still empty after fallback. Data may be corrupted.");
+      }
 
       window.eventIndex = index;
 
@@ -209,6 +247,12 @@ window.loadEventIndex = function loadEventIndex() {
         console.warn("eventIndex cache write error:", e);
       }
 
+      return window.eventIndex;
+    })
+    .catch((err) => {
+      console.error("[ERROR] Failed to load event index:", err);
+      // エラー時は空配列を返す
+      window.eventIndex = [];
       return window.eventIndex;
     })
     .finally(() => {
