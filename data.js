@@ -51,39 +51,35 @@ window.loadEventData = function loadEventData() {
   _eventDataLoadingPromise = Promise.all([loadEventIndex(), loadEventMeta()])
     .then(async ([index, meta]) => {
       // events_index から最小限の events 配列を構築（index.html 互換用）
-      // 日付情報は全て詳細JSONから取得（events_index に next_date が無い場合があるため）
+      // events_index の next_date を優先して使用（パフォーマンス向上）
       const events = [];
       
       if (Array.isArray(index) && index.length > 0) {
-        const ids = index.map(item => item.id).filter(Boolean);
-        
-        // 全てのイベントの詳細JSONを並列で取得
-        const detailPromises = ids.map(id => 
-          loadEventDetail(id).catch(() => null)
-        );
-        const details = await Promise.all(detailPromises);
-        const detailMap = {};
-        details.forEach(d => {
-          if (d && d.id) detailMap[d.id] = d;
-        });
-        
-        // events_index の各アイテムを details の情報で補完して構築
         for (const item of index) {
-          const detail = detailMap[item.id];
-          
-          // dates は詳細JSONから取得（優先）
-          // なければ events_index の next_date から構築
+          // dates は events_index の next_date から構築（優先）
+          // next_date が無い場合のみ詳細JSONから取得
           let dates = [];
-          if (detail && detail.dates && Array.isArray(detail.dates) && detail.dates.length > 0) {
-            dates = detail.dates;
-          } else if (item.next_date) {
+          if (item.next_date) {
             const dateStr = typeof item.next_date === 'string' 
               ? item.next_date 
               : item.next_date instanceof Date 
                 ? item.next_date.toISOString()
                 : null;
             if (dateStr) {
+              // ISO形式の日付文字列をそのまま使用
               dates = [{ date: dateStr }];
+            }
+          }
+          
+          // next_date が無い場合のみ詳細JSONを取得（必要な場合のみ）
+          if (dates.length === 0) {
+            try {
+              const detail = await loadEventDetail(item.id);
+              if (detail && detail.dates && Array.isArray(detail.dates) && detail.dates.length > 0) {
+                dates = detail.dates;
+              }
+            } catch (e) {
+              // 詳細JSON取得失敗は無視
             }
           }
           
@@ -100,9 +96,13 @@ window.loadEventData = function loadEventData() {
             reviewCount: item.reviewCount,
             categoryId: item.categoryId,
             dates: dates,
-            publishedAt: item.publishedAt || item.published_at || (detail && detail.publishedAt) || new Date().toISOString(),
+            publishedAt: item.publishedAt || item.published_at || new Date().toISOString(),
           });
         }
+        
+        console.log(`[loadEventData] Built ${events.length} events, with dates:`, 
+          events.filter(e => e.dates && e.dates.length > 0).length
+        );
       }
 
       window.eventData = {
