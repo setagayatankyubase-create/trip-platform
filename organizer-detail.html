@@ -158,7 +158,7 @@
   <script>
     (async () => {
       try {
-        // メタデータとインデックスを読み込み（デモページと同じ方法）
+        // メタデータとインデックスを読み込み
         await Promise.all([loadEventMeta(), loadEventIndex()]);
 
         // URLパラメータから提供元IDを取得
@@ -170,35 +170,24 @@
           ? window.eventMeta.organizers.find(o => o.id === organizerId) 
           : null;
 
-        // eventIndexから該当するイベントIDを取得（organizerIdでフィルタリング）
-        let eventIdsToLoad = [];
-        if (window.eventIndex && Array.isArray(window.eventIndex)) {
-          // eventIndexにorganizerIdがある場合
-          const matchingIds = window.eventIndex
-            .filter(e => {
-              const eOrganizerId = e.organizerId || e.organizer_id;
-              return eOrganizerId === organizerId;
-            })
-            .map(e => e.id);
-          
-          if (matchingIds.length > 0) {
-            eventIdsToLoad = matchingIds;
-          } else {
-            // organizerIdがない場合は全イベントをチェック
-            eventIdsToLoad = window.eventIndex.map(e => e.id);
-          }
-        }
-
-        // 該当するイベントの詳細を並列で取得（デモページと同じ方法）
+        // events_indexにはorganizerIdが含まれていないため、
+        // すべてのイベントの詳細を取得してorganizerIdでフィルタリング
         const events = [];
-        if (eventIdsToLoad.length > 0) {
+        if (window.eventIndex && Array.isArray(window.eventIndex) && window.eventIndex.length > 0) {
+          const eventIds = window.eventIndex.map(e => e.id).filter(Boolean);
+          console.log(`[organizer-detail.html] Loading ${eventIds.length} event details to filter by organizerId: ${organizerId}`);
+          
           const CONCURRENT_LIMIT = 5;
-          for (let i = 0; i < eventIdsToLoad.length; i += CONCURRENT_LIMIT) {
-            const chunk = eventIdsToLoad.slice(i, i + CONCURRENT_LIMIT);
+          
+          // チャンクに分割して並列処理
+          for (let i = 0; i < eventIds.length; i += CONCURRENT_LIMIT) {
+            const chunk = eventIds.slice(i, i + CONCURRENT_LIMIT);
             const detailPromises = chunk.map(eventId => 
               loadEventDetail(eventId).catch(() => null)
             );
             const details = await Promise.all(detailPromises);
+            
+            // organizerIdでフィルタリング
             const matchingDetails = details.filter(d => {
               if (!d) return false;
               const eOrganizerId = d.organizerId || d.organizer_id;
@@ -206,11 +195,15 @@
             });
             events.push(...matchingDetails);
           }
+          
+          console.log(`[organizer-detail.html] Found ${events.length} events for organizer ${organizerId}`);
+        } else {
+          console.warn('[organizer-detail.html] eventIndex is empty or not available');
         }
 
         // テンプレートを使用してページをレンダリング
         if (!organizer) {
-          console.error('[organizer-detail.html] Organizer not found!');
+          console.error('[organizer-detail.html] Organizer not found for ID:', organizerId);
         }
         if (events.length === 0) {
           console.warn('[organizer-detail.html] No events found for organizer:', organizerId);
