@@ -163,8 +163,29 @@ const ClickTracker = {
       const blob = new Blob([jsonData], { type: 'text/plain;charset=utf-8' });
       const queued = navigator.sendBeacon(CLICK_TRACKING_GAS_URL, blob);
       console.log('[ClickTracker] [カードリンク] sendBeacon queued:', queued);
+      
+      // フォールバック: sendBeaconが失敗した場合は通常のfetchを使用（no-corsモード）
+      if (!queued) {
+        console.warn('[ClickTracker] [カードリンク] sendBeacon failed, using fetch fallback');
+        fetch(CLICK_TRACKING_GAS_URL, {
+          method: 'POST',
+          body: jsonData,
+          keepalive: true,
+          mode: 'no-cors' // CORSエラーを回避
+        }).catch((err) => {
+          console.error('[ClickTracker] [カードリンク] Fetch fallback failed:', err);
+        });
+      }
     } catch (beaconErr) {
-      console.error('[ClickTracker] [カードリンク] sendBeacon failed:', beaconErr);
+      console.error('[ClickTracker] [カードリンク] sendBeacon failed, using fetch fallback:', beaconErr);
+      fetch(CLICK_TRACKING_GAS_URL, {
+        method: 'POST',
+        body: jsonData,
+        keepalive: true,
+        mode: 'no-cors' // CORSエラーを回避
+      }).catch((err) => {
+        console.error('[ClickTracker] [カードリンク] Fetch fallback failed:', err);
+      });
     }
 
     // タイムスタンプは既に保存済み（上で先に保存している）
