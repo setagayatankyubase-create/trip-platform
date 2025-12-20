@@ -71,6 +71,26 @@ const ClickTracker = {
       return;
     }
     
+    // 重複送信防止：最初にsessionStorageをチェック＆セット（最優先）
+    const sentFlagKey = `sotonavi_sent_${eventId}`;
+    const currentTimestamp = Date.now();
+    try {
+      const existingFlag = sessionStorage.getItem(sentFlagKey);
+      if (existingFlag) {
+        const lastSentTime = parseInt(existingFlag, 10);
+        const timeDiff = currentTimestamp - lastSentTime;
+        // 10秒以内の送信は重複として扱う
+        if (timeDiff < 10000) {
+          console.log('[ClickTracker] [カードリンク] 10秒以内に送信済み、スキップします（重複防止）');
+          return;
+        }
+      }
+      // 即座にフラグをセット（重複送信を防ぐ）
+      sessionStorage.setItem(sentFlagKey, currentTimestamp.toString());
+    } catch (storageError) {
+      console.warn('[ClickTracker] sessionStorage error:', storageError);
+    }
+    
     // 連打防止：10分間に1イベント1回まで（同じ人がクリックするのを制限）
     // 別のイベントIDなら別々に記録される（各イベントごとに独立）
     const storageKey = `sotonavi_clicked_${eventId}`; // イベントIDごとに別のキー
@@ -148,42 +168,8 @@ const ClickTracker = {
       console.warn('[ClickTracker] localStorage保存エラー:', storageError);
     }
 
-    // 送信済みフラグをチェック（重複送信防止 - アトミック操作）
-    const sentFlagKey = `sotonavi_sent_${eventId}`;
-    const currentTimestamp = Date.now();
-    
-    // アトミックにチェック＆セット（重複送信を完全に防ぐ）
-    let canSend = false;
-    try {
-      const lastSent = sessionStorage.getItem(sentFlagKey);
-      if (!lastSent) {
-        // フラグが存在しない場合は送信を許可し、フラグをセット
-        sessionStorage.setItem(sentFlagKey, currentTimestamp.toString());
-        canSend = true;
-      } else {
-        const lastSentTime = parseInt(lastSent, 10);
-        const timeDiff = currentTimestamp - lastSentTime;
-        // 5秒以内の送信は重複として扱う（より厳格に）
-        if (timeDiff >= 5000) {
-          // 5秒以上経過している場合は送信を許可し、フラグを更新
-          sessionStorage.setItem(sentFlagKey, currentTimestamp.toString());
-          canSend = true;
-        } else {
-          console.log('[ClickTracker] [カードリンク] 5秒以内に送信済み、スキップします（重複防止）');
-        }
-      }
-    } catch (storageError) {
-      // sessionStorageが使えない場合は送信を許可
-      console.warn('[ClickTracker] sessionStorage error:', storageError);
-      canSend = true;
-    }
-
-    // 送信が許可されていない場合は終了
-    if (!canSend) {
-      return;
-    }
-
     // GASにPOSTリクエストを送信（GAS側の実装に合わせる）
+    // フラグは既にセット済み（上で即座にセットしている）
     const payload = {
       token: CLICK_SECRET,
       event_id: eventId,
@@ -208,14 +194,14 @@ const ClickTracker = {
           // 無視
         }
       } else {
-        // 送信成功時は5秒後にフラグを削除（次のクリックを許可、ただし10分制限はlocalStorageで管理）
+        // 送信成功時は10秒後にフラグを削除（次のクリックを許可、ただし10分制限はlocalStorageで管理）
         setTimeout(() => {
           try {
             sessionStorage.removeItem(sentFlagKey);
           } catch (e) {
             // 無視
           }
-        }, 5000); // 5秒後
+        }, 10000); // 10秒後
       }
     } catch (beaconErr) {
       console.error('[ClickTracker] [カードリンク] sendBeacon error:', beaconErr);

@@ -400,39 +400,24 @@ const EventPageRenderer = {
         
         // クリックイベントリスナーを登録（計測処理）
         const clickHandler = function(e) {
-          // 重複送信防止：アトミック操作でチェック＆セット
+          // 重複送信防止：最初にsessionStorageをチェック＆セット（最優先）
           const sentFlagKey = `sotonavi_sent_button_${event.id}`;
           const currentTimestamp = Date.now();
-          
-          // アトミックにチェック＆セット（重複送信を完全に防ぐ）
-          let canSend = false;
           try {
-            const lastSent = sessionStorage.getItem(sentFlagKey);
-            if (!lastSent) {
-              // フラグが存在しない場合は送信を許可し、フラグをセット
-              sessionStorage.setItem(sentFlagKey, currentTimestamp.toString());
-              canSend = true;
-            } else {
-              const lastSentTime = parseInt(lastSent, 10);
+            const existingFlag = sessionStorage.getItem(sentFlagKey);
+            if (existingFlag) {
+              const lastSentTime = parseInt(existingFlag, 10);
               const timeDiff = currentTimestamp - lastSentTime;
-              // 5秒以内の送信は重複として扱う（より厳格に）
-              if (timeDiff >= 5000) {
-                // 5秒以上経過している場合は送信を許可し、フラグを更新
-                sessionStorage.setItem(sentFlagKey, currentTimestamp.toString());
-                canSend = true;
-              } else {
-                console.log('[ClickTracker] [公式サイトボタン] 5秒以内に送信済み、スキップします（重複防止）');
+              // 10秒以内の送信は重複として扱う
+              if (timeDiff < 10000) {
+                console.log('[ClickTracker] [公式サイトボタン] 10秒以内に送信済み、スキップします（重複防止）');
+                return;
               }
             }
+            // 即座にフラグをセット（重複送信を防ぐ）
+            sessionStorage.setItem(sentFlagKey, currentTimestamp.toString());
           } catch (storageError) {
-            // sessionStorageが使えない場合は送信を許可
             console.warn('[ClickTracker] sessionStorage error:', storageError);
-            canSend = true;
-          }
-
-          // 送信が許可されていない場合は終了
-          if (!canSend) {
-            return;
           }
           
           // 既に処理中ならスキップ（連続クリック防止）
@@ -569,14 +554,14 @@ const EventPageRenderer = {
                   // 無視
                 }
               } else {
-                // 送信成功時は5秒後にフラグを削除（次のクリックを許可、ただし10分制限はlocalStorageで管理）
+                // 送信成功時は10秒後にフラグを削除（次のクリックを許可、ただし10分制限はlocalStorageで管理）
                 setTimeout(() => {
                   try {
                     sessionStorage.removeItem(sentFlagKey);
                   } catch (e) {
                     // 無視
                   }
-                }, 5000); // 5秒後
+                }, 10000); // 10秒後
               }
             } catch (beaconErr) {
               console.error('[ClickTracker] [公式サイトボタン] sendBeacon error:', beaconErr);
