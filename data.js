@@ -50,23 +50,9 @@ window.loadEventData = function loadEventData() {
         const age = Date.now() - parsed.timestamp;
         if (age < CACHE_TTL_MS) {
           window.eventData = parsed.data;
-          // eventIndex もキャッシュから復元
+          // eventIndex もキャッシュから復元（そのまま使用）
           if (parsed.data.events && Array.isArray(parsed.data.events)) {
-            window.eventIndex = parsed.data.events.map(ev => ({
-              id: ev.id,
-              title: ev.title,
-              image: ev.image,
-              city: ev.area || ev.city,
-              prefecture: ev.prefecture,
-              price: ev.price,
-              isRecommended: ev.isRecommended,
-              isNew: ev.isNew,
-              rating: ev.rating,
-              reviewCount: ev.reviewCount,
-              categoryId: ev.categoryId,
-              next_date: ev.next_date || (ev.dates && ev.dates.length > 0 ? ev.dates[0].date : null),
-              publishedAt: ev.publishedAt,
-            }));
+            window.eventIndex = parsed.data.events;
           }
           window.eventMeta = {
             organizers: window.eventData.organizers || [],
@@ -83,173 +69,20 @@ window.loadEventData = function loadEventData() {
   // 2) キャッシュが無ければ static JSON から組み立て
   _eventDataLoadingPromise = Promise.all([loadEventIndex(), loadEventMeta()])
     .then(async ([index, meta]) => {
-      // events_index から最小限の events 配列を構築（index.html 互換用）
-      // events_index の next_date を優先して使用（パフォーマンス向上）
-      const events = [];
-      
-      if (Array.isArray(index) && index.length > 0) {
-        // next_date が無いイベントを特定
-        const itemsWithoutDate = [];
-        const itemsWithDate = [];
-        
-        for (const item of index) {
-          if (item.next_date) {
-            itemsWithDate.push(item);
-          } else {
-            itemsWithoutDate.push(item);
-          }
-        }
-        
-        // next_date があるものは即座に構築
-        for (let i = 0; i < itemsWithDate.length; i++) {
-          const item = itemsWithDate[i];
-          const dateValue = item.next_date;
-          let dateStr = null;
-          
-          if (typeof dateValue === 'string') {
-            dateStr = dateValue;
-          } else if (dateValue instanceof Date) {
-            dateStr = dateValue.toISOString();
-          }
-          
-          const dates = dateStr ? [{ date: dateStr }] : [];
-          
-          // organizerIdはそのまま保持（正規化はフィルタリング時のみ使用）
-          // organizerId は「生成しない」。そのまま流す
-          events.push({
-            ...item,  // ← これで organizerId は保持される
-            organizerId: item.organizerId, // ★明示的に設定して確実に保持
-            id: item.id,
-            title: item.title,
-            image: item.image || item.thumb,
-            area: item.area || item.city,
-            prefecture: item.prefecture,
-            price: item.price,
-            isRecommended: item.isRecommended || false,
-            isNew: item.isNew || false,
-            rating: item.rating,
-            reviewCount: item.reviewCount,
-            categoryId: item.categoryId,
-            dates: dates,
-            next_date: item.next_date,
-            publishedAt: item.publishedAt || item.published_at || new Date().toISOString(),
-          });
-        }
-        
-        // next_date が無いものは詳細JSONから取得（並列化、同時実行数制限付き）
-        if (itemsWithoutDate.length > 0) {
-          const CONCURRENT_LIMIT = 5; // 同時実行数の上限
-          const detailMap = new Map();
-          
-          // チャンクに分割して並列処理
-          for (let i = 0; i < itemsWithoutDate.length; i += CONCURRENT_LIMIT) {
-            const chunk = itemsWithoutDate.slice(i, i + CONCURRENT_LIMIT);
-            const detailPromises = chunk.map(item => 
-              loadEventDetail(item.id)
-                .then(detail => ({ id: item.id, detail }))
-                .catch(() => ({ id: item.id, detail: null }))
-            );
-            
-            const results = await Promise.all(detailPromises);
-            results.forEach(({ id, detail }) => {
-              if (detail) {
-                detailMap.set(id, detail);
-              }
-            });
-          }
-          
-          // 詳細データから dates を取得して構築
-          for (const item of itemsWithoutDate) {
-            const detail = detailMap.get(item.id);
-            const dates = (detail && detail.dates && Array.isArray(detail.dates) && detail.dates.length > 0)
-              ? detail.dates
-              : [];
-            
-            // organizerIdはそのまま保持（詳細JSONから取得するが、item に既にあれば優先）
-            // organizerId は「生成しない」。そのまま流す
-            const organizerId = detail?.organizerId || item.organizerId;
-            events.push({
-              ...item,  // ← これで organizerId は保持される
-              organizerId, // ★ここが必要：detailがあれば上書き、なければ元のまま
-              id: item.id,
-              title: item.title,
-              image: item.image || item.thumb,
-              area: item.area || item.city,
-              prefecture: item.prefecture,
-              price: item.price,
-              isRecommended: item.isRecommended || false,
-              isNew: item.isNew || false,
-              rating: item.rating,
-              reviewCount: item.reviewCount,
-              categoryId: item.categoryId,
-              dates: dates,
-              next_date: item.next_date || (dates.length > 0 ? dates[0].date : null),
-              publishedAt: item.publishedAt || item.published_at || new Date().toISOString(),
-            });
-          }
-          
-          // next_date が無いイベント数をログ出力（GAS/シート整備の参考用）
-          if (itemsWithoutDate.length > 0) {
-            console.log(`[loadEventData] ${itemsWithoutDate.length} events without next_date (GAS側で補完推奨)`);
-          }
-        }
-        
-        // organizerIdが欠けているイベントを補完（過去データ救済用、通常は走らない）
-        // この処理はすべてのイベント構築後に実行する
-        const eventsNeedingOrganizerId = events.filter(needsOrganizerIdLookup);
-        if (eventsNeedingOrganizerId.length > 0) {
-          console.log(`[loadEventData] ⚠ ${eventsNeedingOrganizerId.length} events need organizerId lookup (out of ${events.length} total) - 補完処理を実行`);
-          console.log(`[loadEventData] Sample events needing organizerId:`, eventsNeedingOrganizerId.slice(0, 3).map(e => ({ id: e.id, organizerId: e.organizerId })));
-          const CONCURRENT_LIMIT = 5;
-          
-          for (let i = 0; i < eventsNeedingOrganizerId.length; i += CONCURRENT_LIMIT) {
-            const chunk = eventsNeedingOrganizerId.slice(i, i + CONCURRENT_LIMIT);
-            const lookupPromises = chunk.map(event => 
-              loadEventDetail(event.id)
-                .then(detail => {
-                  const organizerId = normalizeId(detail?.organizerId);
-                  if (organizerId) {
-                    event.organizerId = organizerId;
-                    console.log(`[loadEventData] ✓ Added organizerId ${organizerId} to event ${event.id}`);
-                  } else {
-                    console.warn(`[loadEventData] ⚠ No organizerId found for event ${event.id}`);
-                  }
-                  return event;
-                })
-                .catch(err => {
-                  console.error(`[loadEventData] ✗ Failed to load detail for event ${event.id}:`, err);
-                  return event;
-                })
-            );
-            
-            await Promise.all(lookupPromises);
-          }
-        }
-        
-        // デバッグログ（診断用）
-        console.log(`[DEBUG final events organizerId]`, events.slice(0, 3).map(e => e.organizerId));
-        const eventsWithOrganizerId = events.filter(e => !needsOrganizerIdLookup(e));
-        console.log(`[loadEventData] events total: ${events.length}, with organizerId: ${eventsWithOrganizerId.length}`);
-      }
-
-      console.log("[TRACE] Setting eventData (constructed events array) at", new Error().stack.split("\n")[1]);
-      console.log("[TRACE] constructed events length:", events?.length);
+      // ★余計な再構築を一切しない：index をそのまま使用
       window.eventData = {
-        events,
+        events: index,
+        events_index: index,
         organizers: meta.organizers || [],
         categories: meta.categories || [],
       };
       window.eventIndex = index;
 
-      // ★最終確定：一覧は events_index.json を正とする（organizerId 確実保持のため）
-      // この時点で index は loadEventIndex() から取得済み
-      console.log("[TRACE] Setting eventData.events from index at", new Error().stack.split("\n")[1]);
-      console.log("[TRACE] overwrite events with index length:", index?.length);
-      window.eventData = window.eventData || {};
-      window.eventData.events = index;        // ← ここで確定上書き（index = events_index.json 直由来）
-      window.eventData.events_index = index;  // ← 念のため
-      window.eventData.organizers = meta.organizers || [];
-      window.eventData.categories = meta.categories || [];
+      // 勝利判定用ログ
+      console.log("[FIXED] events organizerId sample:", 
+        (index || []).slice(0, 5).map(e => e.organizerId)
+      );
+      console.log("[FIXED] events count:", (index || []).length);
 
       try {
         const payload = {
