@@ -62,7 +62,10 @@ const EventPageRenderer = {
   renderGallery(event) {
     const mainImage = document.getElementById('event-main-image');
     if (mainImage) {
-      mainImage.style.backgroundImage = `url('${event.image}')`;
+      const imageUrl = event.image || event.thumb || event.mainImage || '';
+      if (imageUrl) {
+        mainImage.style.backgroundImage = `url('${imageUrl}')`;
+      }
     }
   },
 

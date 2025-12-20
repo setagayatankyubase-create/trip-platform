@@ -315,17 +315,26 @@ window.loadEventDetail = function loadEventDetail(eventId) {
   }
 
   const url = `${DATA_BASE}/events/${encodeURIComponent(eventId)}.json`;
+  console.log('[data.js] Loading event detail from:', url);
 
   return fetch(url)
     .then((res) => {
       if (!res.ok) {
+        console.error('[data.js] Failed to load event detail:', res.status, res.statusText);
         throw new Error(`Failed to load event detail: ${res.status}`);
       }
       return res.json();
     })
     .then((json) => {
+      console.log('[data.js] Event detail JSON received:', json);
       // ファイルが { ...event } か { event: {...} } の両方に対応
-      return json && json.event ? json.event : json;
+      const event = json && json.event ? json.event : json;
+      console.log('[data.js] Event object extracted:', event);
+      return event;
+    })
+    .catch((error) => {
+      console.error('[data.js] Error loading event detail:', error);
+      throw error;
     });
 };
 

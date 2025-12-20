@@ -329,17 +329,34 @@
         const urlParams = new URLSearchParams(window.location.search);
         const eventId = urlParams.get('id');
 
-      // 1件分のイベント詳細＋メタデータ＋インデックス（関連イベント用）を読み込み
-      const [event, meta, index] = await Promise.all([
-        loadEventDetail(eventId),
-        loadEventMeta(),
-        loadEventIndex() // 関連イベント表示用
-      ]);
+        if (!eventId) {
+          console.error('Event ID is missing from URL');
+          return;
+        }
+
+        console.log('[experience.html] Loading event detail for:', eventId);
+
+        // 1件分のイベント詳細＋メタデータ＋インデックス（関連イベント用）を読み込み
+        const [event, meta, index] = await Promise.all([
+          loadEventDetail(eventId),
+          loadEventMeta(),
+          loadEventIndex() // 関連イベント表示用
+        ]);
+
+        console.log('[experience.html] Event loaded:', event);
+        console.log('[experience.html] Meta loaded:', meta);
+
+        if (!event) {
+          console.error('[experience.html] Event is null or undefined');
+          return;
+        }
 
         const organizers = meta && meta.organizers ? meta.organizers : [];
         const organizer = event
-          ? organizers.find(o => o.id === event.organizerId)
+          ? organizers.find(o => o.id === event.organizerId || o.id === event.organizer_id)
           : null;
+
+        console.log('[experience.html] Organizer found:', organizer);
 
         // テンプレートを使用してページをレンダリング
         EventPageRenderer.render(event, organizer);
