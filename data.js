@@ -68,7 +68,7 @@ window.loadEventData = function loadEventData() {
 
   // 2) キャッシュが無ければ static JSON から組み立て
   _eventDataLoadingPromise = Promise.all([loadEventIndex(), loadEventMeta()])
-    .then(async ([index, meta]) => {
+    .then(([index, meta]) => {
       // ★余計な再構築を一切しない：index をそのまま使用
       window.eventData = {
         events: index,
