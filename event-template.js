@@ -371,6 +371,7 @@ const EventPageRenderer = {
             const storageKey = `sotonavi_clicked_${event.id}`;
             console.log('[ClickTracker] Using storageKey:', storageKey);
             const RESET_PERIOD_MS = 10 * 60 * 1000; // 10分
+            const now = Date.now();
             
             // まず、前回のタイムスタンプをチェック
             let shouldSkip = false;
@@ -402,11 +403,12 @@ const EventPageRenderer = {
                 
                 // タイムスタンプがある場合、10分以内かチェック
                 if (timestamp) {
-                  const age = Date.now() - timestamp;
+                  const age = now - timestamp; // 現在時刻との差分を計算
                   const lastClickTime = new Date(timestamp).toLocaleString('ja-JP');
                   const ageSeconds = Math.round(age / 1000);
                   const ageMinutes = Math.round(age / 60000 * 10) / 10;
                   console.log(`[ClickTracker] Event ${event.id}: 最後にクリックした時刻 = ${lastClickTime}, 経過時間 = ${ageMinutes}分 (${ageSeconds}秒)`);
+                  
                   if (age < RESET_PERIOD_MS) {
                     console.log(`このイベントは既に計測済みです（10分以内）: ${event.id} - 最後のクリック: ${lastClickTime} (${ageMinutes}分前)`);
                     // 計測はスキップするが、遷移は実行される
@@ -430,7 +432,6 @@ const EventPageRenderer = {
             }
             
             // 今回のクリック時刻を即座に保存（重複実行を防ぐため）
-            const now = Date.now();
             try {
               const cacheData = {
                 eventId: event.id,
