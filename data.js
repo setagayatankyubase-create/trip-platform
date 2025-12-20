@@ -54,7 +54,11 @@ window.loadEventData = function loadEventData() {
       // events_index の next_date を優先して使用（パフォーマンス向上）
       const events = [];
       
+      console.log('[loadEventData] index length:', Array.isArray(index) ? index.length : 0);
       if (Array.isArray(index) && index.length > 0) {
+        console.log('[loadEventData] first index item:', index[0]);
+        console.log('[loadEventData] first index item next_date:', index[0].next_date);
+        
         for (const item of index) {
           // dates は events_index の next_date から構築（優先）
           // next_date が無い場合のみ詳細JSONから取得
@@ -109,6 +113,16 @@ window.loadEventData = function loadEventData() {
           // next_date も保持（フォールバック用）
           if (item.next_date) {
             eventObj.next_date = item.next_date;
+          }
+          
+          // デバッグ：最初の3件だけログ出力
+          if (events.length < 3) {
+            console.log(`[loadEventData] Event ${item.id}:`, {
+              hasNextDate: !!item.next_date,
+              nextDate: item.next_date,
+              datesLength: dates.length,
+              dates: dates
+            });
           }
           
           events.push(eventObj);
