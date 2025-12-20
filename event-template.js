@@ -30,8 +30,14 @@ const EventPageRenderer = {
   renderBreadcrumbs(event) {
     const breadcrumbCategory = document.getElementById('breadcrumb-category');
     if (breadcrumbCategory) {
-      const category = eventData.categories.find(c => c.id === event.categoryId);
-      breadcrumbCategory.textContent = category ? category.name : event.category;
+      // eventMeta または eventData からカテゴリを取得
+      const categories = (window.eventMeta && window.eventMeta.categories) 
+        ? window.eventMeta.categories 
+        : (window.eventData && window.eventData.categories) 
+          ? window.eventData.categories 
+          : [];
+      const category = categories.find(c => c.id === event.categoryId || c.id === event.category_id);
+      breadcrumbCategory.textContent = category ? category.name : (event.category || '');
     }
   },
 
@@ -62,21 +68,34 @@ const EventPageRenderer = {
 
   // メインコンテンツ
   renderContent(event, organizer) {
+    if (!event) {
+      console.error('Event is null or undefined');
+      return;
+    }
+
     // 説明
     const descEl = document.getElementById('event-description');
     if (descEl) {
-      descEl.textContent = event.description;
+      descEl.textContent = event.description || '説明がありません';
     }
 
     // 基本情報
     const durationEl = document.getElementById('event-duration');
     if (durationEl) {
-      durationEl.textContent = event.duration;
+      durationEl.textContent = event.duration || '未設定';
     }
 
     const locationEl = document.getElementById('event-location');
     if (locationEl) {
-      locationEl.textContent = event.location ? event.location.name : `${event.area}, ${event.prefecture}`;
+      if (event.location && event.location.name) {
+        locationEl.textContent = event.location.name;
+      } else if (event.area || event.prefecture) {
+        locationEl.textContent = [event.area, event.prefecture].filter(Boolean).join(', ') || '未設定';
+      } else if (event.city) {
+        locationEl.textContent = event.city;
+      } else {
+        locationEl.textContent = '未設定';
+      }
     }
 
     const targetAgeEl = document.getElementById('event-target-age');
@@ -86,7 +105,11 @@ const EventPageRenderer = {
 
     const priceEl = document.getElementById('event-price');
     if (priceEl) {
-      priceEl.textContent = event.price.toLocaleString();
+      if (event.price !== undefined && event.price !== null) {
+        priceEl.textContent = typeof event.price === 'number' ? event.price.toLocaleString() : event.price;
+      } else {
+        priceEl.textContent = '未設定';
+      }
     }
 
     // 開催日程
@@ -123,21 +146,33 @@ const EventPageRenderer = {
       bookingDateSelect.innerHTML = '<option value="">選択してください</option>';
     }
 
+    // dates が存在し、配列であることを確認
+    if (!event.dates || !Array.isArray(event.dates) || event.dates.length === 0) {
+      if (datesList) {
+        datesList.innerHTML = '<li>開催日程が未設定です</li>';
+      }
+      return;
+    }
+
     event.dates.forEach(d => {
+      if (!d || !d.date) return;
       const dateObj = new Date(d.date);
+      if (isNaN(dateObj.getTime())) return;
+      
       const dateStr = `${dateObj.getFullYear()}年${dateObj.getMonth() + 1}月${dateObj.getDate()}日`;
       const weekday = ['日', '月', '火', '水', '木', '金', '土'][dateObj.getDay()];
+      const timeStr = d.time || '';
 
       if (datesList) {
         const li = document.createElement('li');
-        li.innerHTML = `<span>${dateStr}(${weekday}) ${d.time}</span>`;
+        li.innerHTML = `<span>${dateStr}(${weekday}) ${timeStr}</span>`;
         datesList.appendChild(li);
       }
 
       if (bookingDateSelect) {
         const option = document.createElement('option');
         option.value = d.date;
-        option.textContent = `${dateStr}(${weekday}) ${d.time}`;
+        option.textContent = `${dateStr}(${weekday}) ${timeStr}`;
         bookingDateSelect.appendChild(option);
       }
     });
