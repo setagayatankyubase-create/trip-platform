@@ -166,8 +166,9 @@ window.loadEventData = function loadEventData() {
             
             // organizerIdはそのまま保持（詳細JSONから取得するが、item に既にあれば優先）
             // organizerId は「生成しない」。そのまま流す
+            const organizerId = detail?.organizerId || item.organizerId;
             events.push({
-              ...item,  // ← これで organizerId は保持される
+              ...item,  // ← これで organizerId は保持される（detailがあれば上書き）
               id: item.id,
               title: item.title,
               image: item.image || item.thumb,
@@ -179,8 +180,7 @@ window.loadEventData = function loadEventData() {
               rating: item.rating,
               reviewCount: item.reviewCount,
               categoryId: item.categoryId,
-              // detail から取得した organizerId があれば上書き（過去データ救済用）
-              ...(detail?.organizerId ? { organizerId: detail.organizerId } : {}),
+              organizerId, // ← detailにあればそれ、なければitem
               dates: dates,
               next_date: item.next_date || (dates.length > 0 ? dates[0].date : null),
               publishedAt: item.publishedAt || item.published_at || new Date().toISOString(),

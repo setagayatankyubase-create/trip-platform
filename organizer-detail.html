@@ -176,7 +176,7 @@
         
         // イベントリストを取得（events_index または events のどちらかを使用）
         // loadEventData() は events_index.json を読み込んで events 配列を構築する
-        const eventList = eventData.events || eventData.events_index || [];
+        const eventList = eventData.events_index || eventData.events || [];
         
         // イベントをフィルタリング（organizerId のみ、正規化済み同士で比較）
         const norm = (v) => (v ?? '').toString().trim();
