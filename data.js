@@ -9,10 +9,11 @@ const EVENT_CACHE_VERSION = "v2_2025-12-20"; // v2: organizerId統一対応
 const STORAGE_KEY_BASE = `sotonavi_eventData_${EVENT_CACHE_VERSION}`;
 const INDEX_STORAGE_KEY_BASE = `sotonavi_eventIndex_${EVENT_CACHE_VERSION}`;
 
-// organizerId正規化ヘルパー
+// organizerId正規化ヘルパー（唯一の入口、空文字も殺す）
 const normalizeId = (v) => {
-  const s = (v ?? '').toString().trim();
-  return (s && s !== 'undefined') ? s : undefined;
+  if (v === null || v === undefined) return undefined;
+  const s = String(v).trim();
+  return s.length > 0 ? s : undefined;
 };
 
 // organizerId補完が必要かどうかの判定（organizerId統一対応）
@@ -178,15 +179,19 @@ window.loadEventIndex = function loadEventIndex() {
     })
     .then((json) => {
       // ルートが { events_index: [...] } でも単純配列でも対応
-      const index = Array.isArray(json.events_index) ? json.events_index
+      const raw = Array.isArray(json.events_index) ? json.events_index
         : Array.isArray(json) ? json
         : [];
 
-      // デバッグ: events_index.jsonの構造を確認
-      if (index.length > 0) {
-        console.log(`[loadEventIndex] Loaded ${index.length} events from events_index.json`);
-        console.log(`[DEBUG raw index organizerId]`, index.slice(0, 3).map(e => e.organizerId));
-      }
+      // ★最重要：index を「唯一の真実」にするため、ここで正規化
+      const index = raw.map(e => ({
+        ...e,
+        organizerId: normalizeId(e.organizerId)
+      }));
+
+      console.log("[INDEX normalized organizerId sample]",
+        index.slice(0, 5).map(e => e.organizerId)
+      );
 
       window.eventIndex = index;
 
