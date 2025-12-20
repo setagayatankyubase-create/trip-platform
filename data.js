@@ -5,15 +5,19 @@ const DATA_BASE = "/data";
 // キャッシュ無効化用バージョン（シート構造やレスポンス形式を変えたら更新）
 const EVENT_CACHE_VERSION = "v2_2025-12-20"; // v2: organizerId統一対応
 
+// キャッシュキー（バージョンと連動）
+const STORAGE_KEY_BASE = `sotonavi_eventData_${EVENT_CACHE_VERSION}`;
+const INDEX_STORAGE_KEY_BASE = `sotonavi_eventIndex_${EVENT_CACHE_VERSION}`;
+
 // organizerId正規化ヘルパー
 const normalizeId = (v) => {
   const s = (v ?? '').toString().trim();
   return (s && s !== 'undefined') ? s : undefined;
 };
 
-// organizerId補完が必要かどうかの判定
+// organizerId補完が必要かどうかの判定（organizerId統一対応）
 const needsOrganizerIdLookup = (e) => {
-  const orgId = normalizeId(e.organizerId ?? e.organizer_id);
+  const orgId = normalizeId(e.organizerId);
   return !orgId;
 };
 
@@ -34,7 +38,7 @@ window.loadEventData = function loadEventData() {
   }
   if (_eventDataLoadingPromise) return _eventDataLoadingPromise;
 
-  const STORAGE_KEY = "sotonavi_eventData_v2";
+  const STORAGE_KEY = STORAGE_KEY_BASE;
   const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 1日
 
   // 1) localStorage キャッシュを試す（TTL付き）
@@ -109,8 +113,8 @@ window.loadEventData = function loadEventData() {
           
           const dates = dateStr ? [{ date: dateStr }] : [];
           
-          // organizerIdを正規化
-          const itemOrganizerId = normalizeId(item.organizerId ?? item.organizer_id);
+          // organizerIdを正規化（organizerId統一対応）
+          const itemOrganizerId = normalizeId(item.organizerId);
           
           events.push({
             id: item.id,
@@ -225,7 +229,7 @@ window.loadEventData = function loadEventData() {
         // デバッグログ（最小限）
         const eventsWithOrganizerId = events.filter(e => !needsOrganizerIdLookup(e));
         console.log(`[loadEventData] events total: ${events.length}, with organizerId: ${eventsWithOrganizerId.length}, sample:`, 
-          events.slice(0, 3).map(e => ({ id: e.id, organizerId: normalizeId(e.organizerId ?? e.organizer_id) || '(empty)' })));
+          events.slice(0, 3).map(e => ({ id: e.id, organizerId: normalizeId(e.organizerId) || '(empty)' })));
       }
 
       window.eventData = {
@@ -272,7 +276,7 @@ window.loadEventIndex = function loadEventIndex() {
   }
   if (_eventIndexLoadingPromise) return _eventIndexLoadingPromise;
 
-  const INDEX_STORAGE_KEY = "sotonavi_eventIndex_v2";
+  const INDEX_STORAGE_KEY = INDEX_STORAGE_KEY_BASE;
   const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 1日（GitHub 更新が1日1回の想定）
 
   try {
