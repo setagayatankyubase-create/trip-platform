@@ -526,10 +526,14 @@ const EventPageRenderer = {
               null;
 
             // 計測処理（失敗しても遷移は実行）
+            // リクエストIDを追加して、GAS側で重複チェックを可能にする
+            const requestId = `${event.id}_${currentTimestamp}_${Math.random().toString(36).substr(2, 9)}`;
             const measurementData = {
               token: 'sotonavi_click_9F2kA8R7mQX3LZpD5YwE11', // GAS側のCLICK_SECRETと一致
               event_id: event.id,
-              organizer_id: organizerIdForCount
+              organizer_id: organizerIdForCount,
+              request_id: requestId,
+              timestamp: currentTimestamp
             };
             
             const gasUrl = 'https://script.google.com/macros/s/AKfycbyHnX2Z4jnTHfYSCFFaOVmVdIf6yY2edAMTCEyAOUn0Mak2Mam67CQ0g-V26zAJSVJphw/exec';

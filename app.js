@@ -170,10 +170,14 @@ const ClickTracker = {
 
     // GASにPOSTリクエストを送信（GAS側の実装に合わせる）
     // フラグは既にセット済み（上で即座にセットしている）
+    // リクエストIDを追加して、GAS側で重複チェックを可能にする
+    const requestId = `${eventId}_${currentTimestamp}_${Math.random().toString(36).substr(2, 9)}`;
     const payload = {
       token: CLICK_SECRET,
       event_id: eventId,
-      organizer_id: organizerId || ''
+      organizer_id: organizerId || '',
+      request_id: requestId,
+      timestamp: currentTimestamp
     };
 
     // navigator.sendBeaconのみを使用（ページ遷移時も確実に送信、重複送信を防ぐ）
