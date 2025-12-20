@@ -64,7 +64,7 @@ const ClickTracker = {
   },
 
   track(eventId, organizerId) {
-    console.log('[ClickTracker] track called:', eventId, organizerId);
+    console.log('[ClickTracker] [カードリンク] track called:', eventId, organizerId);
     
     if (!eventId) {
       console.warn('[ClickTracker] eventId is missing');
@@ -74,7 +74,7 @@ const ClickTracker = {
     // 連打防止：10分間に1イベント1回まで（同じ人がクリックするのを制限）
     // 別のイベントIDなら別々に記録される（各イベントごとに独立）
     const storageKey = `sotonavi_clicked_${eventId}`; // イベントIDごとに別のキー
-    console.log('[ClickTracker] Using storageKey:', storageKey);
+    console.log('[ClickTracker] [カードリンク] Using storageKey:', storageKey);
     const RESET_PERIOD_MS = 10 * 60 * 1000; // 10分
     const now = Date.now();
     
@@ -82,6 +82,7 @@ const ClickTracker = {
     let shouldSkip = false;
     try {
       const cached = localStorage.getItem(storageKey);
+      console.log('[ClickTracker] [カードリンク] cached value:', cached);
       if (cached) {
         let timestamp = null;
         

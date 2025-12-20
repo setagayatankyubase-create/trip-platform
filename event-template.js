@@ -369,7 +369,7 @@ const EventPageRenderer = {
             // 連打防止：10分間に1イベント1回まで（同じ人がクリックするのを制限）
             // 各イベントIDごとに独立して記録される
             const storageKey = `sotonavi_clicked_${event.id}`;
-            console.log('[ClickTracker] Using storageKey:', storageKey);
+            console.log('[ClickTracker] [公式サイトボタン] Using storageKey:', storageKey);
             const RESET_PERIOD_MS = 10 * 60 * 1000; // 10分
             const now = Date.now();
             
@@ -377,6 +377,7 @@ const EventPageRenderer = {
             let shouldSkip = false;
             try {
               const cached = localStorage.getItem(storageKey);
+              console.log('[ClickTracker] [公式サイトボタン] cached value:', cached);
               if (cached) {
                 let timestamp = null;
                 
@@ -432,6 +433,7 @@ const EventPageRenderer = {
             }
             
             // 今回のクリック時刻を即座に保存（重複実行を防ぐため）
+            console.log('[ClickTracker] [公式サイトボタン] タイムスタンプを保存します（計測を続行）');
             try {
               const cacheData = {
                 eventId: event.id,
@@ -439,7 +441,7 @@ const EventPageRenderer = {
               };
               localStorage.setItem(storageKey, JSON.stringify(cacheData));
               const savedTime = new Date(now).toLocaleString('ja-JP');
-              console.log(`[ClickTracker] ✅ クリック時刻を先に保存しました: ${event.id} - 保存時刻: ${savedTime}`);
+              console.log(`[ClickTracker] [公式サイトボタン] ✅ クリック時刻を先に保存しました: ${event.id} - 保存時刻: ${savedTime}`);
             } catch (storageError) {
               console.warn('localStorage保存エラー:', storageError);
             }
@@ -463,7 +465,7 @@ const EventPageRenderer = {
             try {
               // fetchで計測データを送信（デバッグ用にCORSモードでレスポンスを確認）
               const jsonData = JSON.stringify(measurementData);
-              console.log("Sending to GAS:", measurementData);
+              console.log("[ClickTracker] [公式サイトボタン] Sending to GAS:", measurementData);
               
               fetch(gasUrl, {
                 method: 'POST',
