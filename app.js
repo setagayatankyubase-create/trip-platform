@@ -166,9 +166,6 @@ const ClickTracker = {
     } catch (beaconErr) {
       console.error('[ClickTracker] [カードリンク] sendBeacon failed:', beaconErr);
     }
-    } catch (error) {
-      console.error('[ClickTracker] Error:', error);
-    }
 
     // タイムスタンプは既に保存済み（上で先に保存している）
     // 10分後にフラグを削除（簡易実装）
