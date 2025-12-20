@@ -171,43 +171,44 @@ window.loadEventData = function loadEventData() {
             });
           }
           
-          // organizerIdが欠けているイベントを補完（並列化、同時実行数制限付き）
-          const eventsNeedingOrganizerId = events.filter(e => {
-            const hasOrganizerId = e.organizerId && e.organizerId !== 'undefined' && e.organizerId !== '';
-            return !hasOrganizerId;
-          });
-          if (eventsNeedingOrganizerId.length > 0) {
-            console.log(`[loadEventData] ${eventsNeedingOrganizerId.length} events need organizerId lookup (out of ${events.length} total)`);
-            const CONCURRENT_LIMIT = 5;
-            
-            for (let i = 0; i < eventsNeedingOrganizerId.length; i += CONCURRENT_LIMIT) {
-              const chunk = eventsNeedingOrganizerId.slice(i, i + CONCURRENT_LIMIT);
-              const lookupPromises = chunk.map(event => 
-                loadEventDetail(event.id)
-                  .then(detail => {
-                    if (detail && (detail.organizerId || detail.organizer_id)) {
-                      const organizerId = detail.organizerId || detail.organizer_id;
-                      event.organizerId = organizerId;
-                      delete event._needsOrganizerIdLookup;
-                      console.log(`[loadEventData] ✓ Added organizerId ${organizerId} to event ${event.id}`);
-                    } else {
-                      console.warn(`[loadEventData] ⚠ No organizerId found for event ${event.id}`);
-                    }
-                    return event;
-                  })
-                  .catch(err => {
-                    console.error(`[loadEventData] ✗ Failed to load detail for event ${event.id}:`, err);
-                    return event;
-                  })
-              );
-              
-              await Promise.all(lookupPromises);
-            }
-          }
-          
           // next_date が無いイベント数をログ出力（GAS/シート整備の参考用）
           if (itemsWithoutDate.length > 0) {
             console.log(`[loadEventData] ${itemsWithoutDate.length} events without next_date (GAS側で補完推奨)`);
+          }
+        }
+        
+        // organizerIdが欠けているイベントを補完（並列化、同時実行数制限付き）
+        // この処理はすべてのイベント構築後に実行する
+        const eventsNeedingOrganizerId = events.filter(e => {
+          const hasOrganizerId = e.organizerId && e.organizerId !== 'undefined' && e.organizerId !== '' && e.organizerId !== null;
+          return !hasOrganizerId;
+        });
+        if (eventsNeedingOrganizerId.length > 0) {
+          console.log(`[loadEventData] ${eventsNeedingOrganizerId.length} events need organizerId lookup (out of ${events.length} total)`);
+          const CONCURRENT_LIMIT = 5;
+          
+          for (let i = 0; i < eventsNeedingOrganizerId.length; i += CONCURRENT_LIMIT) {
+            const chunk = eventsNeedingOrganizerId.slice(i, i + CONCURRENT_LIMIT);
+            const lookupPromises = chunk.map(event => 
+              loadEventDetail(event.id)
+                .then(detail => {
+                  if (detail && (detail.organizerId || detail.organizer_id)) {
+                    const organizerId = detail.organizerId || detail.organizer_id;
+                    event.organizerId = organizerId;
+                    delete event._needsOrganizerIdLookup;
+                    console.log(`[loadEventData] ✓ Added organizerId ${organizerId} to event ${event.id}`);
+                  } else {
+                    console.warn(`[loadEventData] ⚠ No organizerId found for event ${event.id}`);
+                  }
+                  return event;
+                })
+                .catch(err => {
+                  console.error(`[loadEventData] ✗ Failed to load detail for event ${event.id}:`, err);
+                  return event;
+                })
+            );
+            
+            await Promise.all(lookupPromises);
           }
         }
         
