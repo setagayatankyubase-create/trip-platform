@@ -384,14 +384,17 @@ const EventPageRenderer = {
                 // タイムスタンプがある場合、10分以内かチェック
                 if (timestamp) {
                   const age = Date.now() - timestamp;
-                  console.log(`[ClickTracker] Event ${event.id}: cached age = ${Math.round(age / 1000)} seconds`);
+                  const lastClickTime = new Date(timestamp).toLocaleString('ja-JP');
+                  const ageSeconds = Math.round(age / 1000);
+                  const ageMinutes = Math.round(age / 60000 * 10) / 10;
+                  console.log(`[ClickTracker] Event ${event.id}: 最後にクリックした時刻 = ${lastClickTime}, 経過時間 = ${ageMinutes}分 (${ageSeconds}秒)`);
                   if (age < RESET_PERIOD_MS) {
-                    console.log('このイベントは既に計測済みです（10分以内）:', event.id, `(${Math.round(age / 1000)}秒前)`);
+                    console.log(`このイベントは既に計測済みです（10分以内）: ${event.id} - 最後のクリック: ${lastClickTime} (${ageMinutes}分前)`);
                     // 計測はスキップするが、遷移は実行される
                     return;
                   } else {
                     // 10分経過しているので古いデータを削除
-                    console.log(`[ClickTracker] Event ${event.id}: cache expired (${Math.round(age / 1000)}秒経過), removing`);
+                    console.log(`[ClickTracker] Event ${event.id}: キャッシュ期限切れ（${ageMinutes}分経過）、削除します`);
                     localStorage.removeItem(storageKey);
                   }
                 }
@@ -453,12 +456,14 @@ const EventPageRenderer = {
               
               // 送信済みフラグを保存（10分間有効、送信成功・失敗に関わらず記録）
               try {
+                const now = Date.now();
                 const cacheData = {
                   eventId: event.id, // 確実にeventIdを含める
-                  timestamp: Date.now()
+                  timestamp: now
                 };
                 localStorage.setItem(storageKey, JSON.stringify(cacheData));
-                console.log('[ClickTracker] ✅ Saved to localStorage:', storageKey, cacheData);
+                const savedTime = new Date(now).toLocaleString('ja-JP');
+                console.log(`[ClickTracker] ✅ クリック時刻を保存しました: ${event.id} - 保存時刻: ${savedTime}`, cacheData);
                 // 10分後にフラグを削除（簡易実装）
                 setTimeout(() => {
                   try {
