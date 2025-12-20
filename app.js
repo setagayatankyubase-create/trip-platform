@@ -65,6 +65,7 @@ const ClickTracker = {
 
   track(eventId, organizerId) {
     console.log('[ClickTracker] [カードリンク] track called:', eventId, organizerId);
+    console.log('[ClickTracker] [カードリンク] organizerId type:', typeof organizerId, 'value:', organizerId);
     
     if (!eventId) {
       console.warn('[ClickTracker] eventId is missing');
@@ -168,11 +169,14 @@ const ClickTracker = {
 
     // GASにPOSTリクエストを送信（GAS側の実装に合わせる）
     // フラグは既にセット済み（上で即座にセットしている）
+    // organizer_idを確実に送信（空文字列でも送信）
+    const organizerIdToSend = (organizerId !== null && organizerId !== undefined) ? String(organizerId) : '';
     const payload = {
       token: CLICK_SECRET,
       event_id: eventId,
-      organizer_id: organizerId || ''
+      organizer_id: organizerIdToSend
     };
+    console.log('[ClickTracker] [カードリンク] Payload with organizer_id:', payload);
 
     // navigator.sendBeaconのみを使用（ページ遷移時も確実に送信、重複送信を防ぐ）
     // text/plainを使用することでCORSプリフライトを回避
@@ -754,9 +758,12 @@ const CardRenderer = {
     links.forEach(link => {
       link.addEventListener('click', (e) => {
         const eventId = link.getAttribute('data-event-id');
-        console.log('[CardRenderer] Card clicked:', eventId);
+        console.log('[CardRenderer] Card clicked (list):', eventId);
         const event = eventsMap.get(eventId);
+        // organizerIdを取得（複数の可能性のあるフィールドから取得）
         const organizerId = event ? (event.organizerId || event.organizer_id || '') : '';
+        console.log('[CardRenderer] Event object (list):', event);
+        console.log('[CardRenderer] Extracted organizerId (list):', organizerId);
         ClickTracker.track(eventId, organizerId);
       });
     });
@@ -786,9 +793,12 @@ const CardRenderer = {
     links.forEach(link => {
       link.addEventListener('click', (e) => {
         const eventId = link.getAttribute('data-event-id');
-        console.log('[CardRenderer] Card clicked:', eventId);
+        console.log('[CardRenderer] Card clicked (carousel):', eventId);
         const event = eventsMap.get(eventId);
+        // organizerIdを取得（複数の可能性のあるフィールドから取得）
         const organizerId = event ? (event.organizerId || event.organizer_id || '') : '';
+        console.log('[CardRenderer] Event object (carousel):', event);
+        console.log('[CardRenderer] Extracted organizerId (carousel):', organizerId);
         ClickTracker.track(eventId, organizerId);
       });
     });

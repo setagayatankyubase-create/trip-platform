@@ -521,14 +521,19 @@ const EventPageRenderer = {
               (organizer && organizer.id) ||
               event.organizerId ||
               event.organizer_id ||
-              null;
+              '';
+            
+            console.log('[ClickTracker] [公式サイトボタン] organizerIdForCount:', organizerIdForCount);
 
             // 計測処理（失敗しても遷移は実行）
+            // organizer_idを確実に送信（空文字列でも送信）
+            const organizerIdToSend = (organizerIdForCount !== null && organizerIdForCount !== undefined) ? String(organizerIdForCount) : '';
             const measurementData = {
               token: 'sotonavi_click_9F2kA8R7mQX3LZpD5YwE11', // GAS側のCLICK_SECRETと一致
               event_id: event.id,
-              organizer_id: organizerIdForCount
+              organizer_id: organizerIdToSend
             };
+            console.log('[ClickTracker] [公式サイトボタン] Payload with organizer_id:', measurementData);
             
             const gasUrl = 'https://script.google.com/macros/s/AKfycbyHnX2Z4jnTHfYSCFFaOVmVdIf6yY2edAMTCEyAOUn0Mak2Mam67CQ0g-V26zAJSVJphw/exec';
             
