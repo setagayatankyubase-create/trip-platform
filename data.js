@@ -172,9 +172,12 @@ window.loadEventData = function loadEventData() {
           }
           
           // organizerIdが欠けているイベントを補完（並列化、同時実行数制限付き）
-          const eventsNeedingOrganizerId = events.filter(e => !e.organizerId && e._needsOrganizerIdLookup);
+          const eventsNeedingOrganizerId = events.filter(e => {
+            const hasOrganizerId = e.organizerId && e.organizerId !== 'undefined' && e.organizerId !== '';
+            return !hasOrganizerId;
+          });
           if (eventsNeedingOrganizerId.length > 0) {
-            console.log(`[loadEventData] ${eventsNeedingOrganizerId.length} events need organizerId lookup`);
+            console.log(`[loadEventData] ${eventsNeedingOrganizerId.length} events need organizerId lookup (out of ${events.length} total)`);
             const CONCURRENT_LIMIT = 5;
             
             for (let i = 0; i < eventsNeedingOrganizerId.length; i += CONCURRENT_LIMIT) {
@@ -183,12 +186,19 @@ window.loadEventData = function loadEventData() {
                 loadEventDetail(event.id)
                   .then(detail => {
                     if (detail && (detail.organizerId || detail.organizer_id)) {
-                      event.organizerId = detail.organizerId || detail.organizer_id;
+                      const organizerId = detail.organizerId || detail.organizer_id;
+                      event.organizerId = organizerId;
                       delete event._needsOrganizerIdLookup;
+                      console.log(`[loadEventData] ✓ Added organizerId ${organizerId} to event ${event.id}`);
+                    } else {
+                      console.warn(`[loadEventData] ⚠ No organizerId found for event ${event.id}`);
                     }
                     return event;
                   })
-                  .catch(() => event)
+                  .catch(err => {
+                    console.error(`[loadEventData] ✗ Failed to load detail for event ${event.id}:`, err);
+                    return event;
+                  })
               );
               
               await Promise.all(lookupPromises);
