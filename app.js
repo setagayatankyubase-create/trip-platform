@@ -16,19 +16,20 @@ const ClickTracker = {
     }
     
     // 連打防止：同一デバイスで1イベントにつき1回まで（1週間でリセット）
-    const storageKey = `sotonavi_clicked_${eventId}`;
+    // 別のイベントIDなら別々に記録される（各イベントごとに独立）
+    const storageKey = `sotonavi_clicked_${eventId}`; // イベントIDごとに別のキー
     const RESET_PERIOD_MS = 7 * 24 * 60 * 60 * 1000; // 1週間
     
     try {
       const cached = localStorage.getItem(storageKey);
       if (cached) {
         const parsed = JSON.parse(cached);
-        // timestamp と eventId を確認
+        // timestamp と eventId を確認（このイベントIDのみチェック）
         if (parsed && parsed.timestamp && parsed.eventId === eventId) {
           const age = Date.now() - parsed.timestamp;
           if (age < RESET_PERIOD_MS) {
             console.log('[ClickTracker] Already sent within 1 week, skipping:', eventId);
-            return; // 1週間以内に送信済み
+            return; // このイベントIDは1週間以内に送信済み（別のイベントIDは影響なし）
           }
           // 1週間経過していれば古いデータを削除（下で新しいデータを保存）
         }
