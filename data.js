@@ -5,6 +5,18 @@ const DATA_BASE = "/data";
 // キャッシュ無効化用バージョン（シート構造やレスポンス形式を変えたら更新）
 const EVENT_CACHE_VERSION = "v1_2025-12-20"; // キャッシュ無効化（organizerId補完の確認用）
 
+// organizerId正規化ヘルパー
+const normalizeId = (v) => {
+  const s = (v ?? '').toString().trim();
+  return (s && s !== 'undefined') ? s : undefined;
+};
+
+// organizerId補完が必要かどうかの判定
+const needsOrganizerIdLookup = (e) => {
+  const orgId = normalizeId(e.organizerId ?? e.organizer_id);
+  return !orgId;
+};
+
 // グローバルに公開しておく（他のスクリプトから必ず参照できるようにする）
 // eventData: 従来どおりのフルデータ（events / organizers / categories）
 // eventIndex: 一覧表示用の軽量データ（events_index）
@@ -97,8 +109,8 @@ window.loadEventData = function loadEventData() {
           
           const dates = dateStr ? [{ date: dateStr }] : [];
           
-          // organizerIdがevents_indexにない場合は、個別JSONを取得する必要がある
-          const itemOrganizerId = (item.organizerId || item.organizer_id || '').toString().trim();
+          // organizerIdを正規化
+          const itemOrganizerId = normalizeId(item.organizerId ?? item.organizer_id);
           
           events.push({
             id: item.id,
@@ -112,7 +124,7 @@ window.loadEventData = function loadEventData() {
             rating: item.rating,
             reviewCount: item.reviewCount,
             categoryId: item.categoryId,
-            organizerId: itemOrganizerId || undefined, // 空文字列の場合はundefinedにする（補完処理で検出できるように）
+            organizerId: itemOrganizerId, // 正規化済み（空の場合はundefined）
             dates: dates,
             next_date: item.next_date,
             publishedAt: item.publishedAt || item.published_at || new Date().toISOString(),
@@ -149,9 +161,9 @@ window.loadEventData = function loadEventData() {
               : [];
             
             // organizerIdは詳細JSONから優先して取得
-            const organizerId = detail 
-              ? ((detail.organizerId || detail.organizer_id || '').toString().trim() || undefined)
-              : ((item.organizerId || item.organizer_id || '').toString().trim() || undefined);
+            const organizerId = normalizeId(
+              detail?.organizerId ?? detail?.organizer_id ?? item.organizerId ?? item.organizer_id
+            );
             
             events.push({
               id: item.id,
@@ -180,11 +192,7 @@ window.loadEventData = function loadEventData() {
         
         // organizerIdが欠けているイベントを補完（並列化、同時実行数制限付き）
         // この処理はすべてのイベント構築後に実行する
-        const eventsNeedingOrganizerId = events.filter(e => {
-          const organizerId = e.organizerId || e.organizer_id;
-          // undefined、null、空文字列、'undefined'文字列の場合は補完が必要
-          return !organizerId || organizerId === 'undefined' || organizerId === '';
-        });
+        const eventsNeedingOrganizerId = events.filter(needsOrganizerIdLookup);
         if (eventsNeedingOrganizerId.length > 0) {
           console.log(`[loadEventData] ${eventsNeedingOrganizerId.length} events need organizerId lookup (out of ${events.length} total)`);
           console.log(`[loadEventData] Sample events needing organizerId:`, eventsNeedingOrganizerId.slice(0, 3).map(e => ({ id: e.id, organizerId: e.organizerId })));
@@ -195,10 +203,9 @@ window.loadEventData = function loadEventData() {
             const lookupPromises = chunk.map(event => 
               loadEventDetail(event.id)
                 .then(detail => {
-                  if (detail && (detail.organizerId || detail.organizer_id)) {
-                    const organizerId = detail.organizerId || detail.organizer_id;
+                  const organizerId = normalizeId(detail?.organizerId ?? detail?.organizer_id);
+                  if (organizerId) {
                     event.organizerId = organizerId;
-                    delete event._needsOrganizerIdLookup;
                     console.log(`[loadEventData] ✓ Added organizerId ${organizerId} to event ${event.id}`);
                   } else {
                     console.warn(`[loadEventData] ⚠ No organizerId found for event ${event.id}`);
@@ -215,15 +222,10 @@ window.loadEventData = function loadEventData() {
           }
         }
         
-        console.log(`[loadEventData] Built ${events.length} events, with dates: ${events.filter(e => e.dates && e.dates.length > 0).length}`);
-        // デバッグ：organizerIdの有無を確認
-        const eventsWithOrganizerId = events.filter(e => e.organizerId && e.organizerId !== 'undefined' && e.organizerId !== '' && e.organizerId !== null);
-        console.log(`[loadEventData] Events with organizerId: ${eventsWithOrganizerId.length} out of ${events.length}`);
-        if (events.length > 0) {
-          console.log(`[loadEventData] Sample organizerIds (first 10):`, events.slice(0, 10).map(e => ({ id: e.id, organizerId: e.organizerId || e.organizer_id || '(empty)' })));
-        } else {
-          console.warn(`[loadEventData] WARNING: events array is empty!`);
-        }
+        // デバッグログ（最小限）
+        const eventsWithOrganizerId = events.filter(e => !needsOrganizerIdLookup(e));
+        console.log(`[loadEventData] events total: ${events.length}, with organizerId: ${eventsWithOrganizerId.length}, sample:`, 
+          events.slice(0, 3).map(e => ({ id: e.id, organizerId: normalizeId(e.organizerId ?? e.organizer_id) || '(empty)' })));
       }
 
       window.eventData = {

@@ -173,18 +173,18 @@
         // 提供元データを取得
         const organizer = eventData?.organizers?.find(o => o.id === organizerId);
         
-        // イベントをフィルタリング（organizerId と organizer_id の両方をチェック）
-        const events = (eventData?.events || []).filter(e => {
-          const eOrganizerId = e.organizerId || e.organizer_id;
-          return eOrganizerId === organizerId;
-        });
+        // イベントをフィルタリング（organizerId と organizer_id の両方をチェック、trim済み同士で比較）
+        const norm = (v) => (v ?? '').toString().trim();
+        const events = (eventData?.events || []).filter(e => 
+          norm(e.organizerId ?? e.organizer_id) === norm(organizerId)
+        );
 
         // レンダリング
         if (!organizer) {
           console.error('[organizer-detail.html] Organizer not found:', organizerId);
         }
         if (events.length === 0) {
-          console.warn('[organizer-detail.html] No events found for organizer:', organizerId, `(checked ${eventData?.events?.length || 0} events)`);
+          console.warn('[organizer-detail.html] filtered events length: 0', `(checked ${eventData?.events?.length || 0} events, organizerId: "${organizerId}")`);
         }
         
         OrganizerPageRenderer.render(organizer, events);
