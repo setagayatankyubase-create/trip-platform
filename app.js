@@ -156,26 +156,16 @@ const ClickTracker = {
     };
 
     // navigator.sendBeaconを使用（ページ遷移時も確実に送信）
+    // text/plainを使用することでCORSプリフライトを回避
     try {
       const jsonData = JSON.stringify(payload);
       console.log('[ClickTracker] [カードリンク] Sending payload:', payload);
-      const blob = new Blob([jsonData], { type: 'application/json' });
+      const blob = new Blob([jsonData], { type: 'text/plain;charset=utf-8' });
       const queued = navigator.sendBeacon(CLICK_TRACKING_GAS_URL, blob);
       console.log('[ClickTracker] [カードリンク] sendBeacon queued:', queued);
-      
-      // sendBeaconが失敗した場合のフォールバック（通常は実行されない）
-      if (!queued) {
-        fetch(CLICK_TRACKING_GAS_URL, {
-          method: 'POST',
-          body: jsonData,
-          keepalive: true,
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        }).catch((err) => {
-          console.warn('[ClickTracker] [カードリンク] Fetch fallback failed:', err);
-        });
-      }
+    } catch (beaconErr) {
+      console.error('[ClickTracker] [カードリンク] sendBeacon failed:', beaconErr);
+    }
     } catch (error) {
       console.error('[ClickTracker] Error:', error);
     }

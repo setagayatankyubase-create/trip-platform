@@ -469,36 +469,13 @@ const EventPageRenderer = {
               console.log("[ClickTracker] [公式サイトボタン] Sending to GAS:", measurementData);
               
               // navigator.sendBeaconを使用（ページ遷移時も確実に送信）
+              // text/plainを使用することでCORSプリフライトを回避
               try {
-                const blob = new Blob([jsonData], { type: 'application/json' });
+                const blob = new Blob([jsonData], { type: 'text/plain;charset=utf-8' });
                 const queued = navigator.sendBeacon(gasUrl, blob);
                 console.log('[ClickTracker] [公式サイトボタン] sendBeacon queued:', queued);
-                
-                // sendBeaconが失敗した場合のフォールバック（通常は実行されない）
-                if (!queued) {
-                  fetch(gasUrl, {
-                    method: 'POST',
-                    body: jsonData,
-                    keepalive: true,
-                    headers: {
-                      'Content-Type': 'application/json'
-                    }
-                  }).catch(function(err) {
-                    console.warn('[ClickTracker] [公式サイトボタン] Fetch fallback failed:', err);
-                  });
-                }
               } catch (beaconErr) {
-                console.error('[ClickTracker] [公式サイトボタン] sendBeacon failed, using fetch:', beaconErr);
-                fetch(gasUrl, {
-                  method: 'POST',
-                  body: jsonData,
-                  keepalive: true,
-                  headers: {
-                    'Content-Type': 'application/json'
-                  }
-                }).catch(function(err) {
-                  console.warn('[ClickTracker] [公式サイトボタン] Fetch failed:', err);
-                });
+                console.error('[ClickTracker] [公式サイトボタン] sendBeacon failed:', beaconErr);
               }
               
               // タイムスタンプは既に保存済み（上で先に保存している）
