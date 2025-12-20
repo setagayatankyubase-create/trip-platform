@@ -118,6 +118,7 @@ window.loadEventData = function loadEventData() {
           // organizerId は「生成しない」。そのまま流す
           events.push({
             ...item,  // ← これで organizerId は保持される
+            organizerId: item.organizerId, // ★明示的に設定して確実に保持
             id: item.id,
             title: item.title,
             image: item.image || item.thumb,
@@ -231,12 +232,22 @@ window.loadEventData = function loadEventData() {
         console.log(`[loadEventData] events total: ${events.length}, with organizerId: ${eventsWithOrganizerId.length}`);
       }
 
+      console.log("[TRACE] Setting eventData (constructed events array) at", new Error().stack.split("\n")[1]);
       window.eventData = {
         events,
         organizers: meta.organizers || [],
         categories: meta.categories || [],
       };
       window.eventIndex = index;
+
+      // ★最終確定：一覧は events_index.json を正とする（organizerId 確実保持のため）
+      // この時点で index は loadEventIndex() から取得済み
+      console.log("[TRACE] Setting eventData.events from index at", new Error().stack.split("\n")[1]);
+      window.eventData = window.eventData || {};
+      window.eventData.events = index;        // ← ここで確定上書き（index = events_index.json 直由来）
+      window.eventData.events_index = index;  // ← 念のため
+      window.eventData.organizers = meta.organizers || [];
+      window.eventData.categories = meta.categories || [];
 
       try {
         const payload = {
@@ -317,6 +328,7 @@ window.loadEventIndex = function loadEventIndex() {
       window.eventIndex = index;
 
       // ★互換: 既存ページが eventData.events を見る前提なら、ここに index を流し込む
+      console.log("[TRACE] Setting eventData.events from index (loadEventIndex) at", new Error().stack.split("\n")[1]);
       window.eventData = window.eventData || {};
       window.eventData.events = index;        // ← ここが重要
       window.eventData.events_index = index;  // ← ついでに入れておくと安全
