@@ -158,68 +158,25 @@
   <script>
     (async () => {
       try {
-        // メタデータとインデックスを読み込み
-        await Promise.all([loadEventMeta(), loadEventIndex()]);
+        // loadEventData()を使用（organizerIdが補完されている）
+        await loadEventData();
 
         // URLパラメータから提供元IDを取得
         const urlParams = new URLSearchParams(window.location.search);
         const organizerId = urlParams.get('id');
 
         // 提供元データを取得
-        const organizer = window.eventMeta && window.eventMeta.organizers 
-          ? window.eventMeta.organizers.find(o => o.id === organizerId) 
-          : null;
-
-        // events_indexにorganizerIdがあるかチェックして、事前フィルタリングを試行
-        let eventIdsToLoad = [];
-        if (window.eventIndex && Array.isArray(window.eventIndex) && window.eventIndex.length > 0) {
-          // events_indexにorganizerIdが含まれているかチェック
-          const sampleItem = window.eventIndex[0];
-          const hasOrganizerIdInIndex = sampleItem && (sampleItem.organizerId || sampleItem.organizer_id);
-          
-          if (hasOrganizerIdInIndex) {
-            // events_indexにorganizerIdがある場合、事前フィルタリング
-            eventIdsToLoad = window.eventIndex
-              .filter(e => {
-                const eOrganizerId = e.organizerId || e.organizer_id;
-                return eOrganizerId === organizerId;
-              })
-              .map(e => e.id)
-              .filter(Boolean);
-            console.log(`[organizer-detail.html] Filtered ${eventIdsToLoad.length} events from eventIndex by organizerId: ${organizerId}`);
-          } else {
-            // events_indexにorganizerIdがない場合、すべてのイベントIDを取得
-            eventIdsToLoad = window.eventIndex.map(e => e.id).filter(Boolean);
-            console.log(`[organizer-detail.html] organizerId not in eventIndex, loading all ${eventIdsToLoad.length} events to filter`);
-          }
-        }
-
-        // 該当するイベントの詳細を並列で取得
-        const events = [];
-        if (eventIdsToLoad.length > 0) {
-          const CONCURRENT_LIMIT = 5;
-          
-          // チャンクに分割して並列処理
-          for (let i = 0; i < eventIdsToLoad.length; i += CONCURRENT_LIMIT) {
-            const chunk = eventIdsToLoad.slice(i, i + CONCURRENT_LIMIT);
-            const detailPromises = chunk.map(eventId => 
-              loadEventDetail(eventId).catch(() => null)
-            );
-            const details = await Promise.all(detailPromises);
-            
-            // organizerIdでフィルタリング（events_indexにorganizerIdがない場合に備える）
-            const matchingDetails = details.filter(d => {
-              if (!d) return false;
-              const eOrganizerId = d.organizerId || d.organizer_id;
-              return eOrganizerId === organizerId;
-            });
-            events.push(...matchingDetails);
-          }
-          
-          console.log(`[organizer-detail.html] Found ${events.length} events for organizer ${organizerId}`);
-        } else {
-          console.warn('[organizer-detail.html] No events to load');
-        }
+        const organizer = eventData.organizers.find(o => o.id === organizerId);
+        
+        // イベントをフィルタリング（eventData.eventsにはorganizerIdが含まれている）
+        const events = eventData.events.filter(e => {
+          const eOrganizerId = e.organizerId || e.organizer_id;
+          return eOrganizerId === organizerId;
+        });
+        
+        console.log(`[organizer-detail.html] Organizer ID: ${organizerId}`);
+        console.log(`[organizer-detail.html] Organizer found:`, organizer);
+        console.log(`[organizer-detail.html] Events found: ${events.length}`);
 
         // テンプレートを使用してページをレンダリング
         if (!organizer) {
