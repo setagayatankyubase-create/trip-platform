@@ -176,11 +176,27 @@
         // eventIndexから該当するイベントをフィルタリング
         let matchingIndexEvents = [];
         if (window.eventIndex && Array.isArray(window.eventIndex)) {
+          console.log('[organizer-detail.html] eventIndex length:', window.eventIndex.length);
+          
+          // デバッグ：最初の数件のeventIndexの内容を確認
+          if (window.eventIndex.length > 0) {
+            console.log('[organizer-detail.html] Sample eventIndex items (first 5):');
+            window.eventIndex.slice(0, 5).forEach((e, idx) => {
+              console.log(`  Index ${idx + 1}: id=${e.id}, organizerId=${e.organizerId}, organizer_id=${e.organizer_id}`);
+            });
+          }
+          
           matchingIndexEvents = window.eventIndex.filter(e => {
             const eOrganizerId = e.organizerId || e.organizer_id;
-            return eOrganizerId === organizerId;
+            const matches = eOrganizerId === organizerId;
+            if (matches) {
+              console.log('[organizer-detail.html] Matched event in eventIndex:', e.id, 'organizerId:', eOrganizerId);
+            }
+            return matches;
           });
           console.log('[organizer-detail.html] Found', matchingIndexEvents.length, 'events in eventIndex for organizer', organizerId);
+        } else {
+          console.warn('[organizer-detail.html] eventIndex is not available or not an array:', window.eventIndex);
         }
         
         // マッチしたイベントの詳細を並列で取得（個別JSONから）
@@ -201,6 +217,30 @@
           }
           
           console.log('[organizer-detail.html] Loaded', events.length, 'event details');
+        } else if (window.eventIndex && window.eventIndex.length > 0) {
+          // eventIndexにorganizerIdが含まれていない場合、全イベントの詳細を取得してフィルタリング
+          console.log('[organizer-detail.html] organizerId not found in eventIndex, loading all event details to filter...');
+          const CONCURRENT_LIMIT = 5;
+          const allEventIds = window.eventIndex.map(e => e.id);
+          
+          for (let i = 0; i < allEventIds.length; i += CONCURRENT_LIMIT) {
+            const chunk = allEventIds.slice(i, i + CONCURRENT_LIMIT);
+            const detailPromises = chunk.map(eventId => 
+              loadEventDetail(eventId).catch(err => {
+                console.error('[organizer-detail.html] Failed to load event detail:', eventId, err);
+                return null;
+              })
+            );
+            const details = await Promise.all(detailPromises);
+            const matchingDetails = details.filter(d => {
+              if (!d) return false;
+              const eOrganizerId = d.organizerId || d.organizer_id;
+              return eOrganizerId === organizerId;
+            });
+            events.push(...matchingDetails);
+          }
+          
+          console.log('[organizer-detail.html] Loaded', events.length, 'event details after filtering all events');
         }
         
         console.log('[organizer-detail.html] Events count:', events.length);
