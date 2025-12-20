@@ -1,5 +1,61 @@
 // アプリケーションロジック
 
+// GAS URL（クリック計測用）
+const CLICK_TRACKING_GAS_URL = 'https://script.google.com/macros/s/AKfycbw7G7Rf3wK2o8eS9V9VgNHtQvrTdMnhpoHxkXlR7Om9YdOLTP9nAjcdX4uN4xOeHKVHJw/exec';
+
+// クリック計測（スプレッドシートに書き込み）
+const ClickTracker = {
+  track(eventId, eventTitle) {
+    // 連打防止：同じイベントIDは1回だけ送信（localStorageで管理）
+    const storageKey = `sotonavi_clicked_${eventId}`;
+    try {
+      const alreadySent = localStorage.getItem(storageKey);
+      if (alreadySent) {
+        return; // 既に送信済み
+      }
+    } catch (storageError) {
+      // localStorageが使えない環境でも計測は続行
+    }
+
+    // GASにPOSTリクエストを送信
+    const payload = {
+      action: 'track_click',
+      eventId: eventId,
+      eventTitle: eventTitle || '',
+      timestamp: new Date().toISOString(),
+      pageUrl: window.location.href,
+      userAgent: navigator.userAgent
+    };
+
+    // fetchでPOST送信（エラーは無視）
+    fetch(CLICK_TRACKING_GAS_URL, {
+      method: 'POST',
+      mode: 'no-cors', // CORSエラーを回避
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload)
+    }).catch(() => {
+      // エラーは無視（オフラインなど）
+    });
+
+    // 送信済みフラグを保存（24時間有効）
+    try {
+      localStorage.setItem(storageKey, Date.now().toString());
+      // 24時間後にフラグを削除（簡易実装）
+      setTimeout(() => {
+        try {
+          localStorage.removeItem(storageKey);
+        } catch (e) {
+          // 無視
+        }
+      }, 24 * 60 * 60 * 1000);
+    } catch (storageError) {
+      // localStorageが使えない環境では無視
+    }
+  }
+};
+
 // URLクエリパラメータの管理
 const URLManager = {
   getParams() {
@@ -529,6 +585,16 @@ const CardRenderer = {
     }
 
     container.innerHTML = events.map(event => this.render(event)).join('');
+    
+    // クリックイベントリスナーを追加
+    container.querySelectorAll('.card-link').forEach(link => {
+      link.addEventListener('click', (e) => {
+        const eventId = link.getAttribute('data-event-id');
+        const card = link.querySelector('.card');
+        const eventTitle = card ? card.querySelector('.card-title')?.textContent || '' : '';
+        ClickTracker.track(eventId, eventTitle);
+      });
+    });
   },
 
   renderCarousel(events, containerId) {
@@ -547,6 +613,16 @@ const CardRenderer = {
     }
 
     container.innerHTML = events.map(event => this.render(event)).join('');
+    
+    // クリックイベントリスナーを追加
+    container.querySelectorAll('.card-link').forEach(link => {
+      link.addEventListener('click', (e) => {
+        const eventId = link.getAttribute('data-event-id');
+        const card = link.querySelector('.card');
+        const eventTitle = card ? card.querySelector('.card-title')?.textContent || '' : '';
+        ClickTracker.track(eventId, eventTitle);
+      });
+    });
   }
 };
 
