@@ -194,10 +194,22 @@
     // デモ用設定（GAS APIのURL）
     const DEMO_GAS_API_URL = 'https://script.google.com/macros/s/AKfycbyyjVTkFqxOf32P3pT2d9XfzPAir2ssEMj9u7-6kO1allkXUo1ey0bQbdcENK2Rl4lr-w/exec';
     
-    // セッション中に既に認証済みかチェック
+    // セッション中に既に認証済みかチェック（有効期限も確認）
     function getDemoPassword() {
       try {
-        return sessionStorage.getItem('demo_password');
+        const authDataStr = sessionStorage.getItem('demo_auth');
+        if (!authDataStr) return null;
+        
+        const authData = JSON.parse(authDataStr);
+        
+        // 有効期限をチェック
+        if (Date.now() > authData.expiresAt) {
+          // 期限切れの場合は認証をクリア
+          sessionStorage.removeItem('demo_auth');
+          return null;
+        }
+        
+        return authData.password;
       } catch (e) {
         return null;
       }

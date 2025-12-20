@@ -380,8 +380,10 @@ const EventPageRenderer = {
 
     const bookingBtn = document.getElementById('external-booking-btn');
     if (bookingBtn) {
-      if (event.externalLink) {
-        bookingBtn.href = event.externalLink;
+      // externalLinkまたはexternal_linkの両方に対応
+      const externalLink = event.externalLink || event.external_link;
+      if (externalLink) {
+        bookingBtn.href = externalLink;
         bookingBtn.textContent = '公式サイトへ進む';
         bookingBtn.style.display = 'block';
         

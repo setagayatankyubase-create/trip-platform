@@ -101,6 +101,7 @@
   <script>
     // デモ用設定（GAS APIのURL）
     const DEMO_GAS_API_URL = 'https://script.google.com/macros/s/AKfycbyyjVTkFqxOf32P3pT2d9XfzPAir2ssEMj9u7-6kO1allkXUo1ey0bQbdcENK2Rl4lr-w/exec';
+    const DEMO_AUTH_EXPIRY_MS = 60 * 60 * 1000; // 認証有効期限：1時間
     
     // デモデータを取得
     async function fetchDemoData(password) {
@@ -150,10 +151,14 @@
       try {
         const demoData = await fetchDemoData(password);
         
-        // パスワードが正しい場合、sessionStorageに保存
+        // パスワードが正しい場合、sessionStorageに保存（有効期限付き）
         try {
-          sessionStorage.setItem('demo_authenticated', 'true');
-          sessionStorage.setItem('demo_password', password);
+          const authData = {
+            password: password,
+            authenticatedAt: Date.now(),
+            expiresAt: Date.now() + DEMO_AUTH_EXPIRY_MS
+          };
+          sessionStorage.setItem('demo_auth', JSON.stringify(authData));
         } catch (e) {
           console.warn('sessionStorage not available:', e);
         }
@@ -277,8 +282,7 @@
     // デモ認証をクリア
     function clearDemoAuth() {
       try {
-        sessionStorage.removeItem('demo_authenticated');
-        sessionStorage.removeItem('demo_password');
+        sessionStorage.removeItem('demo_auth');
       } catch (e) {
         console.warn('sessionStorage not available:', e);
       }
@@ -288,13 +292,23 @@
       document.getElementById('demo-auth-error').style.display = 'none';
     }
     
-    // セッション中に既に認証済みかチェック
+    // セッション中に既に認証済みかチェック（有効期限も確認）
     function checkDemoAuth() {
       try {
-        const authenticated = sessionStorage.getItem('demo_authenticated');
-        const password = sessionStorage.getItem('demo_password');
+        const authDataStr = sessionStorage.getItem('demo_auth');
+        if (!authDataStr) return;
         
-        if (authenticated === 'true' && password) {
+        const authData = JSON.parse(authDataStr);
+        
+        // 有効期限をチェック
+        if (Date.now() > authData.expiresAt) {
+          // 期限切れの場合は認証をクリア
+          sessionStorage.removeItem('demo_auth');
+          return;
+        }
+        
+        const password = authData.password;
+        if (password) {
           // 既に認証済みの場合はデータを取得して表示
           fetchDemoData(password).then(demoData => {
             if (demoData && demoData.success) {

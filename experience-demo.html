@@ -343,10 +343,22 @@
     // デモ用設定（GAS APIのURL）
     const DEMO_GAS_API_URL = 'https://script.google.com/macros/s/AKfycbyyjVTkFqxOf32P3pT2d9XfzPAir2ssEMj9u7-6kO1allkXUo1ey0bQbdcENK2Rl4lr-w/exec';
     
-    // セッション中に既に認証済みかチェック
+    // セッション中に既に認証済みかチェック（有効期限も確認）
     function getDemoPassword() {
       try {
-        return sessionStorage.getItem('demo_password');
+        const authDataStr = sessionStorage.getItem('demo_auth');
+        if (!authDataStr) return null;
+        
+        const authData = JSON.parse(authDataStr);
+        
+        // 有効期限をチェック
+        if (Date.now() > authData.expiresAt) {
+          // 期限切れの場合は認証をクリア
+          sessionStorage.removeItem('demo_auth');
+          return null;
+        }
+        
+        return authData.password;
       } catch (e) {
         return null;
       }
@@ -441,6 +453,11 @@
 
         // イベント詳細をレンダリング（event-template.jsのEventPageRendererを使用）
         if (typeof EventPageRenderer !== 'undefined') {
+          // デモデータのexternal_linkをexternalLinkに変換（EventPageRenderer.renderBookingで使用）
+          if (event.external_link && !event.externalLink) {
+            event.externalLink = event.external_link;
+          }
+          
           EventPageRenderer.render(event, organizer);
           
           // デモバッジを追加
@@ -453,6 +470,18 @@
           const organizerLink = document.getElementById('organizer-link');
           if (organizerLink && organizer && organizer.id) {
             organizerLink.href = `organizer-demo.html?id=${organizer.id}`;
+          }
+          
+          // 外部リンクボタンを確実に設定（EventPageRenderer.renderBookingのフォールバック）
+          const externalBtn = document.getElementById('external-booking-btn');
+          if (externalBtn) {
+            const externalLink = event.externalLink || event.external_link;
+            if (externalLink) {
+              externalBtn.href = externalLink;
+              externalBtn.style.display = 'block';
+            } else {
+              externalBtn.style.display = 'none';
+            }
           }
         } else {
           // EventPageRendererが使えない場合は手動でレンダリング
