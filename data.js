@@ -233,6 +233,7 @@ window.loadEventData = function loadEventData() {
       }
 
       console.log("[TRACE] Setting eventData (constructed events array) at", new Error().stack.split("\n")[1]);
+      console.log("[TRACE] constructed events length:", events?.length);
       window.eventData = {
         events,
         organizers: meta.organizers || [],
@@ -243,6 +244,7 @@ window.loadEventData = function loadEventData() {
       // ★最終確定：一覧は events_index.json を正とする（organizerId 確実保持のため）
       // この時点で index は loadEventIndex() から取得済み
       console.log("[TRACE] Setting eventData.events from index at", new Error().stack.split("\n")[1]);
+      console.log("[TRACE] overwrite events with index length:", index?.length);
       window.eventData = window.eventData || {};
       window.eventData.events = index;        // ← ここで確定上書き（index = events_index.json 直由来）
       window.eventData.events_index = index;  // ← 念のため
@@ -306,12 +308,19 @@ window.loadEventIndex = function loadEventIndex() {
   }
 
   const url = `${DATA_BASE}/events_index.json`;
-  _eventIndexLoadingPromise = fetch(url)
-    .then((res) => {
+  _eventIndexLoadingPromise = fetch(url, { cache: "no-store" })
+    .then(async (res) => {
+      console.log("[TRACE] index fetch", res.status, res.url, res.headers.get("content-type"));
+      const txt = await res.text();
+      console.log("[TRACE] index head", txt.slice(0, 120));
+      const json = JSON.parse(txt);
+      console.log("[TRACE] index keys", Object.keys(json));
+      console.log("[TRACE] index length", (json.events_index || []).length);
+      
       if (!res.ok) {
         throw new Error(`Failed to load event index: ${res.status}`);
       }
-      return res.json();
+      return json;
     })
     .then((json) => {
       // ルートが { events_index: [...] } でも単純配列でも対応
@@ -329,6 +338,7 @@ window.loadEventIndex = function loadEventIndex() {
 
       // ★互換: 既存ページが eventData.events を見る前提なら、ここに index を流し込む
       console.log("[TRACE] Setting eventData.events from index (loadEventIndex) at", new Error().stack.split("\n")[1]);
+      console.log("[TRACE] overwrite events with index length:", index?.length);
       window.eventData = window.eventData || {};
       window.eventData.events = index;        // ← ここが重要
       window.eventData.events_index = index;  // ← ついでに入れておくと安全
