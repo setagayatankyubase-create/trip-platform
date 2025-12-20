@@ -97,6 +97,9 @@ window.loadEventData = function loadEventData() {
           
           const dates = dateStr ? [{ date: dateStr }] : [];
           
+          // organizerIdがevents_indexにない場合は、個別JSONを取得する必要がある
+          const itemOrganizerId = item.organizerId || item.organizer_id;
+          
           events.push({
             id: item.id,
             title: item.title,
@@ -109,7 +112,8 @@ window.loadEventData = function loadEventData() {
             rating: item.rating,
             reviewCount: item.reviewCount,
             categoryId: item.categoryId,
-            organizerId: item.organizerId || item.organizer_id, // organizerIdを追加
+            organizerId: itemOrganizerId, // organizerIdを追加（存在しない場合は後で補完）
+            _needsOrganizerIdLookup: !itemOrganizerId, // organizerIdがない場合はフラグを立てる
             dates: dates,
             next_date: item.next_date,
             publishedAt: item.publishedAt || item.published_at || new Date().toISOString(),
@@ -145,6 +149,9 @@ window.loadEventData = function loadEventData() {
               ? detail.dates
               : [];
             
+            // organizerIdは詳細JSONから優先して取得
+            const organizerId = detail ? (detail.organizerId || detail.organizer_id) : (item.organizerId || item.organizer_id);
+            
             events.push({
               id: item.id,
               title: item.title,
@@ -157,11 +164,35 @@ window.loadEventData = function loadEventData() {
               rating: item.rating,
               reviewCount: item.reviewCount,
               categoryId: item.categoryId,
-              organizerId: detail ? (detail.organizerId || detail.organizer_id) : (item.organizerId || item.organizer_id), // organizerIdを追加
+              organizerId: organizerId, // organizerIdを追加
               dates: dates,
               next_date: item.next_date || (dates.length > 0 ? dates[0].date : null),
               publishedAt: item.publishedAt || item.published_at || new Date().toISOString(),
             });
+          }
+          
+          // organizerIdが欠けているイベントを補完（並列化、同時実行数制限付き）
+          const eventsNeedingOrganizerId = events.filter(e => !e.organizerId && e._needsOrganizerIdLookup);
+          if (eventsNeedingOrganizerId.length > 0) {
+            console.log(`[loadEventData] ${eventsNeedingOrganizerId.length} events need organizerId lookup`);
+            const CONCURRENT_LIMIT = 5;
+            
+            for (let i = 0; i < eventsNeedingOrganizerId.length; i += CONCURRENT_LIMIT) {
+              const chunk = eventsNeedingOrganizerId.slice(i, i + CONCURRENT_LIMIT);
+              const lookupPromises = chunk.map(event => 
+                loadEventDetail(event.id)
+                  .then(detail => {
+                    if (detail && (detail.organizerId || detail.organizer_id)) {
+                      event.organizerId = detail.organizerId || detail.organizer_id;
+                      delete event._needsOrganizerIdLookup;
+                    }
+                    return event;
+                  })
+                  .catch(() => event)
+              );
+              
+              await Promise.all(lookupPromises);
+            }
           }
           
           // next_date が無いイベント数をログ出力（GAS/シート整備の参考用）
