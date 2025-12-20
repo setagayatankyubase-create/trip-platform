@@ -152,7 +152,8 @@ function doGet(e) {
       const passwordMatch = rowPassword && rowPassword.toString().trim() === password.trim();
       const organizerIdMatch = rowOrganizerId && organizerId && rowOrganizerId.toString().trim() === organizerId.toString().trim();
       
-      if (statusMatch && (passwordMatch || organizerIdMatch)) {
+      // passwordマッチを優先（提供元ごとにパスワードで管理するため）
+      if (statusMatch && passwordMatch) {
         const event = {
           id: row[eventHeaderMap['id']] ? row[eventHeaderMap['id']].toString() : '',
           title: row[eventHeaderMap['title']] ? row[eventHeaderMap['title']].toString() : '',

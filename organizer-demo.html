@@ -256,7 +256,8 @@
       const meta = document.getElementById('organizer-meta');
       if (meta) {
         let metaHtml = '';
-        if (organizer.establishedYear) {
+        // establishedYearが存在し、有効な値の場合のみ表示
+        if (organizer.establishedYear && organizer.establishedYear !== '' && organizer.establishedYear !== 'undefined') {
           metaHtml += `
             <div class="meta-item">
               <div class="meta-label">設立年</div>
@@ -264,11 +265,12 @@
             </div>
           `;
         }
-        if (organizer.rating) {
+        // ratingが存在し、0以外の場合のみ表示
+        if (organizer.rating && organizer.rating !== 0 && organizer.rating !== 'undefined' && !isNaN(organizer.rating)) {
           metaHtml += `
             <div class="meta-item">
               <div class="meta-label">評価</div>
-              <div class="meta-value">★${organizer.rating} ${organizer.reviewCount ? `(${organizer.reviewCount}件)` : ''}</div>
+              <div class="meta-value">★${organizer.rating} ${organizer.reviewCount && organizer.reviewCount !== 0 && organizer.reviewCount !== 'undefined' && !isNaN(organizer.reviewCount) ? `(${organizer.reviewCount}件)` : ''}</div>
             </div>
           `;
         }
@@ -280,7 +282,16 @@
             </div>
           `;
         }
-        if (organizer.website) {
+        // contactが存在し、有効な値の場合のみ表示
+        if (organizer.contact && organizer.contact !== '' && organizer.contact !== 'undefined') {
+          metaHtml += `
+            <div class="meta-item">
+              <div class="meta-label">連絡先</div>
+              <div class="meta-value" style="font-size: 0.95rem;">${organizer.contact}</div>
+            </div>
+          `;
+        }
+        if (organizer.website && organizer.website !== '' && organizer.website !== 'undefined') {
           metaHtml += `
             <div class="meta-item">
               <div class="meta-label">ウェブサイト</div>
@@ -301,13 +312,17 @@
         eventCount.textContent = `${events.length}件`;
       }
       
+      console.log('[organizer-demo.html] renderOrganizerDetail - events:', events);
+      console.log('[organizer-demo.html] renderOrganizerDetail - events.length:', events.length);
+      
       const eventsContainer = document.getElementById('organizer-events');
       if (eventsContainer) {
         if (events.length === 0) {
           eventsContainer.innerHTML = '<p style="color: #6c7a72; padding: 40px; text-align: center;">この提供元のイベントはありません</p>';
         } else {
           // デモ用のイベントカードを手動でレンダリング（experience-demo.htmlにリンク）
-          eventsContainer.innerHTML = events.map(event => {
+          const eventsHtml = events.map(event => {
+            console.log('[organizer-demo.html] Rendering event:', event);
             let badgesHtml = '';
             if (event.isRecommended) {
               badgesHtml += '<span class="badge recommended">おすすめ</span>';
@@ -336,6 +351,9 @@
               </a>
             `;
           }).join('');
+          
+          console.log('[organizer-demo.html] Events HTML length:', eventsHtml.length);
+          eventsContainer.innerHTML = eventsHtml;
           
           // クリック計測を追加（必要に応じて）
           const links = eventsContainer.querySelectorAll('.card-link');
@@ -388,7 +406,10 @@
         // デモデータを取得
         const demoData = await fetchDemoData(password);
         
+        console.log('[organizer-demo.html] Demo data received:', demoData);
+        
         if (!demoData || !demoData.success || !demoData.organizer) {
+          console.error('[organizer-demo.html] Demo data error:', demoData);
           document.getElementById('demo-error').style.display = 'block';
           document.getElementById('demo-content').style.display = 'none';
           return;
@@ -396,6 +417,7 @@
         
         // 指定されたIDの提供元を検索
         if (demoData.organizer.id !== organizerId) {
+          console.warn('[organizer-demo.html] Organizer ID mismatch:', demoData.organizer.id, 'vs', organizerId);
           document.getElementById('demo-error').style.display = 'block';
           document.getElementById('demo-error').innerHTML = `
             <h2>提供元が見つかりません</h2>
@@ -407,6 +429,10 @@
           document.getElementById('demo-content').style.display = 'none';
           return;
         }
+
+        console.log('[organizer-demo.html] Rendering organizer:', demoData.organizer);
+        console.log('[organizer-demo.html] Events count:', demoData.events ? demoData.events.length : 0);
+        console.log('[organizer-demo.html] Events:', demoData.events);
 
         // コンテンツを表示
         document.getElementById('demo-error').style.display = 'none';
