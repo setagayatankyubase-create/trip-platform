@@ -339,6 +339,11 @@ window.loadEventIndex = function loadEventIndex() {
 
       window.eventIndex = index;
 
+      // ★互換: 既存ページが eventData.events を見る前提なら、ここに index を流し込む
+      window.eventData = window.eventData || {};
+      window.eventData.events = index;        // ← ここが重要
+      window.eventData.events_index = index;  // ← ついでに入れておくと安全
+
       try {
         const payload = {
           timestamp: Date.now(),
