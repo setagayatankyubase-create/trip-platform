@@ -175,6 +175,24 @@ const ClickTracker = {
       organizer_id: organizerId || ''
     };
 
+    // 送信直前に再度チェック（重複送信防止）
+    try {
+      const lastSent = sessionStorage.getItem(sentFlagKey);
+      if (lastSent) {
+        const lastSentTime = parseInt(lastSent, 10);
+        const timeDiff = currentTimestamp - lastSentTime;
+        // 1秒以内の送信は重複として扱う
+        if (timeDiff < 1000) {
+          console.log('[ClickTracker] [カードリンク] 送信直前に重複を検出、スキップします');
+          return;
+        }
+      }
+      // 送信直前にタイムスタンプを更新
+      sessionStorage.setItem(sentFlagKey, currentTimestamp.toString());
+    } catch (storageError) {
+      // sessionStorageが使えない場合は続行
+    }
+
     // navigator.sendBeaconのみを使用（ページ遷移時も確実に送信、重複送信を防ぐ）
     // text/plainを使用することでCORSプリフライトを回避
     try {
