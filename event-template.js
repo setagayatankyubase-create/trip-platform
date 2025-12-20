@@ -349,14 +349,24 @@ const EventPageRenderer = {
         
         // クリックイベントリスナーを登録（計測処理）
         bookingBtn.addEventListener('click', function(e) {
-            // 連打防止：同じイベントIDは1回だけ送信（localStorageで管理）
+            // 連打防止：10分間に1イベント1回まで（同じ人がクリックするのを制限）
             const storageKey = `sotonavi_clicked_${event.id}`;
+            const RESET_PERIOD_MS = 10 * 60 * 1000; // 10分
+            
             try {
-              const alreadySent = localStorage.getItem(storageKey);
-              if (alreadySent) {
-                console.log('このイベントは既に計測済みです:', event.id);
-                // 計測はスキップするが、遷移は実行される
-                return;
+              const cached = localStorage.getItem(storageKey);
+              if (cached) {
+                const parsed = JSON.parse(cached);
+                // timestamp と eventId を確認
+                if (parsed && parsed.timestamp && parsed.eventId === event.id) {
+                  const age = Date.now() - parsed.timestamp;
+                  if (age < RESET_PERIOD_MS) {
+                    console.log('このイベントは既に計測済みです（10分以内）:', event.id);
+                    // 計測はスキップするが、遷移は実行される
+                    return;
+                  }
+                  // 10分経過していれば古いデータを削除（下で新しいデータを保存）
+                }
               }
             } catch (storageError) {
               // localStorageが使えない環境でも計測は続行
@@ -372,10 +382,9 @@ const EventPageRenderer = {
 
             // 計測処理（失敗しても遷移は実行）
             const measurementData = {
-              token: 'sotonavi_click_9F2kA8R7mQX3LZpD5YwE1H',
+              token: 'sotonavi_click_9F2kA8R7mQX3LZpD5YwE11', // GAS側のCLICK_SECRETと一致
               event_id: event.id,
-              organizer_id: organizerIdForCount,
-              origin: window.location.origin // Originチェック用
+              organizer_id: organizerIdForCount
             };
             
             const gasUrl = 'https://script.google.com/macros/s/AKfycbw7G7Rf3wK2o8eS9V9VgNHtQvrTdMnhpoHxkXlR7Om9YdOLTP9nAjcdX4uN4xOeHKVHJw/exec';
@@ -399,9 +408,21 @@ const EventPageRenderer = {
                 });
               }
               
-              // 送信済みフラグを保存（送信成功・失敗に関わらず記録）
+              // 送信済みフラグを保存（10分間有効、送信成功・失敗に関わらず記録）
               try {
-                localStorage.setItem(storageKey, Date.now().toString());
+                const cacheData = {
+                  eventId: event.id,
+                  timestamp: Date.now()
+                };
+                localStorage.setItem(storageKey, JSON.stringify(cacheData));
+                // 10分後にフラグを削除（簡易実装）
+                setTimeout(() => {
+                  try {
+                    localStorage.removeItem(storageKey);
+                  } catch (e) {
+                    // 無視
+                  }
+                }, RESET_PERIOD_MS);
               } catch (storageError) {
                 // localStorage保存失敗は無視
               }
