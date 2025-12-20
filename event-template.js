@@ -598,25 +598,34 @@ const EventPageRenderer = {
     const structuredDataEl = document.getElementById('event-structured-data');
     if (!structuredDataEl) return;
 
+    // datesが存在し、配列で、要素がある場合のみstartDateを設定
+    let startDate = "";
+    if (event.dates && Array.isArray(event.dates) && event.dates.length > 0 && event.dates[0]) {
+      const firstDate = event.dates[0];
+      if (firstDate.date) {
+        startDate = firstDate.time ? `${firstDate.date}T${firstDate.time}:00` : `${firstDate.date}T00:00:00`;
+      }
+    }
+
     const structuredData = {
       "@context": "https://schema.org",
       "@type": "Event",
-      "name": event.title,
-      "description": event.description,
-      "image": event.image,
-      "startDate": event.dates[0] ? `${event.dates[0].date}T${event.dates[0].time}:00` : "",
+      "name": event.title || "",
+      "description": event.description || "",
+      "image": event.image || "",
+      "startDate": startDate,
       "location": {
         "@type": "Place",
-        "name": event.location ? event.location.name : `${event.area}, ${event.prefecture}`,
+        "name": event.location && event.location.name ? event.location.name : `${event.area || ''}, ${event.prefecture || ''}`,
         "address": {
           "@type": "PostalAddress",
-          "addressLocality": event.area,
-          "addressRegion": event.prefecture
+          "addressLocality": event.area || "",
+          "addressRegion": event.prefecture || ""
         }
       },
       "offers": {
         "@type": "Offer",
-        "price": event.price,
+        "price": event.price || 0,
         "priceCurrency": "JPY"
       }
     };
