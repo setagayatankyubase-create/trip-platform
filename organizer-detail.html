@@ -156,14 +156,18 @@
   <script src="app.js"></script>
   <script src="organizer-template.js"></script>
   <script>
+    console.log('[organizer-detail.html] Script loaded at', new Date().toISOString());
     (async () => {
       try {
+        console.log('[organizer-detail.html] ===== START =====');
         // メタデータとインデックスを読み込み（提供元情報とイベント一覧用）
         console.log('[organizer-detail.html] Starting data load...');
-        await Promise.all([loadEventMeta(), loadEventIndex()]);
+        const [meta, index] = await Promise.all([loadEventMeta(), loadEventIndex()]);
+        console.log('[organizer-detail.html] loadEventMeta returned:', meta);
+        console.log('[organizer-detail.html] loadEventIndex returned:', index);
         console.log('[organizer-detail.html] Data load completed');
         console.log('[organizer-detail.html] window.eventMeta:', window.eventMeta);
-        console.log('[organizer-detail.html] window.eventIndex:', window.eventIndex);
+        console.log('[organizer-detail.html] window.eventIndex type:', typeof window.eventIndex, 'isArray:', Array.isArray(window.eventIndex), 'length:', window.eventIndex ? window.eventIndex.length : 'null/undefined');
 
         // URLパラメータから提供元IDを取得
         const urlParams = new URLSearchParams(window.location.search);
@@ -224,10 +228,11 @@
           console.log('[organizer-detail.html] Loaded', events.length, 'event details');
         } else {
           // eventIndexにorganizerIdが含まれていない場合、全イベントの詳細を取得してフィルタリング
-          console.log('[organizer-detail.html] No matches in eventIndex, trying fallback: load all event details and filter...');
+          console.log('[organizer-detail.html] ===== FALLBACK: No matches in eventIndex =====');
           console.log('[organizer-detail.html] eventIndex available:', !!window.eventIndex, 'length:', window.eventIndex ? window.eventIndex.length : 0);
           
-          if (window.eventIndex && window.eventIndex.length > 0) {
+          if (window.eventIndex && Array.isArray(window.eventIndex) && window.eventIndex.length > 0) {
+            console.log('[organizer-detail.html] eventIndex is valid array with', window.eventIndex.length, 'items, proceeding with fallback...');
             const CONCURRENT_LIMIT = 5;
             const allEventIds = window.eventIndex.map(e => e.id);
             console.log('[organizer-detail.html] Loading details for', allEventIds.length, 'events to filter by organizerId...');
