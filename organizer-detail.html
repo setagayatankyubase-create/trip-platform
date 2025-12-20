@@ -158,6 +158,10 @@
   <script>
     (async () => {
       try {
+        // キャッシュクリア（デバッグ用）
+        // localStorage.removeItem('sotonavi_eventData_v1');
+        // localStorage.removeItem('sotonavi_eventIndex_v1');
+        
         // メタデータとインデックスを読み込み（デモページと同じ方法）
         await Promise.all([loadEventMeta(), loadEventIndex()]);
 
@@ -194,9 +198,20 @@
             const matchingDetails = details.filter(d => {
               if (!d) return false;
               const eOrganizerId = d.organizerId || d.organizer_id;
+              if (i === 0 && chunk.indexOf(details.indexOf(d)) === 0) {
+                console.log(`[organizer-detail.html] Sample detail: id=${d.id}, organizerId=${eOrganizerId}, looking for: ${organizerId}`);
+              }
               return eOrganizerId === organizerId;
             });
             events.push(...matchingDetails);
+            
+            // デバッグ：最初のチャンクの結果を確認
+            if (i === 0) {
+              console.log(`[organizer-detail.html] First chunk: loaded ${details.filter(d => d).length} details, matched ${matchingDetails.length} events`);
+              if (details[0]) {
+                console.log(`[organizer-detail.html] First detail keys:`, Object.keys(details[0]));
+              }
+            }
           }
           
           console.log(`[organizer-detail.html] Found ${events.length} events for organizer ${organizerId}`);
