@@ -158,16 +158,55 @@
   <script>
     (async () => {
       try {
-        // APIからイベント・提供元データを読み込み
-        await loadEventData();
+        // メタデータとインデックスを読み込み（デモページと同じ方法）
+        await Promise.all([loadEventMeta(), loadEventIndex()]);
 
         // URLパラメータから提供元IDを取得
         const urlParams = new URLSearchParams(window.location.search);
         const organizerId = urlParams.get('id');
 
         // 提供元データを取得
-        const organizer = eventData.organizers.find(o => o.id === organizerId);
-        const events = eventData.events.filter(e => e.organizerId === organizerId);
+        const organizer = window.eventMeta && window.eventMeta.organizers 
+          ? window.eventMeta.organizers.find(o => o.id === organizerId) 
+          : null;
+
+        // eventIndexから該当するイベントIDを取得（organizerIdでフィルタリング）
+        let eventIdsToLoad = [];
+        if (window.eventIndex && Array.isArray(window.eventIndex)) {
+          // eventIndexにorganizerIdがある場合
+          const matchingIds = window.eventIndex
+            .filter(e => {
+              const eOrganizerId = e.organizerId || e.organizer_id;
+              return eOrganizerId === organizerId;
+            })
+            .map(e => e.id);
+          
+          if (matchingIds.length > 0) {
+            eventIdsToLoad = matchingIds;
+          } else {
+            // organizerIdがない場合は全イベントをチェック
+            eventIdsToLoad = window.eventIndex.map(e => e.id);
+          }
+        }
+
+        // 該当するイベントの詳細を並列で取得（デモページと同じ方法）
+        const events = [];
+        if (eventIdsToLoad.length > 0) {
+          const CONCURRENT_LIMIT = 5;
+          for (let i = 0; i < eventIdsToLoad.length; i += CONCURRENT_LIMIT) {
+            const chunk = eventIdsToLoad.slice(i, i + CONCURRENT_LIMIT);
+            const detailPromises = chunk.map(eventId => 
+              loadEventDetail(eventId).catch(() => null)
+            );
+            const details = await Promise.all(detailPromises);
+            const matchingDetails = details.filter(d => {
+              if (!d) return false;
+              const eOrganizerId = d.organizerId || d.organizer_id;
+              return eOrganizerId === organizerId;
+            });
+            events.push(...matchingDetails);
+          }
+        }
 
         // テンプレートを使用してページをレンダリング
         if (!organizer) {
