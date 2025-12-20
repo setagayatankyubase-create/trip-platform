@@ -114,18 +114,10 @@ window.loadEventData = function loadEventData() {
           
           const dates = dateStr ? [{ date: dateStr }] : [];
           
-          // organizerIdを正規化（organizerId統一対応）
-          // デバッグ: 最初の3件でorganizerIdの有無を確認
-          if (i < 3) {
-            console.log(`[loadEventData] Event ${item.id} from events_index:`, {
-              hasOrganizerId: 'organizerId' in item,
-              organizerId_raw: item.organizerId,
-              allKeys: Object.keys(item)
-            });
-          }
-          const itemOrganizerId = normalizeId(item.organizerId);
-          
+          // organizerIdはそのまま保持（正規化はフィルタリング時のみ使用）
+          // organizerId は「生成しない」。そのまま流す
           events.push({
+            ...item,  // ← これで organizerId は保持される
             id: item.id,
             title: item.title,
             image: item.image || item.thumb,
@@ -137,7 +129,6 @@ window.loadEventData = function loadEventData() {
             rating: item.rating,
             reviewCount: item.reviewCount,
             categoryId: item.categoryId,
-            organizerId: itemOrganizerId, // 正規化済み（空の場合はundefined）
             dates: dates,
             next_date: item.next_date,
             publishedAt: item.publishedAt || item.published_at || new Date().toISOString(),
@@ -173,12 +164,10 @@ window.loadEventData = function loadEventData() {
               ? detail.dates
               : [];
             
-            // organizerIdは詳細JSONから優先して取得（organizerId統一対応）
-            const organizerId = normalizeId(
-              detail?.organizerId ?? item.organizerId
-            );
-            
+            // organizerIdはそのまま保持（詳細JSONから取得するが、item に既にあれば優先）
+            // organizerId は「生成しない」。そのまま流す
             events.push({
+              ...item,  // ← これで organizerId は保持される
               id: item.id,
               title: item.title,
               image: item.image || item.thumb,
@@ -190,7 +179,8 @@ window.loadEventData = function loadEventData() {
               rating: item.rating,
               reviewCount: item.reviewCount,
               categoryId: item.categoryId,
-              organizerId: organizerId, // organizerIdを追加（空の場合はundefined）
+              // detail から取得した organizerId があれば上書き（過去データ救済用）
+              ...(detail?.organizerId ? { organizerId: detail.organizerId } : {}),
               dates: dates,
               next_date: item.next_date || (dates.length > 0 ? dates[0].date : null),
               publishedAt: item.publishedAt || item.published_at || new Date().toISOString(),
@@ -236,16 +226,9 @@ window.loadEventData = function loadEventData() {
         }
         
         // デバッグログ（診断用）
+        console.log(`[DEBUG final events organizerId]`, events.slice(0, 3).map(e => e.organizerId));
         const eventsWithOrganizerId = events.filter(e => !needsOrganizerIdLookup(e));
         console.log(`[loadEventData] events total: ${events.length}, with organizerId: ${eventsWithOrganizerId.length}`);
-        if (events.length > 0) {
-          console.log(`[loadEventData] sample events:`, events.slice(0, 3).map(e => ({ 
-            id: e.id, 
-            organizerId: e.organizerId || '(missing)',
-            organizerId_raw: e.organizerId,
-            hasOrganizerId: !!e.organizerId
-          })));
-        }
       }
 
       window.eventData = {
@@ -328,13 +311,7 @@ window.loadEventIndex = function loadEventIndex() {
       // デバッグ: events_index.jsonの構造を確認
       if (index.length > 0) {
         console.log(`[loadEventIndex] Loaded ${index.length} events from events_index.json`);
-        console.log(`[loadEventIndex] First event keys:`, Object.keys(index[0]));
-        console.log(`[loadEventIndex] First event organizerId:`, index[0].organizerId);
-        console.log(`[loadEventIndex] Sample (first 3):`, index.slice(0, 3).map(e => ({
-          id: e.id,
-          organizerId: e.organizerId,
-          hasOrganizerId: 'organizerId' in e
-        })));
+        console.log(`[DEBUG raw index organizerId]`, index.slice(0, 3).map(e => e.organizerId));
       }
 
       window.eventIndex = index;
