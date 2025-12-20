@@ -393,15 +393,22 @@ const EventPageRenderer = {
         
         // クリックイベントリスナーを登録（計測処理）
         const clickHandler = function(e) {
-          // 重複送信防止：送信済みフラグを最優先でチェック
+          // 重複送信防止：タイムスタンプベースでチェック
           const sentFlagKey = `sotonavi_sent_button_${event.id}`;
+          const currentTimestamp = Date.now();
           try {
-            if (sessionStorage.getItem(sentFlagKey)) {
-              console.log('[ClickTracker] [公式サイトボタン] 既に送信済み、スキップします');
-              return;
+            const lastSent = sessionStorage.getItem(sentFlagKey);
+            if (lastSent) {
+              const lastSentTime = parseInt(lastSent, 10);
+              const timeDiff = currentTimestamp - lastSentTime;
+              // 1秒以内の送信は重複として扱う
+              if (timeDiff < 1000) {
+                console.log('[ClickTracker] [公式サイトボタン] 1秒以内に送信済み、スキップします（重複防止）');
+                return;
+              }
             }
-            // 送信前にフラグをセット（重複送信を防ぐ）
-            sessionStorage.setItem(sentFlagKey, '1');
+            // 送信前にタイムスタンプをセット（重複送信を防ぐ）
+            sessionStorage.setItem(sentFlagKey, currentTimestamp.toString());
           } catch (storageError) {
             // sessionStorageが使えない場合は続行
           }
@@ -533,14 +540,14 @@ const EventPageRenderer = {
                   // 無視
                 }
               } else {
-                // 送信成功時のみフラグを維持（10分後に削除）
+                // 送信成功時は1秒後にフラグを削除（次のクリックを許可、ただし10分制限はlocalStorageで管理）
                 setTimeout(() => {
                   try {
                     sessionStorage.removeItem(sentFlagKey);
                   } catch (e) {
                     // 無視
                   }
-                }, 10 * 60 * 1000); // 10分後
+                }, 1000); // 1秒後
               }
             } catch (beaconErr) {
               console.error('[ClickTracker] [公式サイトボタン] sendBeacon error:', beaconErr);
