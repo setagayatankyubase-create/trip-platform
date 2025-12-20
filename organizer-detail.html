@@ -168,15 +168,31 @@
         // 提供元データを取得
         const organizer = eventData.organizers.find(o => o.id === organizerId);
         
+        console.log(`[organizer-detail.html] Organizer ID: ${organizerId}`);
+        console.log(`[organizer-detail.html] Organizer found:`, organizer);
+        console.log(`[organizer-detail.html] eventData.events length:`, eventData.events ? eventData.events.length : 0);
+        
+        // デバッグ：最初の数件のイベントのorganizerIdを確認
+        if (eventData.events && eventData.events.length > 0) {
+          console.log(`[organizer-detail.html] Sample events (first 5):`);
+          eventData.events.slice(0, 5).forEach((e, idx) => {
+            console.log(`  Event ${idx + 1}: id=${e.id}, organizerId=${e.organizerId}, organizer_id=${e.organizer_id}`);
+          });
+        }
+        
         // イベントをフィルタリング（eventData.eventsにはorganizerIdが含まれている）
         const events = eventData.events.filter(e => {
           const eOrganizerId = e.organizerId || e.organizer_id;
           return eOrganizerId === organizerId;
         });
         
-        console.log(`[organizer-detail.html] Organizer ID: ${organizerId}`);
-        console.log(`[organizer-detail.html] Organizer found:`, organizer);
         console.log(`[organizer-detail.html] Events found: ${events.length}`);
+        
+        // デバッグ：マッチしなかったイベントのorganizerIdも確認
+        if (events.length === 0 && eventData.events && eventData.events.length > 0) {
+          console.log(`[organizer-detail.html] No events matched. Sample organizerIds in eventData.events:`, 
+            eventData.events.slice(0, 10).map(e => e.organizerId || e.organizer_id || '(empty)').filter((v, i, arr) => arr.indexOf(v) === i));
+        }
 
         // テンプレートを使用してページをレンダリング
         if (!organizer) {

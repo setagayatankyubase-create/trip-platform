@@ -185,6 +185,7 @@ window.loadEventData = function loadEventData() {
         });
         if (eventsNeedingOrganizerId.length > 0) {
           console.log(`[loadEventData] ${eventsNeedingOrganizerId.length} events need organizerId lookup (out of ${events.length} total)`);
+          console.log(`[loadEventData] Sample events needing organizerId:`, eventsNeedingOrganizerId.slice(0, 3).map(e => ({ id: e.id, organizerId: e.organizerId })));
           const CONCURRENT_LIMIT = 5;
           
           for (let i = 0; i < eventsNeedingOrganizerId.length; i += CONCURRENT_LIMIT) {
@@ -213,6 +214,12 @@ window.loadEventData = function loadEventData() {
         }
         
         console.log(`[loadEventData] Built ${events.length} events, with dates: ${events.filter(e => e.dates && e.dates.length > 0).length}`);
+        // デバッグ：organizerIdの有無を確認
+        const eventsWithOrganizerId = events.filter(e => e.organizerId && e.organizerId !== 'undefined' && e.organizerId !== '' && e.organizerId !== null);
+        console.log(`[loadEventData] Events with organizerId: ${eventsWithOrganizerId.length} out of ${events.length}`);
+        if (events.length > 0) {
+          console.log(`[loadEventData] Sample organizerIds:`, events.slice(0, 5).map(e => e.organizerId || e.organizer_id || '(empty)'));
+        }
       }
 
       window.eventData = {
