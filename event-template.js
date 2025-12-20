@@ -408,23 +408,38 @@ const EventPageRenderer = {
             const gasUrl = 'https://script.google.com/macros/s/AKfycbw7G7Rf3wK2o8eS9V9VgNHtQvrTdMnhpoHxkXlR7Om9YdOLTP9nAjcdX4uN4xOeHKVHJw/exec';
             
             try {
-              // navigator.sendBeacon で計測データを送信
+              // fetchで計測データを送信（デバッグ用にCORSモードでレスポンスを確認）
               const jsonData = JSON.stringify(measurementData);
-              const blob = new Blob([jsonData], { type: 'text/plain;charset=utf-8' });
-              const queued = navigator.sendBeacon(gasUrl, blob);
-              console.log("beacon queued:", queued, measurementData);
+              console.log("Sending to GAS:", measurementData);
               
-              // sendBeaconが失敗した場合の保険としてfetchを使用
-              if (queued === false) {
-                fetch(gasUrl, {
-                  method: 'POST',
-                  body: jsonData,
-                  keepalive: true,
-                  mode: 'no-cors' // レスポンスは読めないが保険として送信
-                }).catch(function(err) {
-                  console.warn('保険fetchも失敗:', err);
-                });
-              }
+              fetch(gasUrl, {
+                method: 'POST',
+                body: jsonData,
+                keepalive: true,
+                mode: 'cors', // デバッグ用にCORSモードにしてレスポンスを確認
+                headers: {
+                  'Content-Type': 'text/plain;charset=utf-8'
+                }
+              })
+              .then(response => response.text())
+              .then(text => {
+                console.log('GAS response:', text);
+                if (text === 'ok') {
+                  console.log('✅ Click tracked successfully');
+                } else {
+                  console.warn('⚠️ GAS returned:', text);
+                }
+              })
+              .catch(function(err) {
+                console.warn('Fetch failed:', err);
+                // フォールバック: sendBeaconを試す
+                try {
+                  const blob = new Blob([jsonData], { type: 'text/plain;charset=utf-8' });
+                  navigator.sendBeacon(gasUrl, blob);
+                } catch (beaconErr) {
+                  console.error('sendBeacon also failed:', beaconErr);
+                }
+              });
               
               // 送信済みフラグを保存（10分間有効、送信成功・失敗に関わらず記録）
               try {

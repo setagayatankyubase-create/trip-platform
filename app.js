@@ -82,39 +82,41 @@ const ClickTracker = {
       organizer_id: organizerId || ''
     };
 
-    // navigator.sendBeacon で計測データを送信（ページ遷移時も確実に送信）
-    // sendBeaconは text/plain を使用（application/jsonはサポートされていない）
+    // fetchで計測データを送信（デバッグ用にCORSモードでレスポンスを確認）
     try {
       const jsonData = JSON.stringify(payload);
       console.log('[ClickTracker] Sending payload:', payload);
-      const blob = new Blob([jsonData], { type: 'text/plain;charset=utf-8' });
-      const queued = navigator.sendBeacon(CLICK_TRACKING_GAS_URL, blob);
-      console.log('[ClickTracker] sendBeacon queued:', queued);
       
-      // sendBeaconが失敗した場合の保険としてfetchを使用
-      if (queued === false) {
-        console.warn('[ClickTracker] sendBeacon failed, using fetch fallback');
-        fetch(CLICK_TRACKING_GAS_URL, {
-          method: 'POST',
-          body: jsonData,
-          keepalive: true,
-          mode: 'no-cors' // レスポンスは読めないが保険として送信
-        }).catch((err) => {
-          console.warn('[ClickTracker] fetch fallback failed:', err);
-        });
-      }
-    } catch (beaconError) {
-      // sendBeaconが使えない場合は fetch を使用
       fetch(CLICK_TRACKING_GAS_URL, {
         method: 'POST',
-        mode: 'no-cors', // CORSエラーを回避
+        body: jsonData,
+        keepalive: true,
+        mode: 'cors', // デバッグ用にCORSモードにしてレスポンスを確認
         headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload)
-      }).catch((err) => {
-        console.warn('ClickTracker: fetch failed:', err);
+          'Content-Type': 'text/plain;charset=utf-8'
+        }
+      })
+      .then(response => response.text())
+      .then(text => {
+        console.log('[ClickTracker] GAS response:', text);
+        if (text === 'ok') {
+          console.log('[ClickTracker] ✅ Click tracked successfully');
+        } else {
+          console.warn('[ClickTracker] ⚠️ GAS returned:', text);
+        }
+      })
+      .catch((err) => {
+        console.warn('[ClickTracker] Fetch failed:', err);
+        // フォールバック: sendBeaconを試す
+        try {
+          const blob = new Blob([jsonData], { type: 'text/plain;charset=utf-8' });
+          navigator.sendBeacon(CLICK_TRACKING_GAS_URL, blob);
+        } catch (beaconErr) {
+          console.error('[ClickTracker] sendBeacon also failed:', beaconErr);
+        }
       });
+    } catch (error) {
+      console.error('[ClickTracker] Error:', error);
     }
 
     // 送信済みフラグを保存（10分間有効、同じ人がクリックするのを制限）
