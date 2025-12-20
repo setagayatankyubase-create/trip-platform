@@ -3,7 +3,7 @@
 const DATA_BASE = "/data";
 
 // キャッシュ無効化用バージョン（シート構造やレスポンス形式を変えたら更新）
-const EVENT_CACHE_VERSION = "v1_2025-12-18";
+const EVENT_CACHE_VERSION = "v1_2025-12-20"; // キャッシュ無効化（organizerId補完の確認用）
 
 // グローバルに公開しておく（他のスクリプトから必ず参照できるようにする）
 // eventData: 従来どおりのフルデータ（events / organizers / categories）

@@ -158,8 +158,25 @@
   <script>
     (async () => {
       try {
+        // デバッグ：キャッシュを確認（必要に応じてクリア）
+        const cached = localStorage.getItem('sotonavi_eventData_v1');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          console.log('[organizer-detail.html] Cache exists, version:', parsed.version);
+          console.log('[organizer-detail.html] Cache age:', Math.round((Date.now() - parsed.timestamp) / 1000 / 60), 'minutes');
+          // キャッシュをクリアしたい場合は以下のコメントアウトを外す
+          // localStorage.removeItem('sotonavi_eventData_v1');
+          // console.log('[organizer-detail.html] Cache cleared');
+        } else {
+          console.log('[organizer-detail.html] No cache found');
+        }
+        
         // loadEventData()を使用（organizerIdが補完されている）
         await loadEventData();
+        
+        // デバッグ：loadEventData()後の状態を確認
+        console.log('[organizer-detail.html] After loadEventData, eventData:', eventData ? 'exists' : 'null');
+        console.log('[organizer-detail.html] After loadEventData, eventData.events:', eventData && eventData.events ? eventData.events.length : 0);
 
         // URLパラメータから提供元IDを取得
         const urlParams = new URLSearchParams(window.location.search);
@@ -190,8 +207,14 @@
         
         // デバッグ：マッチしなかったイベントのorganizerIdも確認
         if (events.length === 0 && eventData.events && eventData.events.length > 0) {
-          console.log(`[organizer-detail.html] No events matched. Sample organizerIds in eventData.events:`, 
-            eventData.events.slice(0, 10).map(e => e.organizerId || e.organizer_id || '(empty)').filter((v, i, arr) => arr.indexOf(v) === i));
+          const allOrganizerIds = eventData.events.map(e => e.organizerId || e.organizer_id || '(empty)');
+          const uniqueOrganizerIds = [...new Set(allOrganizerIds)];
+          console.log(`[organizer-detail.html] No events matched. Looking for organizerId: "${organizerId}"`);
+          console.log(`[organizer-detail.html] Unique organizerIds in eventData.events (first 20):`, uniqueOrganizerIds.slice(0, 20));
+          console.log(`[organizer-detail.html] Full eventData.events (first 3):`, eventData.events.slice(0, 3));
+        } else if (!eventData.events || eventData.events.length === 0) {
+          console.error('[organizer-detail.html] eventData.events is empty or undefined!');
+          console.error('[organizer-detail.html] eventData:', eventData);
         }
 
         // テンプレートを使用してページをレンダリング
