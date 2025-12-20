@@ -170,12 +170,14 @@
           return;
         }
 
-        // 提供元データを取得
-        const organizer = eventData?.organizers?.find(o => o.id === organizerId);
+        // 提供元データを取得（window.eventDataから）
+        const eventData = window.eventData || {};
+        const organizer = eventData.organizers?.find(o => o.id === organizerId);
         
         // イベントをフィルタリング（organizerId のみ、正規化済み同士で比較）
+        // eventData.events は loadEventData() が構築した配列
         const norm = (v) => (v ?? '').toString().trim();
-        const events = (eventData?.events || []).filter(e => 
+        const events = (eventData.events || []).filter(e => 
           norm(e.organizerId) === norm(organizerId)
         );
 
