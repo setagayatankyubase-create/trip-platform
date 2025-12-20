@@ -174,12 +174,22 @@
         const eventData = window.eventData || {};
         const organizer = eventData.organizers?.find(o => o.id === organizerId);
         
+        // イベントリストを取得（events_index または events のどちらかを使用）
+        // loadEventData() は events_index.json を読み込んで events 配列を構築する
+        const eventList = eventData.events || eventData.events_index || [];
+        
         // イベントをフィルタリング（organizerId のみ、正規化済み同士で比較）
-        // eventData.events は loadEventData() が構築した配列
         const norm = (v) => (v ?? '').toString().trim();
-        const events = (eventData.events || []).filter(e => 
+        const events = eventList.filter(e => 
           norm(e.organizerId) === norm(organizerId)
         );
+        
+        // デバッグログ（最小限）
+        console.log(`[organizer-detail.html] eventData keys:`, Object.keys(eventData));
+        console.log(`[organizer-detail.html] events_index length:`, eventData.events_index?.length ?? null);
+        console.log(`[organizer-detail.html] events length:`, eventData.events?.length ?? null);
+        console.log(`[organizer-detail.html] using list length:`, eventList.length);
+        console.log(`[organizer-detail.html] filtered events count:`, events.length);
 
         // レンダリング
         if (!organizer) {

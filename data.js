@@ -101,7 +101,8 @@ window.loadEventData = function loadEventData() {
         }
         
         // next_date があるものは即座に構築
-        for (const item of itemsWithDate) {
+        for (let i = 0; i < itemsWithDate.length; i++) {
+          const item = itemsWithDate[i];
           const dateValue = item.next_date;
           let dateStr = null;
           
@@ -114,6 +115,14 @@ window.loadEventData = function loadEventData() {
           const dates = dateStr ? [{ date: dateStr }] : [];
           
           // organizerIdを正規化（organizerId統一対応）
+          // デバッグ: 最初の3件でorganizerIdの有無を確認
+          if (i < 3) {
+            console.log(`[loadEventData] Event ${item.id} from events_index:`, {
+              hasOrganizerId: 'organizerId' in item,
+              organizerId_raw: item.organizerId,
+              allKeys: Object.keys(item)
+            });
+          }
           const itemOrganizerId = normalizeId(item.organizerId);
           
           events.push({
@@ -226,10 +235,17 @@ window.loadEventData = function loadEventData() {
           }
         }
         
-        // デバッグログ（最小限）
+        // デバッグログ（診断用）
         const eventsWithOrganizerId = events.filter(e => !needsOrganizerIdLookup(e));
-        console.log(`[loadEventData] events total: ${events.length}, with organizerId: ${eventsWithOrganizerId.length}, sample:`, 
-          events.slice(0, 3).map(e => ({ id: e.id, organizerId: normalizeId(e.organizerId) || '(empty)' })));
+        console.log(`[loadEventData] events total: ${events.length}, with organizerId: ${eventsWithOrganizerId.length}`);
+        if (events.length > 0) {
+          console.log(`[loadEventData] sample events:`, events.slice(0, 3).map(e => ({ 
+            id: e.id, 
+            organizerId: e.organizerId || '(missing)',
+            organizerId_raw: e.organizerId,
+            hasOrganizerId: !!e.organizerId
+          })));
+        }
       }
 
       window.eventData = {
@@ -308,6 +324,18 @@ window.loadEventIndex = function loadEventIndex() {
       const index = Array.isArray(json.events_index) ? json.events_index
         : Array.isArray(json) ? json
         : [];
+
+      // デバッグ: events_index.jsonの構造を確認
+      if (index.length > 0) {
+        console.log(`[loadEventIndex] Loaded ${index.length} events from events_index.json`);
+        console.log(`[loadEventIndex] First event keys:`, Object.keys(index[0]));
+        console.log(`[loadEventIndex] First event organizerId:`, index[0].organizerId);
+        console.log(`[loadEventIndex] Sample (first 3):`, index.slice(0, 3).map(e => ({
+          id: e.id,
+          organizerId: e.organizerId,
+          hasOrganizerId: 'organizerId' in e
+        })));
+      }
 
       window.eventIndex = index;
 
