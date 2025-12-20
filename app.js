@@ -77,6 +77,8 @@ const ClickTracker = {
     console.log('[ClickTracker] Using storageKey:', storageKey);
     const RESET_PERIOD_MS = 10 * 60 * 1000; // 10分
     
+    // まず、前回のタイムスタンプをチェック
+    let shouldSkip = false;
     try {
       const cached = localStorage.getItem(storageKey);
       if (cached) {
@@ -112,7 +114,7 @@ const ClickTracker = {
           console.log(`[ClickTracker] Event ${eventId}: 最後にクリックした時刻 = ${lastClickTime}, 経過時間 = ${ageMinutes}分 (${ageSeconds}秒)`);
           if (age < RESET_PERIOD_MS) {
             console.log(`[ClickTracker] このイベントは既に計測済みです（10分以内）: ${eventId} - 最後のクリック: ${lastClickTime} (${ageMinutes}分前)`);
-            return; // このイベントIDは10分以内に送信済み（別のイベントIDは影響なし）
+            shouldSkip = true; // 計測をスキップ
           } else {
             // 10分経過しているので古いデータを削除
             console.log(`[ClickTracker] Event ${eventId}: キャッシュ期限切れ（${ageMinutes}分経過）、削除します`);
@@ -123,6 +125,25 @@ const ClickTracker = {
     } catch (storageError) {
       // localStorageが使えない環境でも計測は続行
       console.warn('[ClickTracker] localStorage error:', storageError);
+    }
+    
+    // 10分以内にクリックされていた場合は、計測をスキップ
+    if (shouldSkip) {
+      return;
+    }
+    
+    // 今回のクリック時刻を即座に保存（重複実行を防ぐため）
+    const now = Date.now();
+    try {
+      const cacheData = {
+        eventId: eventId,
+        timestamp: now
+      };
+      localStorage.setItem(storageKey, JSON.stringify(cacheData));
+      const savedTime = new Date(now).toLocaleString('ja-JP');
+      console.log(`[ClickTracker] ✅ クリック時刻を先に保存しました: ${eventId} - 保存時刻: ${savedTime}`);
+    } catch (storageError) {
+      console.warn('[ClickTracker] localStorage保存エラー:', storageError);
     }
 
     // GASにPOSTリクエストを送信（GAS側の実装に合わせる）
@@ -169,27 +190,15 @@ const ClickTracker = {
       console.error('[ClickTracker] Error:', error);
     }
 
-    // 送信済みフラグを保存（10分間有効、同じ人がクリックするのを制限）
-    try {
-      const now = Date.now();
-      const cacheData = {
-        eventId: eventId, // 確実にeventIdを含める
-        timestamp: now
-      };
-      localStorage.setItem(storageKey, JSON.stringify(cacheData));
-      const savedTime = new Date(now).toLocaleString('ja-JP');
-      console.log(`[ClickTracker] ✅ クリック時刻を保存しました: ${eventId} - 保存時刻: ${savedTime}`, cacheData);
-      // 10分後にフラグを削除（簡易実装）
-      setTimeout(() => {
-        try {
-          localStorage.removeItem(storageKey);
-        } catch (e) {
-          // 無視
-        }
-      }, RESET_PERIOD_MS);
-    } catch (storageError) {
-      // localStorageが使えない環境では無視
-    }
+    // タイムスタンプは既に保存済み（上で先に保存している）
+    // 10分後にフラグを削除（簡易実装）
+    setTimeout(() => {
+      try {
+        localStorage.removeItem(storageKey);
+      } catch (e) {
+        // 無視
+      }
+    }, RESET_PERIOD_MS);
   }
 };
 
