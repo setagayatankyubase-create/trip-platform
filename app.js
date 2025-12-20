@@ -2,10 +2,12 @@
 
 // GAS URL（クリック計測用）
 const CLICK_TRACKING_GAS_URL = 'https://script.google.com/macros/s/AKfycbw7G7Rf3wK2o8eS9V9VgNHtQvrTdMnhpoHxkXlR7Om9YdOLTP9nAjcdX4uN4xOeHKVHJw/exec';
+// クリック計測用の秘密鍵（GAS側のCLICK_SECRETと一致させる必要がある）
+const CLICK_SECRET = 'sotonavi_click_9F2kA8R7mQX3LZpD5YwE1H';
 
 // クリック計測（スプレッドシートに書き込み）
 const ClickTracker = {
-  track(eventId, eventTitle) {
+  track(eventId, organizerId) {
     // 連打防止：同じイベントIDは1回だけ送信（localStorageで管理）
     const storageKey = `sotonavi_clicked_${eventId}`;
     try {
@@ -17,27 +19,30 @@ const ClickTracker = {
       // localStorageが使えない環境でも計測は続行
     }
 
-    // GASにPOSTリクエストを送信
+    // GASにPOSTリクエストを送信（GAS側の実装に合わせる）
     const payload = {
-      action: 'track_click',
-      eventId: eventId,
-      eventTitle: eventTitle || '',
-      timestamp: new Date().toISOString(),
-      pageUrl: window.location.href,
-      userAgent: navigator.userAgent
+      token: CLICK_SECRET,
+      event_id: eventId,
+      organizer_id: organizerId || ''
     };
 
-    // fetchでPOST送信（エラーは無視）
-    fetch(CLICK_TRACKING_GAS_URL, {
-      method: 'POST',
-      mode: 'no-cors', // CORSエラーを回避
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload)
-    }).catch(() => {
-      // エラーは無視（オフラインなど）
-    });
+    // navigator.sendBeacon で計測データを送信（ページ遷移時も確実に送信）
+    try {
+      const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+      navigator.sendBeacon(CLICK_TRACKING_GAS_URL, blob);
+    } catch (beaconError) {
+      // sendBeaconが使えない場合は fetch を使用
+      fetch(CLICK_TRACKING_GAS_URL, {
+        method: 'POST',
+        mode: 'no-cors', // CORSエラーを回避
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+      }).catch(() => {
+        // エラーは無視（オフラインなど）
+      });
+    }
 
     // 送信済みフラグを保存（24時間有効）
     try {
@@ -586,13 +591,14 @@ const CardRenderer = {
 
     container.innerHTML = events.map(event => this.render(event)).join('');
     
-    // クリックイベントリスナーを追加
+    // クリックイベントリスナーを追加（イベントデータを参照できるようにクロージャで保持）
+    const eventsMap = new Map(events.map(ev => [ev.id, ev]));
     container.querySelectorAll('.card-link').forEach(link => {
       link.addEventListener('click', (e) => {
         const eventId = link.getAttribute('data-event-id');
-        const card = link.querySelector('.card');
-        const eventTitle = card ? card.querySelector('.card-title')?.textContent || '' : '';
-        ClickTracker.track(eventId, eventTitle);
+        const event = eventsMap.get(eventId);
+        const organizerId = event ? (event.organizerId || event.organizer_id || '') : '';
+        ClickTracker.track(eventId, organizerId);
       });
     });
   },
@@ -614,13 +620,14 @@ const CardRenderer = {
 
     container.innerHTML = events.map(event => this.render(event)).join('');
     
-    // クリックイベントリスナーを追加
+    // クリックイベントリスナーを追加（イベントデータを参照できるようにクロージャで保持）
+    const eventsMap = new Map(events.map(ev => [ev.id, ev]));
     container.querySelectorAll('.card-link').forEach(link => {
       link.addEventListener('click', (e) => {
         const eventId = link.getAttribute('data-event-id');
-        const card = link.querySelector('.card');
-        const eventTitle = card ? card.querySelector('.card-title')?.textContent || '' : '';
-        ClickTracker.track(eventId, eventTitle);
+        const event = eventsMap.get(eventId);
+        const organizerId = event ? (event.organizerId || event.organizer_id || '') : '';
+        ClickTracker.track(eventId, organizerId);
       });
     });
   }
