@@ -1,7 +1,7 @@
 // アプリケーションロジック
 
 // GAS URL（クリック計測用）
-const CLICK_TRACKING_GAS_URL = 'https://script.google.com/macros/s/AKfycbw7G7Rf3wK2o8eS9V9VgNHtQvrTdMnhpoHxkXlR7Om9YdOLTP9nAjcdX4uN4xOeHKVHJw/exec';
+const CLICK_TRACKING_GAS_URL = 'https://script.google.com/macros/s/AKfycbyHnX2Z4jnTHfYSCFFaOVmVdIf6yY2edAMTCEyAOUn0Mak2Mam67CQ0g-V26zAJSVJphw/exec';
 // クリック計測用の秘密鍵（GAS側のCLICK_SECRETと一致させる必要がある）
 const CLICK_SECRET = 'sotonavi_click_9F2kA8R7mQX3LZpD5YwE11';
 

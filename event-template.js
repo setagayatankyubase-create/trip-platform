@@ -461,7 +461,7 @@ const EventPageRenderer = {
               organizer_id: organizerIdForCount
             };
             
-            const gasUrl = 'https://script.google.com/macros/s/AKfycbw7G7Rf3wK2o8eS9V9VgNHtQvrTdMnhpoHxkXlR7Om9YdOLTP9nAjcdX4uN4xOeHKVHJw/exec';
+            const gasUrl = 'https://script.google.com/macros/s/AKfycbyHnX2Z4jnTHfYSCFFaOVmVdIf6yY2edAMTCEyAOUn0Mak2Mam67CQ0g-V26zAJSVJphw/exec';
             
             try {
               // fetchで計測データを送信（デバッグ用にCORSモードでレスポンスを確認）
