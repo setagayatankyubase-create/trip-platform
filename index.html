@@ -320,29 +320,28 @@
         })
         .slice(0, MAX_HOME_EVENTS);
 
-      // 直近開催：eventData.events を使う（SearchFilter.getUpcomingEvents と同じロジック）
-      // eventData.events が正しく dates を持っているか確認
+      // 直近開催：今日以降のイベントを日付の近い順にソート
       const eventsForUpcoming = Array.isArray(eventData?.events) && eventData.events.length > 0
         ? eventData.events
         : source;
       
-      console.log('[renderEventBlocks] eventsForUpcoming length:', eventsForUpcoming.length);
-      if (eventsForUpcoming.length > 0) {
-        console.log('[renderEventBlocks] sample event for upcoming:', eventsForUpcoming[0]);
-        console.log('[renderEventBlocks] sample event dates:', eventsForUpcoming[0].dates);
-      }
-      
-      // SearchFilter.getUpcomingEvents と同じロジックを使用
       const upcoming = eventsForUpcoming
-        .filter(event => event.dates && event.dates.length > 0)
+        .filter(event => {
+          // dates があるイベントのみ
+          if (!event.dates || event.dates.length === 0) return false;
+          
+          // 最初の開催日が今日以降のもののみ
+          const eventDate = new Date(event.dates[0].date);
+          eventDate.setHours(0, 0, 0, 0);
+          return eventDate >= today;
+        })
         .sort((a, b) => {
+          // 日付の近い順（早い順）にソート
           const aDate = new Date(a.dates[0].date);
           const bDate = new Date(b.dates[0].date);
           return aDate - bDate;
         })
         .slice(0, MAX_HOME_EVENTS);
-      
-      console.log('[renderEventBlocks] final upcoming count:', upcoming.length);
 
       CardRenderer.renderCarousel(recommended, 'recommended-events');
       CardRenderer.renderCarousel(newEvents, 'new-events');
