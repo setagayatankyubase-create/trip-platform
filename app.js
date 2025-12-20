@@ -8,11 +8,19 @@ const CLICK_SECRET = 'sotonavi_click_9F2kA8R7mQX3LZpD5YwE1H';
 // クリック計測（スプレッドシートに書き込み）
 const ClickTracker = {
   track(eventId, organizerId) {
+    console.log('[ClickTracker] track called:', eventId, organizerId);
+    
+    if (!eventId) {
+      console.warn('[ClickTracker] eventId is missing');
+      return;
+    }
+    
     // 連打防止：同じイベントIDは1回だけ送信（localStorageで管理）
     const storageKey = `sotonavi_clicked_${eventId}`;
     try {
       const alreadySent = localStorage.getItem(storageKey);
       if (alreadySent) {
+        console.log('[ClickTracker] Already sent, skipping:', eventId);
         return; // 既に送信済み
       }
     } catch (storageError) {
@@ -27,9 +35,26 @@ const ClickTracker = {
     };
 
     // navigator.sendBeacon で計測データを送信（ページ遷移時も確実に送信）
+    // sendBeaconは text/plain を使用（application/jsonはサポートされていない）
     try {
-      const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
-      navigator.sendBeacon(CLICK_TRACKING_GAS_URL, blob);
+      const jsonData = JSON.stringify(payload);
+      console.log('[ClickTracker] Sending payload:', payload);
+      const blob = new Blob([jsonData], { type: 'text/plain;charset=utf-8' });
+      const queued = navigator.sendBeacon(CLICK_TRACKING_GAS_URL, blob);
+      console.log('[ClickTracker] sendBeacon queued:', queued);
+      
+      // sendBeaconが失敗した場合の保険としてfetchを使用
+      if (queued === false) {
+        console.warn('[ClickTracker] sendBeacon failed, using fetch fallback');
+        fetch(CLICK_TRACKING_GAS_URL, {
+          method: 'POST',
+          body: jsonData,
+          keepalive: true,
+          mode: 'no-cors' // レスポンスは読めないが保険として送信
+        }).catch((err) => {
+          console.warn('[ClickTracker] fetch fallback failed:', err);
+        });
+      }
     } catch (beaconError) {
       // sendBeaconが使えない場合は fetch を使用
       fetch(CLICK_TRACKING_GAS_URL, {
@@ -39,8 +64,8 @@ const ClickTracker = {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(payload)
-      }).catch(() => {
-        // エラーは無視（オフラインなど）
+      }).catch((err) => {
+        console.warn('ClickTracker: fetch failed:', err);
       });
     }
 
@@ -593,9 +618,12 @@ const CardRenderer = {
     
     // クリックイベントリスナーを追加（イベントデータを参照できるようにクロージャで保持）
     const eventsMap = new Map(events.map(ev => [ev.id, ev]));
-    container.querySelectorAll('.card-link').forEach(link => {
+    const links = container.querySelectorAll('.card-link');
+    console.log('[CardRenderer] Adding click listeners to', links.length, 'cards');
+    links.forEach(link => {
       link.addEventListener('click', (e) => {
         const eventId = link.getAttribute('data-event-id');
+        console.log('[CardRenderer] Card clicked:', eventId);
         const event = eventsMap.get(eventId);
         const organizerId = event ? (event.organizerId || event.organizer_id || '') : '';
         ClickTracker.track(eventId, organizerId);
@@ -622,9 +650,12 @@ const CardRenderer = {
     
     // クリックイベントリスナーを追加（イベントデータを参照できるようにクロージャで保持）
     const eventsMap = new Map(events.map(ev => [ev.id, ev]));
-    container.querySelectorAll('.card-link').forEach(link => {
+    const links = container.querySelectorAll('.card-link');
+    console.log('[CardRenderer] Adding click listeners to', links.length, 'cards');
+    links.forEach(link => {
       link.addEventListener('click', (e) => {
         const eventId = link.getAttribute('data-event-id');
+        console.log('[CardRenderer] Card clicked:', eventId);
         const event = eventsMap.get(eventId);
         const organizerId = event ? (event.organizerId || event.organizer_id || '') : '';
         ClickTracker.track(eventId, organizerId);
