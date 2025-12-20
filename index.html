@@ -327,35 +327,61 @@
         : [];
       
       console.log('[renderEventBlocks] eventsForUpcoming:', eventsForUpcoming.length);
+      if (eventsForUpcoming.length > 0) {
+        console.log('[renderEventBlocks] first event:', eventsForUpcoming[0]);
+        console.log('[renderEventBlocks] first event dates:', eventsForUpcoming[0].dates);
+        console.log('[renderEventBlocks] first event next_date:', eventsForUpcoming[0].next_date);
+      }
+      console.log('[renderEventBlocks] today:', today.toISOString().split('T')[0]);
       
       // dates または next_date から日付を取得するヘルパー
       const getEventDate = (event) => {
         // dates 配列から取得（優先）
-        if (event.dates && event.dates.length > 0 && event.dates[0].date) {
-          return new Date(event.dates[0].date);
+        if (event.dates && event.dates.length > 0 && event.dates[0] && event.dates[0].date) {
+          const d = new Date(event.dates[0].date);
+          if (!isNaN(d.getTime())) {
+            return d;
+          }
         }
         // next_date から取得（フォールバック）
         if (event.next_date) {
-          return new Date(event.next_date);
+          const d = new Date(event.next_date);
+          if (!isNaN(d.getTime())) {
+            return d;
+          }
         }
         // date_min から取得（フォールバック）
         if (event.date_min) {
-          return new Date(event.date_min);
+          const d = new Date(event.date_min);
+          if (!isNaN(d.getTime())) {
+            return d;
+          }
         }
         return null;
       };
       
-      const upcomingCandidates = eventsForUpcoming
-        .map(event => {
-          const eventDate = getEventDate(event);
-          return { event, eventDate };
-        })
-        .filter(({ eventDate }) => {
+      const upcomingCandidatesWithDates = eventsForUpcoming.map(event => {
+        const eventDate = getEventDate(event);
+        return { event, eventDate };
+      });
+      
+      console.log('[renderEventBlocks] events with valid dates:', 
+        upcomingCandidatesWithDates.filter(({ eventDate }) => eventDate !== null).length
+      );
+      
+      const upcomingCandidates = upcomingCandidatesWithDates
+        .filter(({ event, eventDate }) => {
           if (!eventDate || isNaN(eventDate.getTime())) {
+            console.log('[renderEventBlocks] rejected (no date):', event.id);
             return false;
           }
-          eventDate.setHours(0, 0, 0, 0);
-          return eventDate >= today;
+          const eventDateOnly = new Date(eventDate);
+          eventDateOnly.setHours(0, 0, 0, 0);
+          const isUpcoming = eventDateOnly >= today;
+          if (!isUpcoming) {
+            console.log('[renderEventBlocks] rejected (past date):', event.id, eventDateOnly.toISOString().split('T')[0], 'today:', today.toISOString().split('T')[0]);
+          }
+          return isUpcoming;
         });
       
       console.log('[renderEventBlocks] upcomingCandidates:', upcomingCandidates.length);
