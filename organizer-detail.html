@@ -232,9 +232,12 @@
           console.warn('[organizer-detail.html] eventIndex is not available');
         }
         
-        console.log('[organizer-detail.html] Final events count:', events.length);
+        console.log('[organizer-detail.html] ===== Final events count:', events.length, '=====');
         if (events.length > 0) {
           console.log('[organizer-detail.html] Sample event:', events[0]);
+        } else {
+          console.warn('[organizer-detail.html] ⚠️ NO EVENTS FOUND for organizer:', organizerId);
+          console.warn('[organizer-detail.html] Check if eventIndex has organizerId field');
         }
 
         // テンプレートを使用してページをレンダリング
