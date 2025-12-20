@@ -148,24 +148,38 @@ const ClickTracker = {
       console.warn('[ClickTracker] localStorage保存エラー:', storageError);
     }
 
-    // 送信済みフラグをチェック（重複送信防止 - タイムスタンプベース）
+    // 送信済みフラグをチェック（重複送信防止 - アトミック操作）
     const sentFlagKey = `sotonavi_sent_${eventId}`;
     const currentTimestamp = Date.now();
+    
+    // アトミックにチェック＆セット（重複送信を完全に防ぐ）
+    let shouldSend = false;
     try {
       const lastSent = sessionStorage.getItem(sentFlagKey);
-      if (lastSent) {
+      if (!lastSent) {
+        // フラグが存在しない場合のみ送信を許可
+        sessionStorage.setItem(sentFlagKey, currentTimestamp.toString());
+        shouldSend = true;
+      } else {
         const lastSentTime = parseInt(lastSent, 10);
         const timeDiff = currentTimestamp - lastSentTime;
         // 1秒以内の送信は重複として扱う
-        if (timeDiff < 1000) {
+        if (timeDiff >= 1000) {
+          // 1秒以上経過している場合は送信を許可
+          sessionStorage.setItem(sentFlagKey, currentTimestamp.toString());
+          shouldSend = true;
+        } else {
           console.log('[ClickTracker] [カードリンク] 1秒以内に送信済み、スキップします（重複防止）');
-          return;
         }
       }
-      // 送信前にタイムスタンプをセット（重複送信を防ぐ）
-      sessionStorage.setItem(sentFlagKey, currentTimestamp.toString());
     } catch (storageError) {
-      // sessionStorageが使えない場合は続行
+      // sessionStorageが使えない場合は送信を許可
+      shouldSend = true;
+    }
+
+    // 送信が許可されていない場合は終了
+    if (!shouldSend) {
+      return;
     }
 
     // GASにPOSTリクエストを送信（GAS側の実装に合わせる）
@@ -174,24 +188,6 @@ const ClickTracker = {
       event_id: eventId,
       organizer_id: organizerId || ''
     };
-
-    // 送信直前に再度チェック（重複送信防止）
-    try {
-      const lastSent = sessionStorage.getItem(sentFlagKey);
-      if (lastSent) {
-        const lastSentTime = parseInt(lastSent, 10);
-        const timeDiff = currentTimestamp - lastSentTime;
-        // 1秒以内の送信は重複として扱う
-        if (timeDiff < 1000) {
-          console.log('[ClickTracker] [カードリンク] 送信直前に重複を検出、スキップします');
-          return;
-        }
-      }
-      // 送信直前にタイムスタンプを更新
-      sessionStorage.setItem(sentFlagKey, currentTimestamp.toString());
-    } catch (storageError) {
-      // sessionStorageが使えない場合は続行
-    }
 
     // navigator.sendBeaconのみを使用（ページ遷移時も確実に送信、重複送信を防ぐ）
     // text/plainを使用することでCORSプリフライトを回避

@@ -400,29 +400,49 @@ const EventPageRenderer = {
         
         // クリックイベントリスナーを登録（計測処理）
         const clickHandler = function(e) {
-          // 重複送信防止：タイムスタンプベースでチェック
+          // 重複送信防止：アトミック操作でチェック＆セット
           const sentFlagKey = `sotonavi_sent_button_${event.id}`;
           const currentTimestamp = Date.now();
+          
+          // アトミックにチェック＆セット（重複送信を完全に防ぐ）
+          let shouldSend = false;
           try {
             const lastSent = sessionStorage.getItem(sentFlagKey);
-            if (lastSent) {
+            if (!lastSent) {
+              // フラグが存在しない場合のみ送信を許可
+              sessionStorage.setItem(sentFlagKey, currentTimestamp.toString());
+              shouldSend = true;
+            } else {
               const lastSentTime = parseInt(lastSent, 10);
               const timeDiff = currentTimestamp - lastSentTime;
               // 1秒以内の送信は重複として扱う
-              if (timeDiff < 1000) {
+              if (timeDiff >= 1000) {
+                // 1秒以上経過している場合は送信を許可
+                sessionStorage.setItem(sentFlagKey, currentTimestamp.toString());
+                shouldSend = true;
+              } else {
                 console.log('[ClickTracker] [公式サイトボタン] 1秒以内に送信済み、スキップします（重複防止）');
-                return;
               }
             }
-            // 送信前にタイムスタンプをセット（重複送信を防ぐ）
-            sessionStorage.setItem(sentFlagKey, currentTimestamp.toString());
           } catch (storageError) {
-            // sessionStorageが使えない場合は続行
+            // sessionStorageが使えない場合は送信を許可
+            shouldSend = true;
+          }
+
+          // 送信が許可されていない場合は終了
+          if (!shouldSend) {
+            return;
           }
           
           // 既に処理中ならスキップ（連続クリック防止）
           if (bookingBtn._clickProcessing) {
             console.log('[ClickTracker] 処理中のためスキップします');
+            // フラグを削除（リトライ可能にする）
+            try {
+              sessionStorage.removeItem(sentFlagKey);
+            } catch (e) {
+              // 無視
+            }
             return;
           }
           bookingBtn._clickProcessing = true;
@@ -528,27 +548,9 @@ const EventPageRenderer = {
             
             const gasUrl = 'https://script.google.com/macros/s/AKfycbyHnX2Z4jnTHfYSCFFaOVmVdIf6yY2edAMTCEyAOUn0Mak2Mam67CQ0g-V26zAJSVJphw/exec';
             
-            // 送信直前に再度チェック（重複送信防止）
-            try {
-              const lastSent = sessionStorage.getItem(sentFlagKey);
-              if (lastSent) {
-                const lastSentTime = parseInt(lastSent, 10);
-                const timeDiff = currentTimestamp - lastSentTime;
-                // 1秒以内の送信は重複として扱う
-                if (timeDiff < 1000) {
-                  console.log('[ClickTracker] [公式サイトボタン] 送信直前に重複を検出、スキップします');
-                  bookingBtn._clickProcessing = false;
-                  return;
-                }
-              }
-              // 送信直前にタイムスタンプを更新
-              sessionStorage.setItem(sentFlagKey, currentTimestamp.toString());
-            } catch (storageError) {
-              // sessionStorageが使えない場合は続行
-            }
-
             // navigator.sendBeaconのみを使用（ページ遷移時も確実に送信、重複送信を防ぐ）
             // text/plainを使用することでCORSプリフライトを回避
+            // フラグは既にアトミックにセットされているため、ここでは送信のみ実行
             try {
               const jsonData = JSON.stringify(measurementData);
               console.log("[ClickTracker] [公式サイトボタン] Sending to GAS:", measurementData);
