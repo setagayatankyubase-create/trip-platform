@@ -51,39 +51,101 @@ window.loadEventData = function loadEventData() {
   _eventDataLoadingPromise = Promise.all([loadEventIndex(), loadEventMeta()])
     .then(async ([index, meta]) => {
       // events_index から最小限の events 配列を構築（index.html 互換用）
-      // 詳細は必要になったら loadEventDetail() で個別に取得
-      const events = Array.isArray(index) ? index.map(item => {
-        // dates は next_date から生成（getUpcomingEvents が dates[0].date を参照するため）
-        let dates = [];
-        if (item.next_date) {
-          // next_date が ISO 文字列か Date オブジェクトか確認
-          const dateStr = typeof item.next_date === 'string' 
-            ? item.next_date 
-            : item.next_date instanceof Date 
-              ? item.next_date.toISOString()
-              : null;
-          if (dateStr) {
-            dates = [{ date: dateStr }];
+      // next_date が無い場合は詳細JSONから dates を取得
+      const events = [];
+      
+      if (Array.isArray(index) && index.length > 0) {
+        // まず next_date があるものはそれを使う
+        const withNextDate = index.filter(item => item.next_date);
+        const withoutNextDate = index.filter(item => !item.next_date);
+        
+        // next_date があるものは即座に構築
+        for (const item of withNextDate) {
+          let dates = [];
+          if (item.next_date) {
+            const dateStr = typeof item.next_date === 'string' 
+              ? item.next_date 
+              : item.next_date instanceof Date 
+                ? item.next_date.toISOString()
+                : null;
+            if (dateStr) {
+              dates = [{ date: dateStr }];
+            }
           }
+          
+          events.push({
+            id: item.id,
+            title: item.title,
+            image: item.image || item.thumb,
+            area: item.area || item.city,
+            prefecture: item.prefecture,
+            price: item.price,
+            isRecommended: item.isRecommended || false,
+            isNew: item.isNew || false,
+            rating: item.rating,
+            reviewCount: item.reviewCount,
+            categoryId: item.categoryId,
+            dates: dates,
+            publishedAt: item.publishedAt || item.published_at || new Date().toISOString(),
+          });
         }
         
-        return {
-          id: item.id,
-          title: item.title,
-          image: item.image || item.thumb,
-          area: item.area || item.city,
-          prefecture: item.prefecture,
-          price: item.price,
-          isRecommended: item.isRecommended || false,
-          isNew: item.isNew || false,
-          rating: item.rating,
-          reviewCount: item.reviewCount,
-          categoryId: item.categoryId,
-          dates: dates,
-          // publishedAt は必須（getNewEvents が参照）
-          publishedAt: item.publishedAt || item.published_at || new Date().toISOString(),
-        };
-      }) : [];
+        // next_date が無いものは詳細JSONから dates を取得（最初の20件だけ）
+        if (withoutNextDate.length > 0) {
+          const sampleIds = withoutNextDate.slice(0, 20).map(e => e.id).filter(Boolean);
+          const detailPromises = sampleIds.map(id => 
+            loadEventDetail(id).catch(() => null)
+          );
+          const details = await Promise.all(detailPromises);
+          const detailMap = {};
+          details.forEach(d => {
+            if (d && d.id) detailMap[d.id] = d;
+          });
+          
+          for (const item of withoutNextDate.slice(0, 20)) {
+            const detail = detailMap[item.id];
+            let dates = [];
+            if (detail && detail.dates && Array.isArray(detail.dates) && detail.dates.length > 0) {
+              dates = detail.dates;
+            }
+            
+            events.push({
+              id: item.id,
+              title: item.title,
+              image: item.image || item.thumb,
+              area: item.area || item.city,
+              prefecture: item.prefecture,
+              price: item.price,
+              isRecommended: item.isRecommended || false,
+              isNew: item.isNew || false,
+              rating: item.rating,
+              reviewCount: item.reviewCount,
+              categoryId: item.categoryId,
+              dates: dates,
+              publishedAt: item.publishedAt || item.published_at || new Date().toISOString(),
+            });
+          }
+          
+          // 残りは dates 無しで追加
+          for (const item of withoutNextDate.slice(20)) {
+            events.push({
+              id: item.id,
+              title: item.title,
+              image: item.image || item.thumb,
+              area: item.area || item.city,
+              prefecture: item.prefecture,
+              price: item.price,
+              isRecommended: item.isRecommended || false,
+              isNew: item.isNew || false,
+              rating: item.rating,
+              reviewCount: item.reviewCount,
+              categoryId: item.categoryId,
+              dates: [],
+              publishedAt: item.publishedAt || item.published_at || new Date().toISOString(),
+            });
+          }
+        }
+      }
 
       window.eventData = {
         events,

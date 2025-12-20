@@ -320,72 +320,27 @@
         })
         .slice(0, MAX_HOME_EVENTS);
 
-      // 直近開催：next_date または dates[0].date または date_min が今日から7日以内
-      // まず、日付情報があるイベントを全て取得（フィルタリング条件を緩和）
-      const upcomingCandidates = source.filter(e => {
-        return e.next_date || (e.dates && Array.isArray(e.dates) && e.dates.length > 0) || e.date_min;
-      });
+      // 直近開催：eventData.events を使う（SearchFilter.getUpcomingEvents と同じロジック）
+      // eventData.events が正しく dates を持っているか確認
+      const eventsForUpcoming = Array.isArray(eventData?.events) && eventData.events.length > 0
+        ? eventData.events
+        : source;
       
-      console.log('[renderEventBlocks] upcomingCandidates:', upcomingCandidates.length);
+      console.log('[renderEventBlocks] eventsForUpcoming length:', eventsForUpcoming.length);
+      if (eventsForUpcoming.length > 0) {
+        console.log('[renderEventBlocks] sample event for upcoming:', eventsForUpcoming[0]);
+        console.log('[renderEventBlocks] sample event dates:', eventsForUpcoming[0].dates);
+      }
       
-      const upcoming = upcomingCandidates
-        .map(e => {
-          let eventDate = null;
-          let dateSource = null;
-          
-          // 優先順位: next_date > dates[0].date > date_min
-          if (e.next_date) {
-            try {
-              eventDate = new Date(e.next_date);
-              if (!isNaN(eventDate.getTime())) {
-                dateSource = 'next_date';
-              }
-            } catch (err) {
-              // ignore
-            }
-          }
-          
-          if (!eventDate && e.dates && Array.isArray(e.dates) && e.dates.length > 0 && e.dates[0] && e.dates[0].date) {
-            try {
-              eventDate = new Date(e.dates[0].date);
-              if (!isNaN(eventDate.getTime())) {
-                dateSource = 'dates[0].date';
-              }
-            } catch (err) {
-              // ignore
-            }
-          }
-          
-          if (!eventDate && e.date_min) {
-            try {
-              eventDate = new Date(e.date_min);
-              if (!isNaN(eventDate.getTime())) {
-                dateSource = 'date_min';
-              }
-            } catch (err) {
-              // ignore
-            }
-          }
-          
-          return { event: e, eventDate, dateSource };
+      // SearchFilter.getUpcomingEvents と同じロジックを使用
+      const upcoming = eventsForUpcoming
+        .filter(event => event.dates && event.dates.length > 0)
+        .sort((a, b) => {
+          const aDate = new Date(a.dates[0].date);
+          const bDate = new Date(b.dates[0].date);
+          return aDate - bDate;
         })
-        .filter(item => {
-          if (!item.eventDate) return false;
-          
-          item.eventDate.setHours(0, 0, 0, 0);
-          const limit = new Date(today);
-          limit.setDate(today.getDate() + 7);
-          const isInRange = item.eventDate >= today && item.eventDate <= limit;
-          
-          if (isInRange) {
-            console.log('[renderEventBlocks] upcoming event:', item.event.title, 'date:', item.eventDate, 'source:', item.dateSource);
-          }
-          
-          return isInRange;
-        })
-        .sort((a, b) => a.eventDate - b.eventDate) // 早い順
-        .slice(0, MAX_HOME_EVENTS)
-        .map(item => item.event);
+        .slice(0, MAX_HOME_EVENTS);
       
       console.log('[renderEventBlocks] final upcoming count:', upcoming.length);
 
