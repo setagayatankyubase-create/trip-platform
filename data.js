@@ -16,11 +16,16 @@ let _eventIndexLoadingPromise = null;
 let _eventMetaLoadingPromise = null;
 
 window.loadEventData = function loadEventData() {
-  // すでに構築済みなら即返す
+  // すでに構築済みなら即返す（一時的に無効化：datesが空になる問題を回避）
+  // TODO: datesが正しく設定されるようになったら、このチェックを有効化する
+  /*
   if (window.eventData && window.eventIndex) {
     return Promise.resolve(window.eventData);
   }
+  */
   if (_eventDataLoadingPromise) return _eventDataLoadingPromise;
+  
+  console.log('[loadEventData] Starting loadEventData...');
 
   const STORAGE_KEY = "sotonavi_eventData_v1";
   const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 1日
