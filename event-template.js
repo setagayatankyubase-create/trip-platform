@@ -551,20 +551,16 @@ const EventPageRenderer = {
                 // 無視
               }
             }
-              
-              // タイムスタンプは既に保存済み（上で先に保存している）
-              // 10分後にフラグを削除（簡易実装）
-              setTimeout(() => {
-                try {
-                  localStorage.removeItem(storageKey);
-                } catch (e) {
-                  // 無視
-                }
-              }, RESET_PERIOD_MS);
-            } catch (error) {
-              // 計測処理が失敗してもエラーを出さず、遷移は実行
-              console.warn('計測処理でエラーが発生しました:', error);
-            }
+            
+            // タイムスタンプは既に保存済み（上で先に保存している）
+            // 10分後にフラグを削除（簡易実装）
+            setTimeout(() => {
+              try {
+                localStorage.removeItem(storageKey);
+              } catch (e) {
+                // 無視
+              }
+            }, RESET_PERIOD_MS);
             
             // 既存の遷移処理はそのまま実行（<a>タグのデフォルト動作）
             // preventDefault はしないので、通常通り外部サイトに遷移する
