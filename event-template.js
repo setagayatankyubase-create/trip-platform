@@ -347,8 +347,25 @@ const EventPageRenderer = {
         bookingBtn.textContent = '公式サイトへ進む';
         bookingBtn.style.display = 'block';
         
+        // 既存のイベントリスナーを削除（重複登録を防ぐ）
+        const oldHandler = bookingBtn._clickTrackerHandler;
+        if (oldHandler) {
+          bookingBtn.removeEventListener('click', oldHandler);
+        }
+        
         // クリックイベントリスナーを登録（計測処理）
-        bookingBtn.addEventListener('click', function(e) {
+        const clickHandler = function(e) {
+          // 既に処理中ならスキップ（連続クリック防止）
+          if (bookingBtn._clickProcessing) {
+            console.log('[ClickTracker] 処理中のためスキップします');
+            return;
+          }
+          bookingBtn._clickProcessing = true;
+          
+          // 少し遅延してフラグをリセット（連続クリック防止のため）
+          setTimeout(() => {
+            bookingBtn._clickProcessing = false;
+          }, 1000);
             // 連打防止：10分間に1イベント1回まで（同じ人がクリックするのを制限）
             // 各イベントIDごとに独立して記録される
             const storageKey = `sotonavi_clicked_${event.id}`;
@@ -482,7 +499,11 @@ const EventPageRenderer = {
             
             // 既存の遷移処理はそのまま実行（<a>タグのデフォルト動作）
             // preventDefault はしないので、通常通り外部サイトに遷移する
-          });
+          };
+        
+        // ハンドラを参照として保存（後で削除できるように）
+        bookingBtn._clickTrackerHandler = clickHandler;
+        bookingBtn.addEventListener('click', clickHandler);
       } else {
         bookingBtn.style.display = 'none';
       }
