@@ -320,48 +320,53 @@
         })
         .slice(0, MAX_HOME_EVENTS);
 
-      // 直近開催：今日以降のイベントを日付の近い順にソート
+      // 直近開催：eventData.events から、今日以降のイベントを日付の近い順にソート
+      // eventData.events を使う（dates が確実に設定されている）
       const eventsForUpcoming = Array.isArray(eventData?.events) && eventData.events.length > 0
         ? eventData.events
-        : source;
+        : [];
       
       console.log('[renderEventBlocks] eventsForUpcoming:', eventsForUpcoming.length);
-      console.log('[renderEventBlocks] events with dates:', eventsForUpcoming.filter(e => e.dates && e.dates.length > 0).length);
       
-      const upcomingCandidates = eventsForUpcoming.filter(event => {
-        // dates があるイベントのみ
-        if (!event.dates || event.dates.length === 0) {
-          return false;
+      // dates または next_date から日付を取得するヘルパー
+      const getEventDate = (event) => {
+        // dates 配列から取得（優先）
+        if (event.dates && event.dates.length > 0 && event.dates[0].date) {
+          return new Date(event.dates[0].date);
         }
-        
-        // 最初の開催日が今日以降のもののみ
-        try {
-          const eventDate = new Date(event.dates[0].date);
-          if (isNaN(eventDate.getTime())) {
+        // next_date から取得（フォールバック）
+        if (event.next_date) {
+          return new Date(event.next_date);
+        }
+        // date_min から取得（フォールバック）
+        if (event.date_min) {
+          return new Date(event.date_min);
+        }
+        return null;
+      };
+      
+      const upcomingCandidates = eventsForUpcoming
+        .map(event => {
+          const eventDate = getEventDate(event);
+          return { event, eventDate };
+        })
+        .filter(({ eventDate }) => {
+          if (!eventDate || isNaN(eventDate.getTime())) {
             return false;
           }
           eventDate.setHours(0, 0, 0, 0);
-          const isUpcoming = eventDate >= today;
-          if (isUpcoming) {
-            console.log('[renderEventBlocks] upcoming event:', event.id, event.title, eventDate.toISOString().split('T')[0]);
-          }
-          return isUpcoming;
-        } catch (e) {
-          console.warn('[renderEventBlocks] date parse error:', event.id, event.dates[0]);
-          return false;
-        }
-      });
+          return eventDate >= today;
+        });
       
       console.log('[renderEventBlocks] upcomingCandidates:', upcomingCandidates.length);
+      upcomingCandidates.forEach(({ event, eventDate }) => {
+        console.log('[renderEventBlocks] upcoming:', event.id, event.title, eventDate.toISOString().split('T')[0]);
+      });
       
       const upcoming = upcomingCandidates
-        .sort((a, b) => {
-          // 日付の近い順（早い順）にソート
-          const aDate = new Date(a.dates[0].date);
-          const bDate = new Date(b.dates[0].date);
-          return aDate - bDate;
-        })
-        .slice(0, MAX_HOME_EVENTS);
+        .sort((a, b) => a.eventDate - b.eventDate) // 日付の近い順（早い順）
+        .slice(0, MAX_HOME_EVENTS)
+        .map(({ event }) => event); // event オブジェクトのみを返す
       
       console.log('[renderEventBlocks] final upcoming count:', upcoming.length);
 

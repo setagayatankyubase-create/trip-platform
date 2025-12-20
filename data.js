@@ -60,13 +60,20 @@ window.loadEventData = function loadEventData() {
           // next_date が無い場合のみ詳細JSONから取得
           let dates = [];
           if (item.next_date) {
-            const dateStr = typeof item.next_date === 'string' 
-              ? item.next_date 
-              : item.next_date instanceof Date 
-                ? item.next_date.toISOString()
-                : null;
+            // next_date を dates 配列に変換
+            const dateValue = item.next_date;
+            let dateStr = null;
+            
+            if (typeof dateValue === 'string') {
+              // 文字列の場合、そのまま使用（"2026-02-01" 形式を想定）
+              dateStr = dateValue;
+            } else if (dateValue instanceof Date) {
+              // Date オブジェクトの場合、ISO形式に変換
+              dateStr = dateValue.toISOString();
+            }
+            
             if (dateStr) {
-              // ISO形式の日付文字列をそのまま使用
+              // dates 配列形式: [{ date: "2026-02-01" }]
               dates = [{ date: dateStr }];
             }
           }
@@ -83,7 +90,7 @@ window.loadEventData = function loadEventData() {
             }
           }
           
-          events.push({
+          const eventObj = {
             id: item.id,
             title: item.title,
             image: item.image || item.thumb,
@@ -97,7 +104,14 @@ window.loadEventData = function loadEventData() {
             categoryId: item.categoryId,
             dates: dates,
             publishedAt: item.publishedAt || item.published_at || new Date().toISOString(),
-          });
+          };
+          
+          // next_date も保持（フォールバック用）
+          if (item.next_date) {
+            eventObj.next_date = item.next_date;
+          }
+          
+          events.push(eventObj);
         }
         
         console.log(`[loadEventData] Built ${events.length} events, with dates:`, 
