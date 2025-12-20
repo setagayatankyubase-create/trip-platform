@@ -158,66 +158,16 @@
   <script>
     (async () => {
       try {
-        // キャッシュクリア（デバッグ用）
-        // localStorage.removeItem('sotonavi_eventData_v1');
-        // localStorage.removeItem('sotonavi_eventIndex_v1');
-        
-        // メタデータとインデックスを読み込み（デモページと同じ方法）
-        await Promise.all([loadEventMeta(), loadEventIndex()]);
+        // APIからイベント・提供元データを読み込み
+        await loadEventData();
 
         // URLパラメータから提供元IDを取得
         const urlParams = new URLSearchParams(window.location.search);
         const organizerId = urlParams.get('id');
 
         // 提供元データを取得
-        const organizer = window.eventMeta && window.eventMeta.organizers 
-          ? window.eventMeta.organizers.find(o => o.id === organizerId) 
-          : null;
-
-        console.log(`[organizer-detail.html] Organizer ID: ${organizerId}`);
-        console.log(`[organizer-detail.html] Organizer found:`, organizer);
-        console.log(`[organizer-detail.html] eventIndex length:`, window.eventIndex ? window.eventIndex.length : 0);
-
-        // すべてのイベントの詳細を取得してorganizerIdでフィルタリング（デモページと同じ方法）
-        const events = [];
-        if (window.eventIndex && Array.isArray(window.eventIndex) && window.eventIndex.length > 0) {
-          const eventIds = window.eventIndex.map(e => e.id).filter(Boolean);
-          console.log(`[organizer-detail.html] Loading ${eventIds.length} event details to filter by organizerId: ${organizerId}`);
-          
-          const CONCURRENT_LIMIT = 5;
-          
-          // チャンクに分割して並列処理
-          for (let i = 0; i < eventIds.length; i += CONCURRENT_LIMIT) {
-            const chunk = eventIds.slice(i, i + CONCURRENT_LIMIT);
-            const detailPromises = chunk.map(eventId => 
-              loadEventDetail(eventId).catch(() => null)
-            );
-            const details = await Promise.all(detailPromises);
-            
-            // organizerIdでフィルタリング
-            const matchingDetails = details.filter(d => {
-              if (!d) return false;
-              const eOrganizerId = d.organizerId || d.organizer_id;
-              if (i === 0 && chunk.indexOf(details.indexOf(d)) === 0) {
-                console.log(`[organizer-detail.html] Sample detail: id=${d.id}, organizerId=${eOrganizerId}, looking for: ${organizerId}`);
-              }
-              return eOrganizerId === organizerId;
-            });
-            events.push(...matchingDetails);
-            
-            // デバッグ：最初のチャンクの結果を確認
-            if (i === 0) {
-              console.log(`[organizer-detail.html] First chunk: loaded ${details.filter(d => d).length} details, matched ${matchingDetails.length} events`);
-              if (details[0]) {
-                console.log(`[organizer-detail.html] First detail keys:`, Object.keys(details[0]));
-              }
-            }
-          }
-          
-          console.log(`[organizer-detail.html] Found ${events.length} events for organizer ${organizerId}`);
-        } else {
-          console.warn('[organizer-detail.html] eventIndex is empty or not available');
-        }
+        const organizer = eventData.organizers.find(o => o.id === organizerId);
+        const events = eventData.events.filter(e => e.organizerId === organizerId);
 
         // テンプレートを使用してページをレンダリング
         if (!organizer) {
