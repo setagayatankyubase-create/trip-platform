@@ -153,33 +153,23 @@ const ClickTracker = {
     const currentTimestamp = Date.now();
     
     // アトミックにチェック＆セット（重複送信を完全に防ぐ）
-    let shouldSend = false;
+    // フラグが存在する場合は送信をスキップ
     try {
       const lastSent = sessionStorage.getItem(sentFlagKey);
-      if (!lastSent) {
-        // フラグが存在しない場合のみ送信を許可
-        sessionStorage.setItem(sentFlagKey, currentTimestamp.toString());
-        shouldSend = true;
-      } else {
+      if (lastSent) {
         const lastSentTime = parseInt(lastSent, 10);
         const timeDiff = currentTimestamp - lastSentTime;
-        // 1秒以内の送信は重複として扱う
-        if (timeDiff >= 1000) {
-          // 1秒以上経過している場合は送信を許可
-          sessionStorage.setItem(sentFlagKey, currentTimestamp.toString());
-          shouldSend = true;
-        } else {
-          console.log('[ClickTracker] [カードリンク] 1秒以内に送信済み、スキップします（重複防止）');
+        // 3秒以内の送信は重複として扱う（より厳格に）
+        if (timeDiff < 3000) {
+          console.log('[ClickTracker] [カードリンク] 3秒以内に送信済み、スキップします（重複防止）');
+          return;
         }
       }
+      // 送信前にタイムスタンプをセット（重複送信を防ぐ）
+      sessionStorage.setItem(sentFlagKey, currentTimestamp.toString());
     } catch (storageError) {
-      // sessionStorageが使えない場合は送信を許可
-      shouldSend = true;
-    }
-
-    // 送信が許可されていない場合は終了
-    if (!shouldSend) {
-      return;
+      // sessionStorageが使えない場合は続行
+      console.warn('[ClickTracker] sessionStorage error:', storageError);
     }
 
     // GASにPOSTリクエストを送信（GAS側の実装に合わせる）
@@ -207,14 +197,14 @@ const ClickTracker = {
           // 無視
         }
       } else {
-        // 送信成功時は1秒後にフラグを削除（次のクリックを許可、ただし10分制限はlocalStorageで管理）
+        // 送信成功時は3秒後にフラグを削除（次のクリックを許可、ただし10分制限はlocalStorageで管理）
         setTimeout(() => {
           try {
             sessionStorage.removeItem(sentFlagKey);
           } catch (e) {
             // 無視
           }
-        }, 1000); // 1秒後
+        }, 3000); // 3秒後
       }
     } catch (beaconErr) {
       console.error('[ClickTracker] [カードリンク] sendBeacon error:', beaconErr);
