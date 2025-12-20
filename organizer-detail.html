@@ -156,8 +156,6 @@
   <script src="app.js"></script>
   <script src="organizer-template.js"></script>
   <script>
-    // VERSION: 2025-12-20-v2 - Force cache refresh
-    console.log('[organizer-detail.html] Script loaded at', new Date().toISOString(), 'VERSION: 2025-12-20-v2');
     (async () => {
       try {
         // APIからイベント・提供元データを読み込み
@@ -168,32 +166,8 @@
         const organizerId = urlParams.get('id');
 
         // 提供元データを取得
-        const organizer = eventData.organizers ? eventData.organizers.find(o => o.id === organizerId) : null;
-        
-        console.log('[organizer-detail.html] Organizer ID:', organizerId);
-        console.log('[organizer-detail.html] Organizer found:', organizer);
-        console.log('[organizer-detail.html] eventData.events length:', eventData.events ? eventData.events.length : 0);
-        
-        // デバッグ：最初の数件のイベントのorganizerIdを確認
-        if (eventData.events && eventData.events.length > 0) {
-          console.log('[organizer-detail.html] Sample events (first 3):');
-          eventData.events.slice(0, 3).forEach((e, idx) => {
-            console.log(`  Event ${idx + 1}: id=${e.id}, organizerId=${e.organizerId}, organizer_id=${e.organizer_id}`);
-          });
-        }
-        
-        // organizerIdまたはorganizer_idの両方に対応
-        const events = eventData.events ? eventData.events.filter(e => {
-          const eOrganizerId = e.organizerId || e.organizer_id;
-          const matches = eOrganizerId === organizerId;
-          if (matches) {
-            console.log('[organizer-detail.html] ✓ Matched event:', e.id, 'organizerId:', eOrganizerId);
-          }
-          return matches;
-        }) : [];
-        
-        console.log('[organizer-detail.html] Events count:', events.length);
-        console.log('[organizer-detail.html] Sample event:', events[0]);
+        const organizer = eventData.organizers.find(o => o.id === organizerId);
+        const events = eventData.events.filter(e => e.organizerId === organizerId);
 
         // テンプレートを使用してページをレンダリング
         if (!organizer) {
