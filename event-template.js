@@ -356,10 +356,28 @@ const EventPageRenderer = {
             try {
               const cached = localStorage.getItem(storageKey);
               if (cached) {
-                const parsed = JSON.parse(cached);
-                // timestamp と eventId を確認
-                if (parsed && parsed.timestamp && parsed.eventId === event.id) {
-                  const age = Date.now() - parsed.timestamp;
+                let timestamp = null;
+                
+                // 新しい形式 { eventId, timestamp } か古い形式（文字列のタイムスタンプ）に対応
+                try {
+                  const parsed = JSON.parse(cached);
+                  if (parsed && typeof parsed === 'object' && parsed.timestamp) {
+                    // 新しい形式
+                    if (parsed.eventId === event.id) {
+                      timestamp = parsed.timestamp;
+                    }
+                  }
+                } catch (e) {
+                  // JSONとしてパースできない場合は古い形式（文字列のタイムスタンプ）として扱う
+                  const oldTimestamp = Number(cached);
+                  if (!isNaN(oldTimestamp) && oldTimestamp > 0) {
+                    timestamp = oldTimestamp;
+                  }
+                }
+                
+                // タイムスタンプがある場合、10分以内かチェック
+                if (timestamp) {
+                  const age = Date.now() - timestamp;
                   if (age < RESET_PERIOD_MS) {
                     console.log('このイベントは既に計測済みです（10分以内）:', event.id);
                     // 計測はスキップするが、遷移は実行される
