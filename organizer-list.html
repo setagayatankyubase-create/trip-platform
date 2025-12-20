@@ -99,8 +99,8 @@
 
   <script src="data.js"></script>
   <script>
-    // デモ用設定（GAS APIのURLを設定してください）
-    const DEMO_GAS_API_URL = 'https://script.google.com/macros/s/YOUR_DEMO_GAS_URL/exec';
+    // デモ用設定（GAS APIのURL）
+    const DEMO_GAS_API_URL = 'https://script.google.com/macros/s/AKfycbyyjVTkFqxOf32P3pT2d9XfzPAir2ssEMj9u7-6kO1allkXUo1ey0bQbdcENK2Rl4lr-w/exec';
     
     // デモデータを取得
     async function fetchDemoData(password) {
@@ -114,6 +114,12 @@
         }
         
         const data = await response.json();
+        
+        // エラーレスポンスのチェック
+        if (!data.success) {
+          throw new Error(data.error || 'データの取得に失敗しました');
+        }
+        
         return data;
       } catch (error) {
         console.error('Error fetching demo data:', error);
@@ -159,50 +165,111 @@
         
       } catch (error) {
         console.error('Demo auth error:', error);
-        errorDiv.textContent = 'パスワードが正しくないか、データの取得に失敗しました';
+        const errorMsg = error.message || 'パスワードが正しくないか、データの取得に失敗しました';
+        errorDiv.textContent = errorMsg;
         errorDiv.style.display = 'block';
         demoContent.style.display = 'none';
       }
     }
     
-    // デモコンテンツをレンダリング
+    // デモコンテンツをレンダリング（提供元情報 + イベントカード形式）
     function renderDemoContent(demoData) {
       const demoList = document.getElementById('demo-list');
       
-      if (!demoData || !demoData.items || demoData.items.length === 0) {
+      if (!demoData || !demoData.success) {
         demoList.innerHTML = `
           <div class="empty-state">
             <div class="empty-state-icon">📝</div>
-            <h3>デモコンテンツがありません</h3>
+            <h3>データの取得に失敗しました</h3>
           </div>
         `;
         return;
       }
       
-      // デモデータの表示（organizer形式を想定）
-      demoList.innerHTML = demoData.items.map(item => {
-        return `
-          <div class="organizer-card">
+      const organizer = demoData.organizer;
+      const events = demoData.events || [];
+      
+      let html = '';
+      
+      // 提供元情報を表示
+      if (organizer) {
+        html += `
+          <div class="organizer-card" style="margin-bottom: 32px;">
             <div class="organizer-header">
-              ${item.logo ? `<img src="${item.logo}" alt="${item.name || ''}" class="organizer-logo">` : ''}
+              ${organizer.logo ? `<img src="${organizer.logo}" alt="${organizer.name || ''}" class="organizer-logo">` : ''}
               <div class="organizer-info" style="flex: 1;">
-                <h3 style="margin: 0 0 8px 0;">
-                  ${item.link ? `<a href="${item.link}" style="color: inherit; text-decoration: none;">${item.name || 'デモ提供元'}</a>` : (item.name || 'デモ提供元')}
-                </h3>
-                <p style="margin: 0; color: #6c7a72; line-height: 1.6;">${item.description || ''}</p>
-                ${item.meta ? `<div class="organizer-meta">${item.meta}</div>` : ''}
+                <h3 style="margin: 0 0 8px 0; font-size: 1.5rem;">${organizer.name || 'デモ提供元'}</h3>
+                <p style="margin: 0; color: #6c7a72; line-height: 1.6;">${organizer.description || ''}</p>
+                <div class="organizer-meta" style="margin-top: 12px;">
+                  ${organizer.establishedYear ? `<span>設立: ${organizer.establishedYear}年</span>` : ''}
+                  ${organizer.rating ? `<span>${organizer.establishedYear ? ' • ' : ''}評価: ★${organizer.rating} ${organizer.reviewCount ? `(${organizer.reviewCount}件)` : ''}</span>` : ''}
+                </div>
               </div>
             </div>
-            ${item.link ? `
-              <div style="margin-top: 16px;">
-                <a href="${item.link}" class="btn" style="display: inline-block; text-align: center; padding: 12px 24px;">
-                  詳細を見る →
-                </a>
-              </div>
-            ` : ''}
           </div>
         `;
-      }).join('');
+      }
+      
+      // イベント一覧を表示
+      if (events.length === 0) {
+        html += `
+          <div class="empty-state">
+            <div class="empty-state-icon">📝</div>
+            <h3>デモイベントがありません</h3>
+            <p>この提供元のデモイベントが登録されていません</p>
+          </div>
+        `;
+      } else {
+        html += '<h3 style="margin: 0 0 16px 0; font-size: 1.2rem;">デモイベント</h3>';
+        html += '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">';
+        
+        html += events.map(event => {
+          let badgesHtml = '';
+          if (event.isRecommended) {
+            badgesHtml += '<span class="badge recommended">おすすめ</span>';
+          }
+          if (event.isNew) {
+            badgesHtml += '<span class="badge new">新着</span>';
+          }
+          
+          const area = event.area || event.city || '';
+          const price = event.price ? event.price.toLocaleString() : '0';
+          const image = event.image || 'https://via.placeholder.com/800x600?text=No+Image';
+          
+          return `
+            <a href="experience.html?id=${event.id}" class="card-link" data-event-id="${event.id}">
+              <div class="card" data-event-id="${event.id}">
+                <div class="card-image-wrapper">
+                  <img src="${image}" alt="${event.title}" loading="lazy">
+                </div>
+                <div class="card-body">
+                  ${badgesHtml ? `<div class="card-badges">${badgesHtml}</div>` : ''}
+                  <div class="card-title">${event.title}</div>
+                  <div class="card-location">${area}, ${event.prefecture || ''}</div>
+                  <div class="card-price">¥ ${price}</div>
+                </div>
+              </div>
+            </a>
+          `;
+        }).join('');
+        
+        html += '</div>';
+      }
+      
+      demoList.innerHTML = html;
+      
+      // カードクリック時の計測を追加（必要に応じて）
+      const links = demoList.querySelectorAll('.card-link');
+      links.forEach(link => {
+        link.addEventListener('click', (e) => {
+          const eventId = link.getAttribute('data-event-id');
+          if (typeof ClickTracker !== 'undefined' && ClickTracker.track) {
+            const event = events.find(ev => ev.id === eventId);
+            const organizerId = event ? event.organizerId : '';
+            ClickTracker.track(eventId, organizerId);
+          }
+        });
+      });
     }
     
     // デモ認証をクリア
@@ -228,8 +295,13 @@
         if (authenticated === 'true' && password) {
           // 既に認証済みの場合はデータを取得して表示
           fetchDemoData(password).then(demoData => {
-            document.getElementById('demo-content').style.display = 'block';
-            renderDemoContent(demoData);
+            if (demoData && demoData.success) {
+              document.getElementById('demo-content').style.display = 'block';
+              renderDemoContent(demoData);
+            } else {
+              // 認証が無効になった場合はクリア
+              clearDemoAuth();
+            }
           }).catch(error => {
             console.error('Failed to load demo data:', error);
             // 認証が無効になった場合はクリア
