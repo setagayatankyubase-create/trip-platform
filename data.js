@@ -98,7 +98,7 @@ window.loadEventData = function loadEventData() {
           const dates = dateStr ? [{ date: dateStr }] : [];
           
           // organizerIdがevents_indexにない場合は、個別JSONを取得する必要がある
-          const itemOrganizerId = item.organizerId || item.organizer_id;
+          const itemOrganizerId = (item.organizerId || item.organizer_id || '').toString().trim();
           
           events.push({
             id: item.id,
@@ -112,8 +112,7 @@ window.loadEventData = function loadEventData() {
             rating: item.rating,
             reviewCount: item.reviewCount,
             categoryId: item.categoryId,
-            organizerId: itemOrganizerId, // organizerIdを追加（存在しない場合は後で補完）
-            _needsOrganizerIdLookup: !itemOrganizerId, // organizerIdがない場合はフラグを立てる
+            organizerId: itemOrganizerId || undefined, // 空文字列の場合はundefinedにする（補完処理で検出できるように）
             dates: dates,
             next_date: item.next_date,
             publishedAt: item.publishedAt || item.published_at || new Date().toISOString(),
@@ -150,7 +149,9 @@ window.loadEventData = function loadEventData() {
               : [];
             
             // organizerIdは詳細JSONから優先して取得
-            const organizerId = detail ? (detail.organizerId || detail.organizer_id) : (item.organizerId || item.organizer_id);
+            const organizerId = detail 
+              ? ((detail.organizerId || detail.organizer_id || '').toString().trim() || undefined)
+              : ((item.organizerId || item.organizer_id || '').toString().trim() || undefined);
             
             events.push({
               id: item.id,
@@ -164,7 +165,7 @@ window.loadEventData = function loadEventData() {
               rating: item.rating,
               reviewCount: item.reviewCount,
               categoryId: item.categoryId,
-              organizerId: organizerId, // organizerIdを追加
+              organizerId: organizerId, // organizerIdを追加（空の場合はundefined）
               dates: dates,
               next_date: item.next_date || (dates.length > 0 ? dates[0].date : null),
               publishedAt: item.publishedAt || item.published_at || new Date().toISOString(),
@@ -180,8 +181,9 @@ window.loadEventData = function loadEventData() {
         // organizerIdが欠けているイベントを補完（並列化、同時実行数制限付き）
         // この処理はすべてのイベント構築後に実行する
         const eventsNeedingOrganizerId = events.filter(e => {
-          const hasOrganizerId = e.organizerId && e.organizerId !== 'undefined' && e.organizerId !== '' && e.organizerId !== null;
-          return !hasOrganizerId;
+          const organizerId = e.organizerId || e.organizer_id;
+          // undefined、null、空文字列、'undefined'文字列の場合は補完が必要
+          return !organizerId || organizerId === 'undefined' || organizerId === '';
         });
         if (eventsNeedingOrganizerId.length > 0) {
           console.log(`[loadEventData] ${eventsNeedingOrganizerId.length} events need organizerId lookup (out of ${events.length} total)`);

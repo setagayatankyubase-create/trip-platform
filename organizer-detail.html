@@ -158,47 +158,33 @@
   <script>
     (async () => {
       try {
-        // APIからイベント・提供元データを読み込み
+        // データ読み込み
         await loadEventData();
 
         // URLパラメータから提供元IDを取得
         const urlParams = new URLSearchParams(window.location.search);
         const organizerId = urlParams.get('id');
 
-        // 提供元データを取得
-        const organizer = eventData.organizers.find(o => o.id === organizerId);
-        
-        console.log(`[organizer-detail.html] Looking for organizerId: ${organizerId}`);
-        console.log(`[organizer-detail.html] eventData exists:`, !!eventData);
-        console.log(`[organizer-detail.html] eventData.events exists:`, !!(eventData && eventData.events));
-        console.log(`[organizer-detail.html] eventData.events length: ${eventData && eventData.events ? eventData.events.length : 0}`);
-        
-        if (!eventData || !eventData.events || eventData.events.length === 0) {
-          console.error('[organizer-detail.html] ERROR: eventData.events is empty or undefined!');
-          console.error('[organizer-detail.html] eventData:', eventData);
-          OrganizerPageRenderer.render(organizer, []);
+        if (!organizerId) {
+          console.error('[organizer-detail.html] No organizer ID in URL');
           return;
         }
+
+        // 提供元データを取得
+        const organizer = eventData?.organizers?.find(o => o.id === organizerId);
         
         // イベントをフィルタリング（organizerId と organizer_id の両方をチェック）
-        const events = eventData.events.filter(e => {
+        const events = (eventData?.events || []).filter(e => {
           const eOrganizerId = e.organizerId || e.organizer_id;
           return eOrganizerId === organizerId;
         });
-        
-        console.log(`[organizer-detail.html] Sample events (first 5):`, eventData.events.slice(0, 5).map(e => ({
-          id: e.id,
-          organizerId: e.organizerId || '(missing)',
-          organizer_id: e.organizer_id || '(missing)'
-        })));
-        console.log(`[organizer-detail.html] Filtered events count: ${events.length}`);
 
-        // テンプレートを使用してページをレンダリング
+        // レンダリング
         if (!organizer) {
-          console.error('[organizer-detail.html] Organizer not found for ID:', organizerId);
+          console.error('[organizer-detail.html] Organizer not found:', organizerId);
         }
         if (events.length === 0) {
-          console.warn('[organizer-detail.html] No events found for organizer:', organizerId);
+          console.warn('[organizer-detail.html] No events found for organizer:', organizerId, `(checked ${eventData?.events?.length || 0} events)`);
         }
         
         OrganizerPageRenderer.render(organizer, events);
