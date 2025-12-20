@@ -169,12 +169,8 @@ window.loadEventIndex = function loadEventIndex() {
 
       window.eventIndex = index;
 
-      // ★互換: 既存ページが eventData.events を見る前提なら、ここに index を流し込む
-      console.log("[TRACE] Setting eventData.events from index (loadEventIndex) at", new Error().stack.split("\n")[1]);
-      console.log("[TRACE] overwrite events with index length:", index?.length);
-      window.eventData = window.eventData || {};
-      window.eventData.events = index;        // ← ここが重要
-      window.eventData.events_index = index;  // ← ついでに入れておくと安全
+      // ★注意: window.eventData.events は loadEventData() が設定する
+      // ここでは触らない（上書き競合を防ぐ）
 
       try {
         const payload = {
