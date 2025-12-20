@@ -260,10 +260,19 @@
           }
         }
         
-        console.log('[organizer-detail.html] Events count:', events.length);
-        console.log('[organizer-detail.html] Sample event:', events[0]);
+        console.log('[organizer-detail.html] Final events count:', events.length);
+        if (events.length > 0) {
+          console.log('[organizer-detail.html] Sample event:', events[0]);
+        }
 
         // テンプレートを使用してページをレンダリング
+        if (!organizer) {
+          console.error('[organizer-detail.html] Organizer not found!');
+        }
+        if (events.length === 0) {
+          console.warn('[organizer-detail.html] No events found for organizer:', organizerId);
+        }
+        
         OrganizerPageRenderer.render(organizer, events);
         
         // 現在の年を設定
