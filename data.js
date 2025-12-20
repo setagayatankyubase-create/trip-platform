@@ -3,7 +3,7 @@
 const DATA_BASE = "/data";
 
 // キャッシュ無効化用バージョン（シート構造やレスポンス形式を変えたら更新）
-const EVENT_CACHE_VERSION = "v1_2025-12-20"; // キャッシュ無効化（organizerId補完の確認用）
+const EVENT_CACHE_VERSION = "v2_2025-12-20"; // v2: organizerId統一対応
 
 // organizerId正規化ヘルパー
 const normalizeId = (v) => {
@@ -34,7 +34,7 @@ window.loadEventData = function loadEventData() {
   }
   if (_eventDataLoadingPromise) return _eventDataLoadingPromise;
 
-  const STORAGE_KEY = "sotonavi_eventData_v1";
+  const STORAGE_KEY = "sotonavi_eventData_v2";
   const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 1日
 
   // 1) localStorage キャッシュを試す（TTL付き）
@@ -160,9 +160,9 @@ window.loadEventData = function loadEventData() {
               ? detail.dates
               : [];
             
-            // organizerIdは詳細JSONから優先して取得
+            // organizerIdは詳細JSONから優先して取得（organizerId統一対応）
             const organizerId = normalizeId(
-              detail?.organizerId ?? detail?.organizer_id ?? item.organizerId ?? item.organizer_id
+              detail?.organizerId ?? item.organizerId
             );
             
             events.push({
@@ -190,11 +190,11 @@ window.loadEventData = function loadEventData() {
           }
         }
         
-        // organizerIdが欠けているイベントを補完（並列化、同時実行数制限付き）
+        // organizerIdが欠けているイベントを補完（過去データ救済用、通常は走らない）
         // この処理はすべてのイベント構築後に実行する
         const eventsNeedingOrganizerId = events.filter(needsOrganizerIdLookup);
         if (eventsNeedingOrganizerId.length > 0) {
-          console.log(`[loadEventData] ${eventsNeedingOrganizerId.length} events need organizerId lookup (out of ${events.length} total)`);
+          console.log(`[loadEventData] ⚠ ${eventsNeedingOrganizerId.length} events need organizerId lookup (out of ${events.length} total) - 補完処理を実行`);
           console.log(`[loadEventData] Sample events needing organizerId:`, eventsNeedingOrganizerId.slice(0, 3).map(e => ({ id: e.id, organizerId: e.organizerId })));
           const CONCURRENT_LIMIT = 5;
           
@@ -203,7 +203,7 @@ window.loadEventData = function loadEventData() {
             const lookupPromises = chunk.map(event => 
               loadEventDetail(event.id)
                 .then(detail => {
-                  const organizerId = normalizeId(detail?.organizerId ?? detail?.organizer_id);
+                  const organizerId = normalizeId(detail?.organizerId);
                   if (organizerId) {
                     event.organizerId = organizerId;
                     console.log(`[loadEventData] ✓ Added organizerId ${organizerId} to event ${event.id}`);
@@ -272,7 +272,7 @@ window.loadEventIndex = function loadEventIndex() {
   }
   if (_eventIndexLoadingPromise) return _eventIndexLoadingPromise;
 
-  const INDEX_STORAGE_KEY = "sotonavi_eventIndex_v1";
+  const INDEX_STORAGE_KEY = "sotonavi_eventIndex_v2";
   const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 1日（GitHub 更新が1日1回の想定）
 
   try {

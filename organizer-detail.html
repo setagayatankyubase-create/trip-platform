@@ -173,10 +173,10 @@
         // 提供元データを取得
         const organizer = eventData?.organizers?.find(o => o.id === organizerId);
         
-        // イベントをフィルタリング（organizerId と organizer_id の両方をチェック、trim済み同士で比較）
+        // イベントをフィルタリング（organizerId のみ、正規化済み同士で比較）
         const norm = (v) => (v ?? '').toString().trim();
         const events = (eventData?.events || []).filter(e => 
-          norm(e.organizerId ?? e.organizer_id) === norm(organizerId)
+          norm(e.organizerId) === norm(organizerId)
         );
 
         // レンダリング
