@@ -109,6 +109,7 @@ window.loadEventData = function loadEventData() {
             rating: item.rating,
             reviewCount: item.reviewCount,
             categoryId: item.categoryId,
+            organizerId: item.organizerId || item.organizer_id, // organizerIdを追加
             dates: dates,
             next_date: item.next_date,
             publishedAt: item.publishedAt || item.published_at || new Date().toISOString(),
@@ -156,7 +157,9 @@ window.loadEventData = function loadEventData() {
               rating: item.rating,
               reviewCount: item.reviewCount,
               categoryId: item.categoryId,
+              organizerId: detail ? (detail.organizerId || detail.organizer_id) : (item.organizerId || item.organizer_id), // organizerIdを追加
               dates: dates,
+              next_date: item.next_date || (dates.length > 0 ? dates[0].date : null),
               publishedAt: item.publishedAt || item.published_at || new Date().toISOString(),
             });
           }

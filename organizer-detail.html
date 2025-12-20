@@ -166,8 +166,17 @@
         const organizerId = urlParams.get('id');
 
         // 提供元データを取得
-        const organizer = eventData.organizers.find(o => o.id === organizerId);
-        const events = eventData.events.filter(e => e.organizerId === organizerId);
+        const organizer = eventData.organizers ? eventData.organizers.find(o => o.id === organizerId) : null;
+        // organizerIdまたはorganizer_idの両方に対応
+        const events = eventData.events ? eventData.events.filter(e => {
+          const eOrganizerId = e.organizerId || e.organizer_id;
+          return eOrganizerId === organizerId;
+        }) : [];
+        
+        console.log('[organizer-detail.html] Organizer ID:', organizerId);
+        console.log('[organizer-detail.html] Organizer found:', organizer);
+        console.log('[organizer-detail.html] Events count:', events.length);
+        console.log('[organizer-detail.html] Sample event:', events[0]);
 
         // テンプレートを使用してページをレンダリング
         OrganizerPageRenderer.render(organizer, events);
