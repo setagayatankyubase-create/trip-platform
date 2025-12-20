@@ -400,24 +400,22 @@ const EventPageRenderer = {
         
         // クリックイベントリスナーを登録（計測処理）
         const clickHandler = function(e) {
-          // 重複送信防止：最初にsessionStorageをチェック＆セット（最優先）
+          // 重複送信防止：最初にsessionStorageをチェック＆セット（最優先・即座に実行）
           const sentFlagKey = `sotonavi_sent_button_${event.id}`;
           const currentTimestamp = Date.now();
+          
+          // フラグのチェックとセットをアトミックに行う（存在チェック → セット）
           try {
-            const existingFlag = sessionStorage.getItem(sentFlagKey);
-            if (existingFlag) {
-              const lastSentTime = parseInt(existingFlag, 10);
-              const timeDiff = currentTimestamp - lastSentTime;
-              // 10秒以内の送信は重複として扱う
-              if (timeDiff < 10000) {
-                console.log('[ClickTracker] [公式サイトボタン] 10秒以内に送信済み、スキップします（重複防止）');
-                return;
-              }
+            // フラグが既に存在する場合は、即座に終了（重複送信を完全に防ぐ）
+            if (sessionStorage.getItem(sentFlagKey)) {
+              console.log('[ClickTracker] [公式サイトボタン] 既に送信済み、スキップします（重複防止）');
+              return;
             }
-            // 即座にフラグをセット（重複送信を防ぐ）
+            // フラグが存在しない場合のみ、即座にフラグをセット（この時点で他のリクエストをブロック）
             sessionStorage.setItem(sentFlagKey, currentTimestamp.toString());
           } catch (storageError) {
             console.warn('[ClickTracker] sessionStorage error:', storageError);
+            // sessionStorageが使えない場合は続行（重複の可能性があるが、仕方ない）
           }
           
           // 既に処理中ならスキップ（連続クリック防止）
@@ -526,14 +524,10 @@ const EventPageRenderer = {
               null;
 
             // 計測処理（失敗しても遷移は実行）
-            // リクエストIDを追加して、GAS側で重複チェックを可能にする
-            const requestId = `${event.id}_${currentTimestamp}_${Math.random().toString(36).substr(2, 9)}`;
             const measurementData = {
               token: 'sotonavi_click_9F2kA8R7mQX3LZpD5YwE11', // GAS側のCLICK_SECRETと一致
               event_id: event.id,
-              organizer_id: organizerIdForCount,
-              request_id: requestId,
-              timestamp: currentTimestamp
+              organizer_id: organizerIdForCount
             };
             
             const gasUrl = 'https://script.google.com/macros/s/AKfycbyHnX2Z4jnTHfYSCFFaOVmVdIf6yY2edAMTCEyAOUn0Mak2Mam67CQ0g-V26zAJSVJphw/exec';
@@ -558,14 +552,8 @@ const EventPageRenderer = {
                   // 無視
                 }
               } else {
-                // 送信成功時は10秒後にフラグを削除（次のクリックを許可、ただし10分制限はlocalStorageで管理）
-                setTimeout(() => {
-                  try {
-                    sessionStorage.removeItem(sentFlagKey);
-                  } catch (e) {
-                    // 無視
-                  }
-                }, 10000); // 10秒後
+                // 送信成功時はフラグを維持（10分制限はlocalStorageで管理）
+                // フラグは送信直前にセットしているため、ここでは何もしない
               }
             } catch (beaconErr) {
               console.error('[ClickTracker] [公式サイトボタン] sendBeacon error:', beaconErr);

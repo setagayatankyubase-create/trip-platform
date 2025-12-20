@@ -71,24 +71,22 @@ const ClickTracker = {
       return;
     }
     
-    // 重複送信防止：最初にsessionStorageをチェック＆セット（最優先）
+    // 重複送信防止：最初にsessionStorageをチェック＆セット（最優先・即座に実行）
     const sentFlagKey = `sotonavi_sent_${eventId}`;
     const currentTimestamp = Date.now();
+    
+    // フラグのチェックとセットをアトミックに行う（存在チェック → セット）
     try {
-      const existingFlag = sessionStorage.getItem(sentFlagKey);
-      if (existingFlag) {
-        const lastSentTime = parseInt(existingFlag, 10);
-        const timeDiff = currentTimestamp - lastSentTime;
-        // 10秒以内の送信は重複として扱う
-        if (timeDiff < 10000) {
-          console.log('[ClickTracker] [カードリンク] 10秒以内に送信済み、スキップします（重複防止）');
-          return;
-        }
+      // フラグが既に存在する場合は、即座に終了（重複送信を完全に防ぐ）
+      if (sessionStorage.getItem(sentFlagKey)) {
+        console.log('[ClickTracker] [カードリンク] 既に送信済み、スキップします（重複防止）');
+        return;
       }
-      // 即座にフラグをセット（重複送信を防ぐ）
+      // フラグが存在しない場合のみ、即座にフラグをセット（この時点で他のリクエストをブロック）
       sessionStorage.setItem(sentFlagKey, currentTimestamp.toString());
     } catch (storageError) {
       console.warn('[ClickTracker] sessionStorage error:', storageError);
+      // sessionStorageが使えない場合は続行（重複の可能性があるが、仕方ない）
     }
     
     // 連打防止：10分間に1イベント1回まで（同じ人がクリックするのを制限）
@@ -170,14 +168,10 @@ const ClickTracker = {
 
     // GASにPOSTリクエストを送信（GAS側の実装に合わせる）
     // フラグは既にセット済み（上で即座にセットしている）
-    // リクエストIDを追加して、GAS側で重複チェックを可能にする
-    const requestId = `${eventId}_${currentTimestamp}_${Math.random().toString(36).substr(2, 9)}`;
     const payload = {
       token: CLICK_SECRET,
       event_id: eventId,
-      organizer_id: organizerId || '',
-      request_id: requestId,
-      timestamp: currentTimestamp
+      organizer_id: organizerId || ''
     };
 
     // navigator.sendBeaconのみを使用（ページ遷移時も確実に送信、重複送信を防ぐ）
@@ -198,14 +192,8 @@ const ClickTracker = {
           // 無視
         }
       } else {
-        // 送信成功時は10秒後にフラグを削除（次のクリックを許可、ただし10分制限はlocalStorageで管理）
-        setTimeout(() => {
-          try {
-            sessionStorage.removeItem(sentFlagKey);
-          } catch (e) {
-            // 無視
-          }
-        }, 10000); // 10秒後
+        // 送信成功時はフラグを維持（10分制限はlocalStorageで管理）
+        // フラグは送信直前にセットしているため、ここでは何もしない
       }
     } catch (beaconErr) {
       console.error('[ClickTracker] [カードリンク] sendBeacon error:', beaconErr);
