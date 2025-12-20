@@ -168,21 +168,29 @@
         // 提供元データを取得
         const organizer = eventData.organizers.find(o => o.id === organizerId);
         
+        console.log(`[organizer-detail.html] Looking for organizerId: ${organizerId}`);
+        console.log(`[organizer-detail.html] eventData exists:`, !!eventData);
+        console.log(`[organizer-detail.html] eventData.events exists:`, !!(eventData && eventData.events));
+        console.log(`[organizer-detail.html] eventData.events length: ${eventData && eventData.events ? eventData.events.length : 0}`);
+        
+        if (!eventData || !eventData.events || eventData.events.length === 0) {
+          console.error('[organizer-detail.html] ERROR: eventData.events is empty or undefined!');
+          console.error('[organizer-detail.html] eventData:', eventData);
+          OrganizerPageRenderer.render(organizer, []);
+          return;
+        }
+        
         // イベントをフィルタリング（organizerId と organizer_id の両方をチェック）
         const events = eventData.events.filter(e => {
           const eOrganizerId = e.organizerId || e.organizer_id;
           return eOrganizerId === organizerId;
         });
         
-        console.log(`[organizer-detail.html] Looking for organizerId: ${organizerId}`);
-        console.log(`[organizer-detail.html] eventData.events length: ${eventData.events ? eventData.events.length : 0}`);
-        if (eventData.events && eventData.events.length > 0) {
-          console.log(`[organizer-detail.html] Sample events:`, eventData.events.slice(0, 3).map(e => ({
-            id: e.id,
-            organizerId: e.organizerId,
-            organizer_id: e.organizer_id
-          })));
-        }
+        console.log(`[organizer-detail.html] Sample events (first 5):`, eventData.events.slice(0, 5).map(e => ({
+          id: e.id,
+          organizerId: e.organizerId || '(missing)',
+          organizer_id: e.organizer_id || '(missing)'
+        })));
         console.log(`[organizer-detail.html] Filtered events count: ${events.length}`);
 
         // テンプレートを使用してページをレンダリング

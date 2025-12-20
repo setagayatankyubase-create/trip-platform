@@ -218,7 +218,9 @@ window.loadEventData = function loadEventData() {
         const eventsWithOrganizerId = events.filter(e => e.organizerId && e.organizerId !== 'undefined' && e.organizerId !== '' && e.organizerId !== null);
         console.log(`[loadEventData] Events with organizerId: ${eventsWithOrganizerId.length} out of ${events.length}`);
         if (events.length > 0) {
-          console.log(`[loadEventData] Sample organizerIds:`, events.slice(0, 5).map(e => e.organizerId || e.organizer_id || '(empty)'));
+          console.log(`[loadEventData] Sample organizerIds (first 10):`, events.slice(0, 10).map(e => ({ id: e.id, organizerId: e.organizerId || e.organizer_id || '(empty)' })));
+        } else {
+          console.warn(`[loadEventData] WARNING: events array is empty!`);
         }
       }
 
