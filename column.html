@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="自然体験を提供する提供元一覧。信頼できる主催者を見つけよう。">
-  <title>提供元一覧 | そとなび</title>
+  <meta name="description" content="自然体験に関するコラム記事一覧。">
+  <title>コラム | そとなび</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -31,11 +31,16 @@
 
   <main class="container">
     <div style="margin: 20px 0;">
-      <h1 style="margin: 0 0 8px 0; font-size: 1.5rem;">提供元一覧</h1>
-      <p style="color: #6c7a72; margin: 0;">自然体験を提供する信頼できる提供元をご紹介します</p>
+      <h1 style="margin: 0 0 8px 0; font-size: 1.5rem;">コラム</h1>
+      <p style="color: #6c7a72; margin: 0;">自然体験に関する記事をお届けします</p>
     </div>
 
-    <div id="organizer-list" style="display: grid; gap: 20px; margin-top: 24px;"></div>
+    <div id="column-list" style="display: grid; gap: 24px; margin-top: 24px;">
+      <!-- 記事一覧がここに動的に生成されます -->
+      <div style="text-align: center; padding: 40px; color: #6c7a72;">
+        コラム記事は準備中です。
+      </div>
+    </div>
   </main>
 
   <footer class="main-footer">
@@ -59,68 +64,23 @@
   </footer>
 
   <script src="data.js"></script>
+  <script src="app.js"></script>
+  <script src="column.js"></script>
   <script>
-    function renderOrganizers() {
-      const container = document.getElementById('organizer-list');
-      if (!container) return;
-
-      if (eventData.organizers.length === 0) {
-        container.innerHTML = `
-          <div class="empty-state">
-            <div class="empty-state-icon">🏢</div>
-          <h3>提供元が見つかりませんでした</h3>
-          </div>
-        `;
-        return;
-      }
-
-      container.innerHTML = eventData.organizers.map(org => {
-        const events = eventData.events.filter(e => e.organizerId === org.id);
-        return `
-          <div class="organizer-card">
-            <div class="organizer-header">
-              <img src="${org.logo}" alt="${org.name}" class="organizer-logo">
-              <div class="organizer-info" style="flex: 1;">
-                <h3 style="margin: 0 0 8px 0;">
-                  <a href="organizer-detail.html?id=${org.id}" style="color: inherit; text-decoration: none;">
-                    ${org.name}
-                  </a>
-                </h3>
-                <p style="margin: 0; color: #6c7a72; line-height: 1.6;">${org.description}</p>
-                <div class="organizer-meta">
-                  <span>設立: ${org.establishedYear}年</span>
-                  <span> • </span>
-                  <span>評価: ★${org.rating} (${org.reviewCount}件)</span>
-                  <span> • </span>
-                  <span>開催イベント: ${events.length}件</span>
-                </div>
-              </div>
-            </div>
-            <div style="margin-top: 16px;">
-              <a href="organizer-detail.html?id=${org.id}" class="btn" style="display: inline-block; text-align: center; padding: 12px 24px;">
-                詳細を見る →
-              </a>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
     document.addEventListener('DOMContentLoaded', async () => {
       try {
-        // APIからイベント・提供元データを読み込み
-        await loadEventData();
-
         const yearElement = document.getElementById('current-year');
         if (yearElement) {
           yearElement.textContent = new Date().getFullYear();
         }
-        renderOrganizers();
+
+        // コラム記事を読み込み
+        await ColumnManager.loadColumns();
 
         // ヘッダー検索欄の表示切り替え（ヒステリシス付きで点滅を防止）
         let isHeaderSearchVisible = false;
-        const SHOW_THRESHOLD = 150; // この位置を超えたら表示
-        const HIDE_THRESHOLD = 80;  // この位置より上に戻ったら非表示
+        const SHOW_THRESHOLD = 150;
+        const HIDE_THRESHOLD = 80;
 
         function handleScroll() {
           const header = document.getElementById('main-header');
@@ -139,14 +99,28 @@
             headerSearch.style.display = 'none';
           }
         }
-
+        
         window.addEventListener('scroll', handleScroll);
-        // 初期位置に応じて一度判定
         handleScroll();
-      } catch (e) {
-        console.error(e);
-        const el = document.getElementById('error');
-        if (el) el.textContent = 'データの読み込みに失敗しました';
+
+        // 検索処理（ヘッダー検索欄用）
+        window.handleSearch = function handleSearch(event) {
+          event.preventDefault();
+          const formData = new FormData(event.target);
+          const params = {
+            q: formData.get('q') || '',
+            category: formData.get('category') || '',
+            date: formData.get('date') || '',
+            area: formData.get('area') || ''
+          };
+          const urlParams = new URLSearchParams();
+          Object.keys(params).forEach(key => {
+            if (params[key]) urlParams.set(key, params[key]);
+          });
+          window.location.href = `list.html?${urlParams.toString()}`;
+        };
+      } catch (error) {
+        console.error('Error initializing column page:', error);
       }
     });
   </script>

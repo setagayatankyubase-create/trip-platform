@@ -148,6 +148,19 @@ const ClickTracker = {
       console.warn('[ClickTracker] localStorage保存エラー:', storageError);
     }
 
+    // 送信済みフラグをチェック（重複送信防止）
+    const sentFlagKey = `sotonavi_sent_${eventId}`;
+    try {
+      if (sessionStorage.getItem(sentFlagKey)) {
+        console.log('[ClickTracker] [カードリンク] 既に送信済み、スキップします');
+        return;
+      }
+      // 送信前にフラグをセット（重複送信を防ぐ）
+      sessionStorage.setItem(sentFlagKey, '1');
+    } catch (storageError) {
+      // sessionStorageが使えない場合は続行
+    }
+
     // GASにPOSTリクエストを送信（GAS側の実装に合わせる）
     const payload = {
       token: CLICK_SECRET,
@@ -155,7 +168,7 @@ const ClickTracker = {
       organizer_id: organizerId || ''
     };
 
-    // navigator.sendBeaconを使用（ページ遷移時も確実に送信）
+    // navigator.sendBeaconのみを使用（ページ遷移時も確実に送信、重複送信を防ぐ）
     // text/plainを使用することでCORSプリフライトを回避
     try {
       const jsonData = JSON.stringify(payload);
@@ -164,28 +177,32 @@ const ClickTracker = {
       const queued = navigator.sendBeacon(CLICK_TRACKING_GAS_URL, blob);
       console.log('[ClickTracker] [カードリンク] sendBeacon queued:', queued);
       
-      // フォールバック: sendBeaconが失敗した場合は通常のfetchを使用（no-corsモード）
       if (!queued) {
-        console.warn('[ClickTracker] [カードリンク] sendBeacon failed, using fetch fallback');
-        fetch(CLICK_TRACKING_GAS_URL, {
-          method: 'POST',
-          body: jsonData,
-          keepalive: true,
-          mode: 'no-cors' // CORSエラーを回避
-        }).catch((err) => {
-          console.error('[ClickTracker] [カードリンク] Fetch fallback failed:', err);
-        });
+        console.warn('[ClickTracker] [カードリンク] sendBeacon failed (but continuing)');
+        // 失敗時はフラグを削除（リトライ可能にする）
+        try {
+          sessionStorage.removeItem(sentFlagKey);
+        } catch (e) {
+          // 無視
+        }
+      } else {
+        // 送信成功時のみフラグを維持（10分後に削除）
+        setTimeout(() => {
+          try {
+            sessionStorage.removeItem(sentFlagKey);
+          } catch (e) {
+            // 無視
+          }
+        }, 10 * 60 * 1000); // 10分後
       }
     } catch (beaconErr) {
-      console.error('[ClickTracker] [カードリンク] sendBeacon failed, using fetch fallback:', beaconErr);
-      fetch(CLICK_TRACKING_GAS_URL, {
-        method: 'POST',
-        body: jsonData,
-        keepalive: true,
-        mode: 'no-cors' // CORSエラーを回避
-      }).catch((err) => {
-        console.error('[ClickTracker] [カードリンク] Fetch fallback failed:', err);
-      });
+      console.error('[ClickTracker] [カードリンク] sendBeacon error:', beaconErr);
+      // エラー時はフラグを削除（リトライ可能にする）
+      try {
+        sessionStorage.removeItem(sentFlagKey);
+      } catch (e) {
+        // 無視
+      }
     }
 
     // タイムスタンプは既に保存済み（上で先に保存している）

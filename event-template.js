@@ -355,6 +355,19 @@ const EventPageRenderer = {
         
         // クリックイベントリスナーを登録（計測処理）
         const clickHandler = function(e) {
+          // 重複送信防止：送信済みフラグを最優先でチェック
+          const sentFlagKey = `sotonavi_sent_button_${event.id}`;
+          try {
+            if (sessionStorage.getItem(sentFlagKey)) {
+              console.log('[ClickTracker] [公式サイトボタン] 既に送信済み、スキップします');
+              return;
+            }
+            // 送信前にフラグをセット（重複送信を防ぐ）
+            sessionStorage.setItem(sentFlagKey, '1');
+          } catch (storageError) {
+            // sessionStorageが使えない場合は続行
+          }
+          
           // 既に処理中ならスキップ（連続クリック防止）
           if (bookingBtn._clickProcessing) {
             console.log('[ClickTracker] 処理中のためスキップします');
@@ -463,41 +476,43 @@ const EventPageRenderer = {
             
             const gasUrl = 'https://script.google.com/macros/s/AKfycbyHnX2Z4jnTHfYSCFFaOVmVdIf6yY2edAMTCEyAOUn0Mak2Mam67CQ0g-V26zAJSVJphw/exec';
             
+            // navigator.sendBeaconのみを使用（ページ遷移時も確実に送信、重複送信を防ぐ）
+            // text/plainを使用することでCORSプリフライトを回避
             try {
-              // fetchで計測データを送信（デバッグ用にCORSモードでレスポンスを確認）
               const jsonData = JSON.stringify(measurementData);
               console.log("[ClickTracker] [公式サイトボタン] Sending to GAS:", measurementData);
               
-              // navigator.sendBeaconを使用（ページ遷移時も確実に送信）
-              // text/plainを使用することでCORSプリフライトを回避
-              try {
-                const blob = new Blob([jsonData], { type: 'text/plain;charset=utf-8' });
-                const queued = navigator.sendBeacon(gasUrl, blob);
-                console.log('[ClickTracker] [公式サイトボタン] sendBeacon queued:', queued);
-                
-                // フォールバック: sendBeaconが失敗した場合は通常のfetchを使用（no-corsモード）
-                if (!queued) {
-                  console.warn('[ClickTracker] [公式サイトボタン] sendBeacon failed, using fetch fallback');
-                  fetch(gasUrl, {
-                    method: 'POST',
-                    body: jsonData,
-                    keepalive: true,
-                    mode: 'no-cors' // CORSエラーを回避
-                  }).catch((err) => {
-                    console.error('[ClickTracker] [公式サイトボタン] Fetch fallback failed:', err);
-                  });
+              const blob = new Blob([jsonData], { type: 'text/plain;charset=utf-8' });
+              const queued = navigator.sendBeacon(gasUrl, blob);
+              console.log('[ClickTracker] [公式サイトボタン] sendBeacon queued:', queued);
+              
+              if (!queued) {
+                console.warn('[ClickTracker] [公式サイトボタン] sendBeacon failed (but continuing)');
+                // 失敗時はフラグを削除（リトライ可能にする）
+                try {
+                  sessionStorage.removeItem(sentFlagKey);
+                } catch (e) {
+                  // 無視
                 }
-              } catch (beaconErr) {
-                console.error('[ClickTracker] [公式サイトボタン] sendBeacon failed, using fetch fallback:', beaconErr);
-                fetch(gasUrl, {
-                  method: 'POST',
-                  body: jsonData,
-                  keepalive: true,
-                  mode: 'no-cors' // CORSエラーを回避
-                }).catch((err) => {
-                  console.error('[ClickTracker] [公式サイトボタン] Fetch fallback failed:', err);
-                });
+              } else {
+                // 送信成功時のみフラグを維持（10分後に削除）
+                setTimeout(() => {
+                  try {
+                    sessionStorage.removeItem(sentFlagKey);
+                  } catch (e) {
+                    // 無視
+                  }
+                }, 10 * 60 * 1000); // 10分後
               }
+            } catch (beaconErr) {
+              console.error('[ClickTracker] [公式サイトボタン] sendBeacon error:', beaconErr);
+              // エラー時はフラグを削除（リトライ可能にする）
+              try {
+                sessionStorage.removeItem(sentFlagKey);
+              } catch (e) {
+                // 無視
+              }
+            }
               
               // タイムスタンプは既に保存済み（上で先に保存している）
               // 10分後にフラグを削除（簡易実装）
