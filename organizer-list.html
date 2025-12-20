@@ -191,22 +191,24 @@
       
       let html = '';
       
-      // 提供元情報を表示
+      // 提供元情報を表示（クリック可能にする）
       if (organizer) {
         html += `
-          <div class="organizer-card" style="margin-bottom: 32px;">
-            <div class="organizer-header">
-              ${organizer.logo ? `<img src="${organizer.logo}" alt="${organizer.name || ''}" class="organizer-logo">` : ''}
-              <div class="organizer-info" style="flex: 1;">
-                <h3 style="margin: 0 0 8px 0; font-size: 1.5rem;">${organizer.name || 'デモ提供元'}</h3>
-                <p style="margin: 0; color: #6c7a72; line-height: 1.6;">${organizer.description || ''}</p>
-                <div class="organizer-meta" style="margin-top: 12px;">
-                  ${organizer.establishedYear ? `<span>設立: ${organizer.establishedYear}年</span>` : ''}
-                  ${organizer.rating ? `<span>${organizer.establishedYear ? ' • ' : ''}評価: ★${organizer.rating} ${organizer.reviewCount ? `(${organizer.reviewCount}件)` : ''}</span>` : ''}
+          <a href="organizer-demo.html?id=${organizer.id}" style="text-decoration: none; color: inherit; display: block; margin-bottom: 32px;">
+            <div class="organizer-card" style="cursor: pointer;">
+              <div class="organizer-header">
+                ${organizer.logo ? `<img src="${organizer.logo}" alt="${organizer.name || ''}" class="organizer-logo">` : ''}
+                <div class="organizer-info" style="flex: 1;">
+                  <h3 style="margin: 0 0 8px 0; font-size: 1.5rem;">${organizer.name || 'デモ提供元'}</h3>
+                  <p style="margin: 0; color: #6c7a72; line-height: 1.6;">${organizer.description || ''}</p>
+                  <div class="organizer-meta" style="margin-top: 12px;">
+                    ${organizer.establishedYear ? `<span>設立: ${organizer.establishedYear}年</span>` : ''}
+                    ${organizer.rating ? `<span>${organizer.establishedYear ? ' • ' : ''}評価: ★${organizer.rating} ${organizer.reviewCount ? `(${organizer.reviewCount}件)` : ''}</span>` : ''}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          </a>
         `;
       }
       
@@ -237,7 +239,7 @@
           const image = event.image || 'https://via.placeholder.com/800x600?text=No+Image';
           
           return `
-            <a href="experience.html?id=${event.id}" class="card-link" data-event-id="${event.id}">
+            <a href="experience-demo.html?id=${event.id}" class="card-link" data-event-id="${event.id}">
               <div class="card" data-event-id="${event.id}">
                 <div class="card-image-wrapper">
                   <img src="${image}" alt="${event.title}" loading="lazy">
