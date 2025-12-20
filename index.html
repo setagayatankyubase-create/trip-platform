@@ -396,6 +396,12 @@
       
       console.log('[renderEventBlocks] final upcoming count:', upcoming.length);
 
+      // CardRendererが定義されているか確認
+      if (typeof CardRenderer === 'undefined' || !CardRenderer.renderCarousel) {
+        console.error('CardRenderer is not defined. Make sure app.js is loaded.');
+        return;
+      }
+
       CardRenderer.renderCarousel(recommended, 'recommended-events');
       CardRenderer.renderCarousel(newEvents, 'new-events');
       CardRenderer.renderCarousel(upcoming, 'upcoming-events');
