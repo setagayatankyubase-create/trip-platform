@@ -168,7 +168,8 @@ window.loadEventData = function loadEventData() {
             // organizerId は「生成しない」。そのまま流す
             const organizerId = detail?.organizerId || item.organizerId;
             events.push({
-              ...item,  // ← これで organizerId は保持される（detailがあれば上書き）
+              ...item,  // ← これで organizerId は保持される
+              organizerId, // ★ここが必要：detailがあれば上書き、なければ元のまま
               id: item.id,
               title: item.title,
               image: item.image || item.thumb,
@@ -180,7 +181,6 @@ window.loadEventData = function loadEventData() {
               rating: item.rating,
               reviewCount: item.reviewCount,
               categoryId: item.categoryId,
-              organizerId, // ← detailにあればそれ、なければitem
               dates: dates,
               next_date: item.next_date || (dates.length > 0 ? dates[0].date : null),
               publishedAt: item.publishedAt || item.published_at || new Date().toISOString(),

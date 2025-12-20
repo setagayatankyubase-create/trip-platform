@@ -179,10 +179,8 @@
         const eventList = eventData.events_index || eventData.events || [];
         
         // イベントをフィルタリング（organizerId のみ、正規化済み同士で比較）
-        const norm = (v) => (v ?? '').toString().trim();
-        const events = eventList.filter(e => 
-          norm(e.organizerId) === norm(organizerId)
-        );
+        const norm = v => String(v ?? '').trim();
+        const events = eventList.filter(e => norm(e.organizerId) === norm(organizerId));
         
         // デバッグログ（最小限）
         console.log(`[organizer-detail.html] eventData keys:`, Object.keys(eventData));
