@@ -21,6 +21,11 @@ const needsOrganizerIdLookup = (e) => {
   return !orgId;
 };
 
+// events 配列に organizerId が入ってるか判定（キャッシュ健全性チェック用）
+function hasOrganizerIdInEvents_(arr) {
+  return Array.isArray(arr) && arr.some(e => e && typeof e === "object" && String(e.organizerId || "").trim());
+}
+
 // グローバルに公開しておく（他のスクリプトから必ず参照できるようにする）
 // eventData: 従来どおりのフルデータ（events / organizers / categories）
 // eventIndex: 一覧表示用の軽量データ（events_index）
@@ -49,16 +54,26 @@ window.loadEventData = function loadEventData() {
       if (parsed && parsed.timestamp && parsed.data && parsed.version === EVENT_CACHE_VERSION) {
         const age = Date.now() - parsed.timestamp;
         if (age < CACHE_TTL_MS) {
-          window.eventData = parsed.data;
-          // eventIndex もキャッシュから復元（そのまま使用）
-          if (parsed.data.events && Array.isArray(parsed.data.events)) {
-            window.eventIndex = parsed.data.events;
+          const cachedEvents = parsed.data?.events;
+
+          // ★根本治療：organizerId が無いキャッシュは採用しない
+          if (!hasOrganizerIdInEvents_(cachedEvents)) {
+            console.warn("[CACHE] cached events missing organizerId. Ignore cache and refetch.");
+          } else {
+            window.eventData = parsed.data;
+
+            // ★mapで落とさない：そのまま持つ
+            window.eventIndex = cachedEvents;
+
+            // ★互換：events_index も揃える（ページ側がどっち見てもOK）
+            window.eventData.events_index = cachedEvents;
+
+            window.eventMeta = {
+              organizers: window.eventData.organizers || [],
+              categories: window.eventData.categories || [],
+            };
+            return Promise.resolve(window.eventData);
           }
-          window.eventMeta = {
-            organizers: window.eventData.organizers || [],
-            categories: window.eventData.categories || [],
-          };
-          return Promise.resolve(window.eventData);
         }
       }
     }
@@ -69,14 +84,15 @@ window.loadEventData = function loadEventData() {
   // 2) キャッシュが無ければ static JSON から組み立て
   _eventDataLoadingPromise = Promise.all([loadEventIndex(), loadEventMeta()])
     .then(([index, meta]) => {
-      // ★余計な再構築を一切しない：index をそのまま使用
+      // ★最重要：この index を唯一の真実にする
+      window.eventIndex = index;
+
       window.eventData = {
         events: index,
-        events_index: index,
+        events_index: index,                 // ← organizer-detail が events_index 見てもOK
         organizers: meta.organizers || [],
-        categories: meta.categories || [],
+        categories: meta.categories || []
       };
-      window.eventIndex = index;
 
       // 勝利判定用ログ
       console.log("[FIXED] events organizerId sample:", 
@@ -131,8 +147,13 @@ window.loadEventIndex = function loadEventIndex() {
       if (parsed && parsed.timestamp && parsed.data && parsed.version === EVENT_CACHE_VERSION) {
         const age = Date.now() - parsed.timestamp;
         if (age < CACHE_TTL_MS) {
-          window.eventIndex = parsed.data;
-          return Promise.resolve(window.eventIndex);
+          // ★organizerId が無い index キャッシュは捨てる
+          if (!Array.isArray(parsed.data) || !parsed.data.some(e => String(e?.organizerId || "").trim())) {
+            console.warn("[CACHE] cached eventIndex missing organizerId. Ignore cache and refetch.");
+          } else {
+            window.eventIndex = parsed.data;
+            return Promise.resolve(window.eventIndex);
+          }
         }
       }
     }
