@@ -201,9 +201,11 @@ window.loadEventIndex = function loadEventIndex() {
     console.warn("eventIndex cache read error:", e);
   }
 
-  // 2) /data → 壊れてたら raw へ
+  // 2) /data → 壊れてたら raw へ（当面は raw 優先）
   _eventIndexLoadingPromise = (async () => {
-    const primaryUrl = `${DATA_BASE}/events_index.json`;
+    const primaryUrl = GITHUB_RAW_BASE
+      ? `${GITHUB_RAW_BASE}/data/events_index.json`
+      : `${DATA_BASE}/events_index.json`;
 
     let arr = [];
     try {
@@ -213,16 +215,16 @@ window.loadEventIndex = function loadEventIndex() {
       console.warn("[INDEX] primary failed:", e.message);
     }
 
-    // /dataが取れても organizerId が薄いなら「壊れてる」とみなす
+    // primary（GitHub raw優先）が取れても organizerId が薄いなら「壊れてる」とみなす
+    // その場合は /data にフォールバック
     const primaryRate = organizerIdValidRate(arr);
 
-    if (primaryRate < 0.9) {
-      if (!GITHUB_RAW_BASE) {
-        console.warn("[FALLBACK] GITHUB_RAW_BASE not set. Using primary as-is. rate=", primaryRate);
-      } else {
-        const fallbackUrl = `${GITHUB_RAW_BASE}/data/events_index.json`;
-        console.warn("[FALLBACK] using GitHub raw. primary rate=", primaryRate, fallbackUrl);
+    if (primaryRate < 0.9 && GITHUB_RAW_BASE) {
+      // primary が GitHub raw の場合、/data にフォールバック
+      const fallbackUrl = `${DATA_BASE}/events_index.json`;
+      console.warn("[FALLBACK] primary rate low, trying /data. primary rate=", primaryRate, fallbackUrl);
 
+      try {
         const fbJson = await fetchJsonStrict_(fallbackUrl);
         const fbArr = toIndexArray(fbJson);
         const fbRate = organizerIdValidRate(fbArr);
@@ -230,8 +232,10 @@ window.loadEventIndex = function loadEventIndex() {
         if (fbArr.length > 0 && fbRate >= primaryRate) {
           arr = fbArr;
         } else {
-          console.warn("[FALLBACK] raw not better. fbRate=", fbRate, "primaryRate=", primaryRate);
+          console.warn("[FALLBACK] /data not better. fbRate=", fbRate, "primaryRate=", primaryRate);
         }
+      } catch (e) {
+        console.warn("[FALLBACK] /data failed:", e.message);
       }
     }
 
