@@ -16,23 +16,16 @@ let _eventIndexLoadingPromise = null;
 let _eventMetaLoadingPromise = null;
 
 window.loadEventData = function loadEventData() {
-  // すでに構築済みなら即返す（一時的に無効化：datesが空になる問題を回避）
-  // TODO: datesが正しく設定されるようになったら、このチェックを有効化する
-  /*
+  // すでに構築済みなら即返す（早期リターン）
   if (window.eventData && window.eventIndex) {
     return Promise.resolve(window.eventData);
   }
-  */
   if (_eventDataLoadingPromise) return _eventDataLoadingPromise;
-  
-  console.log('[loadEventData] Starting loadEventData...');
 
   const STORAGE_KEY = "sotonavi_eventData_v1";
   const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 1日
 
-  // 1) localStorage キャッシュを試す（一時的に無効化：datesが空になる問題を回避）
-  // TODO: datesが正しく設定されるようになったら、キャッシュを有効化する
-  /*
+  // 1) localStorage キャッシュを試す（TTL付き）
   try {
     const cached = localStorage.getItem(STORAGE_KEY);
     if (cached) {
@@ -41,7 +34,24 @@ window.loadEventData = function loadEventData() {
         const age = Date.now() - parsed.timestamp;
         if (age < CACHE_TTL_MS) {
           window.eventData = parsed.data;
-          window.eventIndex = window.eventData.events || [];
+          // eventIndex もキャッシュから復元
+          if (parsed.data.events && Array.isArray(parsed.data.events)) {
+            window.eventIndex = parsed.data.events.map(ev => ({
+              id: ev.id,
+              title: ev.title,
+              image: ev.image,
+              city: ev.area || ev.city,
+              prefecture: ev.prefecture,
+              price: ev.price,
+              isRecommended: ev.isRecommended,
+              isNew: ev.isNew,
+              rating: ev.rating,
+              reviewCount: ev.reviewCount,
+              categoryId: ev.categoryId,
+              next_date: ev.next_date || (ev.dates && ev.dates.length > 0 ? ev.dates[0].date : null),
+              publishedAt: ev.publishedAt,
+            }));
+          }
           window.eventMeta = {
             organizers: window.eventData.organizers || [],
             categories: window.eventData.categories || [],
@@ -53,7 +63,6 @@ window.loadEventData = function loadEventData() {
   } catch (e) {
     console.warn("eventData cache read error:", e);
   }
-  */
 
   // 2) キャッシュが無ければ static JSON から組み立て
   _eventDataLoadingPromise = Promise.all([loadEventIndex(), loadEventMeta()])
@@ -62,47 +71,33 @@ window.loadEventData = function loadEventData() {
       // events_index の next_date を優先して使用（パフォーマンス向上）
       const events = [];
       
-      console.log('[loadEventData] index length:', Array.isArray(index) ? index.length : 0);
       if (Array.isArray(index) && index.length > 0) {
-        console.log('[loadEventData] first index item:', index[0]);
-        console.log('[loadEventData] first index item next_date:', index[0].next_date);
+        // next_date が無いイベントを特定
+        const itemsWithoutDate = [];
+        const itemsWithDate = [];
         
         for (const item of index) {
-          // dates は events_index の next_date から構築（優先）
-          // next_date が無い場合のみ詳細JSONから取得
-          let dates = [];
           if (item.next_date) {
-            // next_date を dates 配列に変換
-            const dateValue = item.next_date;
-            let dateStr = null;
-            
-            if (typeof dateValue === 'string') {
-              // 文字列の場合、そのまま使用（"2026-02-01" 形式を想定）
-              dateStr = dateValue;
-            } else if (dateValue instanceof Date) {
-              // Date オブジェクトの場合、ISO形式に変換
-              dateStr = dateValue.toISOString();
-            }
-            
-            if (dateStr) {
-              // dates 配列形式: [{ date: "2026-02-01" }]
-              dates = [{ date: dateStr }];
-            }
+            itemsWithDate.push(item);
+          } else {
+            itemsWithoutDate.push(item);
+          }
+        }
+        
+        // next_date があるものは即座に構築
+        for (const item of itemsWithDate) {
+          const dateValue = item.next_date;
+          let dateStr = null;
+          
+          if (typeof dateValue === 'string') {
+            dateStr = dateValue;
+          } else if (dateValue instanceof Date) {
+            dateStr = dateValue.toISOString();
           }
           
-          // next_date が無い場合のみ詳細JSONを取得（必要な場合のみ）
-          if (dates.length === 0) {
-            try {
-              const detail = await loadEventDetail(item.id);
-              if (detail && detail.dates && Array.isArray(detail.dates) && detail.dates.length > 0) {
-                dates = detail.dates;
-              }
-            } catch (e) {
-              // 詳細JSON取得失敗は無視
-            }
-          }
+          const dates = dateStr ? [{ date: dateStr }] : [];
           
-          const eventObj = {
+          events.push({
             id: item.id,
             title: item.title,
             image: item.image || item.thumb,
@@ -115,30 +110,64 @@ window.loadEventData = function loadEventData() {
             reviewCount: item.reviewCount,
             categoryId: item.categoryId,
             dates: dates,
+            next_date: item.next_date,
             publishedAt: item.publishedAt || item.published_at || new Date().toISOString(),
-          };
+          });
+        }
+        
+        // next_date が無いものは詳細JSONから取得（並列化、同時実行数制限付き）
+        if (itemsWithoutDate.length > 0) {
+          const CONCURRENT_LIMIT = 5; // 同時実行数の上限
+          const detailMap = new Map();
           
-          // next_date も保持（フォールバック用）
-          if (item.next_date) {
-            eventObj.next_date = item.next_date;
-          }
-          
-          // デバッグ：最初の3件だけログ出力
-          if (events.length < 3) {
-            console.log(`[loadEventData] Event ${item.id}:`, {
-              hasNextDate: !!item.next_date,
-              nextDate: item.next_date,
-              datesLength: dates.length,
-              dates: dates
+          // チャンクに分割して並列処理
+          for (let i = 0; i < itemsWithoutDate.length; i += CONCURRENT_LIMIT) {
+            const chunk = itemsWithoutDate.slice(i, i + CONCURRENT_LIMIT);
+            const detailPromises = chunk.map(item => 
+              loadEventDetail(item.id)
+                .then(detail => ({ id: item.id, detail }))
+                .catch(() => ({ id: item.id, detail: null }))
+            );
+            
+            const results = await Promise.all(detailPromises);
+            results.forEach(({ id, detail }) => {
+              if (detail) {
+                detailMap.set(id, detail);
+              }
             });
           }
           
-          events.push(eventObj);
+          // 詳細データから dates を取得して構築
+          for (const item of itemsWithoutDate) {
+            const detail = detailMap.get(item.id);
+            const dates = (detail && detail.dates && Array.isArray(detail.dates) && detail.dates.length > 0)
+              ? detail.dates
+              : [];
+            
+            events.push({
+              id: item.id,
+              title: item.title,
+              image: item.image || item.thumb,
+              area: item.area || item.city,
+              prefecture: item.prefecture,
+              price: item.price,
+              isRecommended: item.isRecommended || false,
+              isNew: item.isNew || false,
+              rating: item.rating,
+              reviewCount: item.reviewCount,
+              categoryId: item.categoryId,
+              dates: dates,
+              publishedAt: item.publishedAt || item.published_at || new Date().toISOString(),
+            });
+          }
+          
+          // next_date が無いイベント数をログ出力（GAS/シート整備の参考用）
+          if (itemsWithoutDate.length > 0) {
+            console.log(`[loadEventData] ${itemsWithoutDate.length} events without next_date (GAS側で補完推奨)`);
+          }
         }
         
-        console.log(`[loadEventData] Built ${events.length} events, with dates:`, 
-          events.filter(e => e.dates && e.dates.length > 0).length
-        );
+        console.log(`[loadEventData] Built ${events.length} events, with dates: ${events.filter(e => e.dates && e.dates.length > 0).length}`);
       }
 
       window.eventData = {
