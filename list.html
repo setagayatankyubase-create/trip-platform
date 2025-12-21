@@ -506,6 +506,10 @@
           const target = new Date(params.date);
           target.setHours(0, 0, 0, 0);
           
+          console.log('[list.html] Date search - target date:', params.date, 'target object:', target);
+          console.log('[list.html] Date search - index length:', index.length);
+          console.log('[list.html] Date search - sample event:', index[0]);
+          
           // date_min と date_max で候補を絞り込み（範囲内にある可能性のあるイベントのみ）
           const candidateIds = index
             .filter(e => {
@@ -515,14 +519,22 @@
                 const max = new Date(e.date_max);
                 min.setHours(0, 0, 0, 0);
                 max.setHours(0, 0, 0, 0);
+                const inRange = target >= min && target <= max;
+                if (inRange) {
+                  console.log('[list.html] Candidate found:', e.id, 'date_min:', e.date_min, 'date_max:', e.date_max);
+                }
                 // 範囲内なら候補
-                return target >= min && target <= max;
+                return inRange;
               }
               // date_min/date_maxがない場合は、next_dateが一致する可能性を考慮
               if (e.next_date) {
                 const next = new Date(e.next_date);
                 next.setHours(0, 0, 0, 0);
-                return next.getTime() === target.getTime();
+                const matches = next.getTime() === target.getTime();
+                if (matches) {
+                  console.log('[list.html] Candidate found by next_date:', e.id, 'next_date:', e.next_date);
+                }
+                return matches;
               }
               // どちらもない場合は候補から除外
               return false;
@@ -532,8 +544,15 @@
           
           console.log('[list.html] Date search candidates:', candidateIds.length, candidateIds);
           
+          // 候補が0件の場合は、すべてのイベントを候補として扱う（フォールバック）
+          const finalCandidateIds = candidateIds.length > 0 ? candidateIds : index.map(e => e.id).filter(Boolean);
+          
+          if (candidateIds.length === 0) {
+            console.warn('[list.html] No candidates found by date_min/date_max, checking all events');
+          }
+          
           // 候補の詳細JSONを読み込んで dates 配列を補完
-          const detailPromises = candidateIds.map(id => 
+          const detailPromises = finalCandidateIds.map(id => 
             loadEventDetail(id).catch(() => null)
           );
           const details = await Promise.all(detailPromises);
@@ -544,7 +563,7 @@
             }
           });
           
-          console.log('[list.html] Enriched dates for:', Object.keys(detailMap));
+          console.log('[list.html] Enriched dates for:', Object.keys(detailMap).length, 'events');
           
           // index に dates 配列を補完
           index = index.map(item => {
