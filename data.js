@@ -58,6 +58,14 @@ function getEventImageUrl(eventId, extension = 'jpg') {
   return getGitHubImageUrl(`events/${eventId}.${extension}`);
 }
 
+// イベントのサブ画像URLを取得（2枚目、3枚目など）
+function getEventSubImageUrl(eventId, index = 1, extension = 'jpg') {
+  if (!eventId) return '';
+  // index=1なら 'b', index=2なら 'c' というサフィックスを付ける
+  const suffix = index === 1 ? 'b' : index === 2 ? 'c' : String.fromCharCode(98 + index); // b, c, d, e...
+  return getGitHubImageUrl(`events/${eventId}${suffix}.${extension}`);
+}
+
 // 提供元ロゴURLを取得
 function getOrganizerLogoUrl(organizerId, extension = 'jpg') {
   if (!organizerId) return '';
@@ -67,6 +75,7 @@ function getOrganizerLogoUrl(organizerId, extension = 'jpg') {
 // グローバルに公開
 window.getGitHubImageUrl = getGitHubImageUrl;
 window.getEventImageUrl = getEventImageUrl;
+window.getEventSubImageUrl = getEventSubImageUrl;
 window.getOrganizerLogoUrl = getOrganizerLogoUrl;
 
 // index配列の正規化（organizerId / organizer_id どちらでも organizerId に統一）

@@ -67,14 +67,32 @@ const EventPageRenderer = {
       
       // GitHubの画像URL生成関数が利用可能な場合
       if (typeof window.getEventImageUrl === 'function' && event.id) {
-        // 既存のURLがGitHubのパス（/images/）でない場合のみ、GitHubから取得
-        if (!imageUrl || (!imageUrl.startsWith('/images/') && !imageUrl.includes('/images/'))) {
+        // 既存のURLがGitHubのパス（/assets/images/）でない場合のみ、GitHubから取得
+        if (!imageUrl || (!imageUrl.startsWith('/assets/images/') && !imageUrl.includes('/assets/images/'))) {
           imageUrl = window.getEventImageUrl(event.id, 'jpg');
         }
       }
       
       if (imageUrl) {
         mainImage.style.backgroundImage = `url('${imageUrl}')`;
+      }
+    }
+    
+    // サブ画像（2枚）を設定
+    const thumbsContainer = document.querySelector('.thumbs');
+    if (thumbsContainer && typeof window.getEventSubImageUrl === 'function' && event.id) {
+      const thumbElements = thumbsContainer.querySelectorAll('.thumb');
+      
+      // 1枚目のサブ画像（evt-001b.jpg）
+      if (thumbElements[0]) {
+        const subImageUrl1 = window.getEventSubImageUrl(event.id, 1, 'jpg');
+        thumbElements[0].style.backgroundImage = `url('${subImageUrl1}')`;
+      }
+      
+      // 2枚目のサブ画像（evt-001c.jpg）
+      if (thumbElements[1]) {
+        const subImageUrl2 = window.getEventSubImageUrl(event.id, 2, 'jpg');
+        thumbElements[1].style.backgroundImage = `url('${subImageUrl2}')`;
       }
     }
   },
