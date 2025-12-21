@@ -46,10 +46,22 @@
   <section class="hero-section">
     <div class="hero-content">
       <h1 class="hero-title">東京のすぐそばに、まだ知らない自然がある</h1>
-      <form class="hero-search-form" id="main-search-form" onsubmit="handleSearch(event)">
-        <input type="text" id="search-query" placeholder="行きたい自然体験・場所を探す" name="q" class="hero-search-input">
-        <button type="submit" class="hero-search-button">検索</button>
-      </form>
+      <div class="search-wrapper" style="position: relative;">
+        <form class="hero-search-form" id="main-search-form" onsubmit="handleSearch(event)">
+          <button type="button" class="category-menu-button" id="category-menu-button" aria-label="カテゴリメニュー">
+            <span class="hamburger-icon">
+              <span></span>
+              <span></span>
+              <span></span>
+            </span>
+          </button>
+          <input type="text" id="search-query" placeholder="行きたい自然体験・場所を探す" name="q" class="hero-search-input">
+          <button type="submit" class="hero-search-button">検索</button>
+        </form>
+        <div class="category-menu" id="category-menu">
+          <div class="category-menu-content" id="category-menu-list"></div>
+        </div>
+      </div>
       <p class="hero-subtext">週末の外日和を、そとなびで</p>
     </div>
   </section>
@@ -117,6 +129,7 @@
       <div class="footer-column">
         <h3>運営情報</h3>
         <a href="about.html">運営について</a>
+        <a href="publish.html">掲載について</a>
       </div>
     </div>
     <div class="footer-bottom">
@@ -138,6 +151,20 @@
       container.innerHTML = window.eventData.categories.map(cat => `
         <a href="list.html?category=${cat.id}" class="cat">
           <span>${cat.icon}</span>
+          <span>${cat.name}</span>
+        </a>
+      `).join('');
+    }
+
+    // カテゴリメニューを初期化（ホバーで表示されるので、事前にレンダリングしておく）
+    function initCategoryMenu() {
+      const menuList = document.getElementById('category-menu-list');
+      if (!menuList) return;
+
+      if (!window.eventData || !window.eventData.categories) return;
+      menuList.innerHTML = window.eventData.categories.map(cat => `
+        <a href="list.html?category=${cat.id}" class="category-menu-item">
+          <span class="icon">${cat.icon}</span>
           <span>${cat.name}</span>
         </a>
       `).join('');
@@ -446,6 +473,7 @@
         }
 
         renderCategories();
+        initCategoryMenu(); // カテゴリメニューを初期化（ホバー表示用）
         renderWeekCalendar();
         await renderEventBlocks();
 

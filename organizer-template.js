@@ -61,7 +61,26 @@ const OrganizerPageRenderer = {
         </div>
         <div class="meta-item">
           <div class="meta-label">評価</div>
-          <div class="meta-value">★${organizer.rating} (${organizer.reviewCount}件)</div>
+          <div class="meta-value">
+            ${(() => {
+              const rating = parseFloat(organizer.rating) || 0;
+              const fullStars = Math.floor(rating);
+              const hasHalfStar = rating % 1 >= 0.5;
+              let starsHtml = '';
+              for (let i = 0; i < 5; i++) {
+                if (i < fullStars) {
+                  starsHtml += '<span style="color: #ffc107;">★</span>';
+                } else if (i === fullStars && hasHalfStar) {
+                  starsHtml += '<span style="color: #ffc107;">☆</span>';
+                } else {
+                  starsHtml += '<span style="color: #ddd;">★</span>';
+                }
+              }
+              return starsHtml;
+            })()}
+            <span style="margin-left: 8px; font-weight: 600; font-size: 1.05rem;">${organizer.rating}</span>
+            <span style="color: #6c7a72; font-size: 0.9em; margin-left: 8px;">(${organizer.reviewCount}件)</span>
+          </div>
         </div>
         <div class="meta-item">
           <div class="meta-label">開催イベント数</div>

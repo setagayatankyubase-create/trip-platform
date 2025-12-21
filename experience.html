@@ -103,12 +103,16 @@
       position: sticky;
       top: 80px;
       align-self: start;
+      padding: 20px;
     }
     .price {
       color: var(--primary);
       font-weight: 800;
-      font-size: 1.3rem;
-      margin: 16px 0;
+      font-size: 2rem;
+      margin: 12px 0;
+    }
+    .price-amount {
+      font-size: 2rem;
     }
     .btn {
       display: block;
@@ -137,7 +141,7 @@
       padding: 0;
     }
     .dates-list li {
-      padding: 8px 12px;
+      padding: 12px 16px;
       background: #f8f9fa;
       border-radius: 8px;
       margin-bottom: 8px;
@@ -230,24 +234,23 @@
         <h3>概要</h3>
         <p id="event-description"></p>
 
-        <div class="info-grid">
-          <div class="info-box">
-            <div class="info-box-label">所要時間</div>
-            <div id="event-duration"></div>
+        <div class="info-list">
+          <div class="info-item">
+            <div class="info-label">所要時間</div>
+            <div class="info-value" id="event-duration"></div>
           </div>
-          <div class="info-box">
-            <div class="info-box-label">集合場所</div>
-            <div id="event-location"></div>
+          <div class="info-item">
+            <div class="info-label">集合場所</div>
+            <div class="info-value" id="event-location"></div>
           </div>
-          <div class="info-box">
-            <div class="info-box-label">対象年齢</div>
-            <div id="event-target-age"></div>
-          </div>
-          <div class="info-box">
-            <div class="info-box-label">価格</div>
-            <div>¥<span id="event-price"></span></div>
+          <div class="info-item">
+            <div class="info-label">対象年齢</div>
+            <div class="info-value" id="event-target-age"></div>
           </div>
         </div>
+
+        <h3>詳細</h3>
+        <div id="event-detail" style="line-height: 1.8; margin-bottom: 24px;"></div>
 
         <h3>開催日程</h3>
         <ul class="dates-list" id="event-dates"></ul>
@@ -271,7 +274,7 @@
           <span class="price-amount">¥<span id="booking-price"></span></span>
           <span class="price-meta" id="booking-price-meta"> / 人（税込）</span>
         </div>
-        <p style="margin-top: 16px; font-size: 0.9rem; color: #5b6a62;">
+        <p style="margin-top: 12px; font-size: 0.9rem; color: #5b6a62;">
           最新の開催情報・空き状況は、提供元の公式サイトをご確認ください。
         </p>
         <a href="#" id="external-booking-btn" class="btn" target="_blank" rel="noopener">
@@ -314,6 +317,7 @@
       <div class="footer-column">
         <h3>運営情報</h3>
         <a href="about.html">運営について</a>
+        <a href="publish.html">掲載について</a>
       </div>
     </div>
     <div class="footer-bottom">

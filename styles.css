@@ -1,13 +1,20 @@
 :root {
+  /* コーポレートカラー（自然体験をイメージした深い緑） */
   --primary: #0b7a5d;
+  --primary-light: #0d9675;
+  --primary-dark: #085c47;
   --accent: #f86b40;
+  --accent-light: #fa8c66;
+  --accent-dark: #e55a2e;
   --bg: #ffffff;
   --card: #ffffff;
   --text: #1e2a23;
+  --text-secondary: #6c7a72;
   --border: #d9e4dc;
   --hover: #0a6b52;
-  --shadow: rgba(0, 0, 0, 0.08);
-  --shadow-hover: rgba(0, 0, 0, 0.12);
+  --shadow: rgba(11, 122, 93, 0.08);
+  --shadow-hover: rgba(11, 122, 93, 0.12);
+  --primary-rgb: 11, 122, 93;
 }
 
 * {
@@ -43,15 +50,15 @@ body {
   max-width: 1400px;
   margin: 0 auto;
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
+  gap: 32px;
 }
 
 .nav-left {
   display: flex;
   align-items: center;
   gap: 24px;
-  flex: 1;
 }
 
 .logo {
@@ -78,7 +85,7 @@ body {
 
 .nav-links {
   display: flex;
-  gap: 24px;
+  gap: 32px;
   align-items: center;
 }
 
@@ -118,12 +125,12 @@ body {
 }
 
 .header-search-input::placeholder {
-  color: #999;
+  color: var(--text-secondary);
 }
 
 .header-search-button {
   padding: 10px 24px;
-  background: #0071e3;
+  background: var(--primary);
   color: #fff;
   border: none;
   border-radius: 0 25px 25px 0;
@@ -135,7 +142,7 @@ body {
 }
 
 .header-search-button:hover {
-  background: #005bb5;
+  background: var(--hover);
 }
 
 /* Hero Section */
@@ -156,6 +163,7 @@ body {
   max-width: 800px;
   padding: 0 20px;
   z-index: 1;
+  position: relative;
 }
 
 .hero-title {
@@ -176,6 +184,124 @@ body {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
 }
 
+.category-menu-button {
+  background: var(--primary);
+  border: none;
+  padding: 0 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  border-radius: 50px 0 0 50px;
+}
+
+.category-menu-button:hover {
+  background: var(--hover);
+}
+
+.hamburger-icon {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 20px;
+  height: 16px;
+}
+
+.hamburger-icon span {
+  display: block;
+  width: 100%;
+  height: 2px;
+  background: #fff;
+  border-radius: 1px;
+  transition: all 0.3s ease;
+}
+
+.category-menu-button:hover .hamburger-icon span:nth-child(1) {
+  transform: rotate(45deg) translate(5px, 5px);
+}
+
+.category-menu-button:hover .hamburger-icon span:nth-child(2) {
+  opacity: 0;
+}
+
+.category-menu-button:hover .hamburger-icon span:nth-child(3) {
+  transform: rotate(-45deg) translate(7px, -6px);
+}
+
+.category-menu {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 8px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  min-width: 300px;
+  max-width: 500px;
+  z-index: 1000;
+  padding: 16px;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
+  transform: translateX(-50%) translateY(-10px);
+}
+
+/* 親要素（formを含むdiv）にホバー時、またはメニュー自体にホバー時に表示 */
+.category-menu-button:hover ~ .category-menu,
+.category-menu:hover {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* 親divにホバーした時もメニューを表示 */
+.hero-search-form + .category-menu {
+  display: block;
+}
+
+/* 親のdivにホバー時のスタイル */
+.hero-section > div[style*="position: relative"]:hover .category-menu {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+
+.category-menu-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.category-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+  text-decoration: none;
+  color: var(--text);
+}
+
+.category-menu-item:hover {
+  background: #f0f5f1;
+}
+
+.category-menu-item .icon {
+  font-size: 1.2rem;
+}
+
+.category-menu-item .name {
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
 .hero-search-input {
   flex: 1;
   padding: 18px 24px;
@@ -185,12 +311,12 @@ body {
 }
 
 .hero-search-input::placeholder {
-  color: #999;
+  color: var(--text-secondary);
 }
 
 .hero-search-button {
   padding: 18px 40px;
-  background: #0071e3;
+  background: var(--primary);
   color: #fff;
   border: none;
   border-radius: 0 50px 50px 0;
@@ -202,7 +328,7 @@ body {
 }
 
 .hero-search-button:hover {
-  background: #005bb5;
+  background: var(--hover);
 }
 
 .hero-subtext {
@@ -299,7 +425,7 @@ body {
 }
 
 .section h2 {
-  font-size: 1.8rem;
+  font-size: 2.2rem;
   margin-bottom: 24px;
   font-weight: 700;
   text-align: center;
@@ -381,7 +507,7 @@ body {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  background: #0071e3;
+  background: var(--primary);
   border: none;
   border-radius: 50%;
   width: 44px;
@@ -392,15 +518,15 @@ body {
   cursor: pointer;
   font-size: 1.4rem;
   color: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 8px var(--shadow);
   z-index: 10;
   transition: all 0.2s;
   font-weight: 300;
 }
 
 .carousel-arrow:hover {
-  background: #005bb5;
-  box-shadow: 0 4px 12px rgba(0, 113, 227, 0.3);
+  background: var(--hover);
+  box-shadow: 0 4px 12px var(--shadow-hover);
   transform: translateY(-50%) scale(1.05);
 }
 
@@ -632,7 +758,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #6c7a72;
+  color: var(--text-secondary);
   font-size: 0.9rem;
   background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
 }
@@ -753,7 +879,7 @@ body {
 
 .event-block-header h2 {
   margin: 0;
-  font-size: 1.8rem;
+  font-size: 2.2rem;
   font-weight: 700;
   text-align: center;
   flex: 1;
@@ -791,14 +917,15 @@ body {
 }
 
 .view-all {
-  color: #666;
+  color: var(--text-secondary);
   text-decoration: none;
   font-size: 0.9rem;
   font-weight: 500;
+  transition: color 0.2s;
 }
 
 .view-all:hover {
-  color: #333;
+  color: var(--primary);
   text-decoration: underline;
 }
 
@@ -970,12 +1097,18 @@ body {
   right: 0;
   top: 50%;
   transform: translateY(-50%);
-  background: #0071e3;
-  border: none;
+  background: transparent;
+  border: 2px solid var(--primary);
   border-radius: 50%;
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  font-size: 1.2rem;
+  font-weight: 300;
+  transition: all 0.3s ease;
   align-items: center;
   justify-content: center;
   cursor: pointer;
@@ -988,9 +1121,10 @@ body {
 }
 
 .week-nav-arrow:hover {
-  background: #005bb5;
-  box-shadow: 0 4px 12px rgba(0, 113, 227, 0.3);
-  transform: translateY(-50%) scale(1.05);
+  background: var(--primary);
+  color: white;
+  box-shadow: 0 4px 16px rgba(11, 122, 93, 0.3);
+  transform: translateY(-50%) scale(1.08);
 }
 
 /* Organizer */
@@ -1022,7 +1156,7 @@ body {
 }
 
 .organizer-meta {
-  color: #6c7a72;
+  color: var(--text-secondary);
   font-size: 0.9rem;
   margin-top: 8px;
 }
@@ -1031,7 +1165,7 @@ body {
 .empty-state {
   text-align: center;
   padding: 60px 20px;
-  color: #6c7a72;
+  color: var(--text-secondary);
 }
 
 .empty-state-icon {

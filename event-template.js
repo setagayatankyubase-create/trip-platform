@@ -106,13 +106,10 @@ const EventPageRenderer = {
       targetAgeEl.textContent = event.targetAge || '全年齢';
     }
 
-    const priceEl = document.getElementById('event-price');
-    if (priceEl) {
-      if (event.price !== undefined && event.price !== null) {
-        priceEl.textContent = typeof event.price === 'number' ? event.price.toLocaleString() : event.price;
-      } else {
-        priceEl.textContent = '未設定';
-      }
+    // 詳細
+    const detailEl = document.getElementById('event-detail');
+    if (detailEl) {
+      detailEl.textContent = event.detail || event.description || '';
     }
 
     // 開催日程
@@ -162,20 +159,22 @@ const EventPageRenderer = {
       const dateObj = new Date(d.date);
       if (isNaN(dateObj.getTime())) return;
       
-      const dateStr = `${dateObj.getFullYear()}年${dateObj.getMonth() + 1}月${dateObj.getDate()}日`;
+      const month = dateObj.getMonth() + 1;
+      const day = dateObj.getDate();
       const weekday = ['日', '月', '火', '水', '木', '金', '土'][dateObj.getDay()];
       const timeStr = d.time || '';
 
       if (datesList) {
         const li = document.createElement('li');
-        li.innerHTML = `<span>${dateStr}(${weekday}) ${timeStr}</span>`;
+        li.style.cssText = 'margin-bottom: 12px; font-size: 1rem;';
+        li.innerHTML = `<span>${month}/${day}(${weekday}) ${timeStr}</span>`;
         datesList.appendChild(li);
       }
 
       if (bookingDateSelect) {
         const option = document.createElement('option');
         option.value = d.date;
-        option.textContent = `${dateStr}(${weekday}) ${timeStr}`;
+        option.textContent = `${month}/${day}(${weekday}) ${timeStr}`;
         bookingDateSelect.appendChild(option);
       }
     });
