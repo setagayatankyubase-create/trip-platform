@@ -507,7 +507,6 @@
           target.setHours(0, 0, 0, 0);
           
           // date_min と date_max で候補を絞り込み（範囲内にある可能性のあるイベントのみ）
-          // ただし、date_min/date_maxが範囲外でも念のためチェック（next_dateも考慮）
           const candidateIds = index
             .filter(e => {
               // date_min/date_maxがある場合は範囲内かチェック
@@ -517,20 +516,21 @@
                 min.setHours(0, 0, 0, 0);
                 max.setHours(0, 0, 0, 0);
                 // 範囲内なら候補
-                if (target >= min && target <= max) return true;
+                return target >= min && target <= max;
               }
-              // date_min/date_maxがない、または範囲外でも、next_dateが一致する可能性を考慮
+              // date_min/date_maxがない場合は、next_dateが一致する可能性を考慮
               if (e.next_date) {
                 const next = new Date(e.next_date);
                 next.setHours(0, 0, 0, 0);
-                // next_dateが一致する場合は候補（ただし、date_min/date_maxがある場合は既にチェック済み）
-                if (next.getTime() === target.getTime() && (!e.date_min || !e.date_max)) return true;
+                return next.getTime() === target.getTime();
               }
-              // どちらもない場合は詳細を確認
-              return !e.date_min && !e.date_max && !e.next_date;
+              // どちらもない場合は候補から除外
+              return false;
             })
             .map(e => e.id)
             .filter(Boolean);
+          
+          console.log('[list.html] Date search candidates:', candidateIds.length, candidateIds);
           
           // 候補の詳細JSONを読み込んで dates 配列を補完
           const detailPromises = candidateIds.map(id => 
@@ -544,6 +544,8 @@
             }
           });
           
+          console.log('[list.html] Enriched dates for:', Object.keys(detailMap));
+          
           // index に dates 配列を補完
           index = index.map(item => {
             const detail = detailMap[item.id];
@@ -553,7 +555,7 @@
             return item;
           });
         } catch (e) {
-          console.warn('Failed to enrich dates:', e);
+          console.error('Failed to enrich dates:', e);
         }
       }
 
@@ -619,13 +621,21 @@
       }
 
       // 検索フォームに値を設定
-      document.getElementById('search-query').value = params.q || '';
-      document.getElementById('search-category').value = params.category || '';
-      document.getElementById('search-date').value = params.date || '';
-      document.getElementById('search-area').value = params.area || '';
-      document.getElementById('mobile-filter-category').value = params.category || '';
-      document.getElementById('mobile-filter-area').value = params.area || '';
-      document.getElementById('mobile-filter-date').value = params.date || '';
+      const searchQueryEl = document.getElementById('search-query');
+      const searchCategoryEl = document.getElementById('search-category');
+      const searchDateEl = document.getElementById('search-date');
+      const searchAreaEl = document.getElementById('search-area');
+      const mobileFilterCategoryEl = document.getElementById('mobile-filter-category');
+      const mobileFilterAreaEl = document.getElementById('mobile-filter-area');
+      const mobileFilterDateEl = document.getElementById('mobile-filter-date');
+      
+      if (searchQueryEl) searchQueryEl.value = params.q || '';
+      if (searchCategoryEl) searchCategoryEl.value = params.category || '';
+      if (searchDateEl) searchDateEl.value = params.date || '';
+      if (searchAreaEl) searchAreaEl.value = params.area || '';
+      if (mobileFilterCategoryEl) mobileFilterCategoryEl.value = params.category || '';
+      if (mobileFilterAreaEl) mobileFilterAreaEl.value = params.area || '';
+      if (mobileFilterDateEl) mobileFilterDateEl.value = params.date || '';
     }
 
     // カテゴリ・エリアの選択肢を設定（eventMeta / eventIndex ベース）
