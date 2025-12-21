@@ -1,0 +1,10 @@
+{
+  "id": "col-XXX",
+  "slug": "article-slug",
+  "title": "記事タイトル",
+  "excerpt": "記事の概要・抜粋をここに記入します。一覧ページで表示されます。",
+  "date": "2025-01-15",
+  "author": "著者名",
+  "image": "/assets/columns/col-XXX.jpg",
+  "content": "<p>ここから本文を記入します。HTMLタグを使用できます。</p>\n\n<h2>見出し2</h2>\n<p>段落を追加できます。</p>\n\n<h3>見出し3</h3>\n<p>リストも使用可能です：</p>\n<ul>\n  <li>項目1</li>\n  <li>項目2</li>\n  <li>項目3</li>\n</ul>\n\n<h2>まとめ</h2>\n<p>記事のまとめをここに記入します。</p>"
+}

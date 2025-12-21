@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="自然体験に関するコラム記事の詳細ページ。">
+  <title>コラム | そとなび</title>
+  <link rel="stylesheet" href="styles.css">
+  <script>
+    // GitHub raw URL（全ページ共通設定）
+    window.GITHUB_RAW_BASE = "https://raw.githubusercontent.com/setagayatankyubase-create/trip-platform/main";
+  </script>
+  <style>
+    .column-detail-header {
+      margin-bottom: 32px;
+    }
+    .column-detail-date {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      margin-bottom: 12px;
+    }
+    .column-detail-title {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--text);
+      margin: 0 0 16px 0;
+      line-height: 1.4;
+    }
+    .column-detail-author {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      margin-bottom: 24px;
+    }
+    .column-detail-image {
+      width: 100%;
+      max-width: 800px;
+      height: 400px;
+      object-fit: cover;
+      border-radius: 12px;
+      margin-bottom: 32px;
+    }
+    .column-detail-content {
+      max-width: 800px;
+      margin: 0 auto;
+      line-height: 1.8;
+      color: var(--text);
+    }
+    .column-detail-content h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin: 32px 0 16px 0;
+      color: var(--text);
+      border-bottom: 2px solid var(--primary);
+      padding-bottom: 8px;
+    }
+    .column-detail-content h3 {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin: 24px 0 12px 0;
+      color: var(--text);
+    }
+    .column-detail-content p {
+      margin-bottom: 16px;
+    }
+    .column-detail-content ul,
+    .column-detail-content ol {
+      margin-bottom: 16px;
+      padding-left: 24px;
+    }
+    .column-detail-content li {
+      margin-bottom: 8px;
+    }
+    .column-detail-back {
+      display: inline-block;
+      margin-bottom: 24px;
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .column-detail-back:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <header class="main-header" id="main-header">
+    <div class="nav">
+      <div class="nav-left">
+        <a href="index.html" class="logo">
+          <img src="assets/sotonavi-logo.png" alt="そとなび" class="logo-image">
+        </a>
+      </div>
+      <div class="nav-links">
+        <a href="list.html">イベント一覧</a>
+        <a href="organizer-list.html">提供元</a>
+        <a href="column.html">コラム</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <a href="column.html" class="column-detail-back">← コラム一覧に戻る</a>
+    
+    <div class="column-detail-header">
+      <div class="column-detail-date" id="column-date"></div>
+      <h1 class="column-detail-title" id="column-title"></h1>
+      <div class="column-detail-author" id="column-author"></div>
+    </div>
+
+    <img id="column-image" class="column-detail-image" alt="" style="display: none;">
+
+    <div class="column-detail-content" id="column-content">
+      <!-- 記事内容がここに動的に生成されます -->
+    </div>
+  </main>
+
+  <footer class="main-footer">
+    <div class="footer-content">
+      <div class="footer-column">
+        <h3>サポート</h3>
+        <a href="contact.html">お問い合わせ</a>
+        <a href="terms.html">利用規約</a>
+        <a href="privacy.html">プライバシーポリシー</a>
+      </div>
+      <div class="footer-column">
+        <h3>運営情報</h3>
+        <a href="about.html">運営について</a>
+        <a href="publish.html">掲載について</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-copyright">
+        © <span id="current-year"></span> そとなび. 製作
+      </div>
+    </div>
+  </footer>
+
+  <script src="data.js?v=3_2025-12-21"></script>
+  <script src="app.js"></script>
+  <script>
+    // URLパラメータからslugを取得
+    function getSlugFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('slug');
+    }
+
+    // コラム記事詳細を読み込み
+    async function loadColumnDetail() {
+      try {
+        const slug = getSlugFromUrl();
+        if (!slug) {
+          document.getElementById('column-content').innerHTML = `
+            <div style="text-align: center; padding: 40px; color: #d32f2f;">
+              記事が見つかりませんでした。
+            </div>
+          `;
+          return;
+        }
+
+        // まずcolumns_indexから該当記事を探す
+        const indexUrl = "/data/columns_index.json";
+        const indexRes = await fetch(indexUrl, { cache: "no-store" });
+        if (!indexRes.ok) {
+          throw new Error(`Failed to load columns index: ${indexRes.status}`);
+        }
+        const indexData = await indexRes.json();
+        const columnsIndex = Array.isArray(indexData?.columns_index) 
+          ? indexData.columns_index 
+          : Array.isArray(indexData) 
+          ? indexData 
+          : [];
+        
+        const columnItem = columnsIndex.find(col => (col.slug === slug) || (col.id === slug));
+        if (!columnItem) {
+          throw new Error(`Column not found: ${slug}`);
+        }
+
+        // 個別記事JSONを読み込み（idを使用）
+        const columnId = columnItem.id || slug;
+        const url = `/data/columns/${columnId}.json`;
+        const res = await fetch(url, { cache: "no-store" });
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        const column = await res.json();
+
+        // タイトルを設定
+        document.title = `${column.title || 'コラム'} | そとなび`;
+        document.getElementById('column-title').textContent = column.title || 'タイトルなし';
+
+        // 日付を設定
+        if (column.date) {
+          const date = new Date(column.date);
+          const dateStr = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+          document.getElementById('column-date').textContent = dateStr;
+        }
+
+        // 著者を設定
+        if (column.author) {
+          document.getElementById('column-author').textContent = `著者: ${column.author}`;
+        }
+
+        // 画像を設定
+        if (column.image) {
+          const imgEl = document.getElementById('column-image');
+          imgEl.src = column.image;
+          imgEl.alt = column.title || '';
+          imgEl.style.display = 'block';
+        }
+
+        // 本文を設定
+        if (column.content) {
+          document.getElementById('column-content').innerHTML = column.content;
+        } else {
+          document.getElementById('column-content').innerHTML = `
+            <div style="text-align: center; padding: 40px; color: #6c7a72;">
+              記事の内容がありません。
+            </div>
+          `;
+        }
+      } catch (error) {
+        console.error('Error loading column detail:', error);
+        document.getElementById('column-content').innerHTML = `
+          <div style="text-align: center; padding: 40px; color: #d32f2f;">
+            記事の読み込みに失敗しました。
+          </div>
+        `;
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const yearElement = document.getElementById('current-year');
+        if (yearElement) {
+          yearElement.textContent = new Date().getFullYear();
+        }
+
+        await loadColumnDetail();
+      } catch (error) {
+        console.error('Error initializing column detail page:', error);
+      }
+    });
+  </script>
+</body>
+</html>
