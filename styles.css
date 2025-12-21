@@ -311,23 +311,24 @@ body {
 
 .category-menu-content {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
 }
 
 .category-menu-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 16px 18px;
-  border-radius: 8px;
+  gap: 12px;
+  padding: 24px 28px;
+  border-radius: 12px;
   cursor: pointer;
   transition: background 0.2s, transform 0.1s;
   text-decoration: none;
   color: var(--text);
   user-select: none;
   -webkit-tap-highlight-color: transparent;
-  min-height: 48px;
+  min-height: 64px;
+  font-size: 1rem;
 }
 
 .category-menu-item:hover {
@@ -341,11 +342,11 @@ body {
 }
 
 .category-menu-item .icon {
-  font-size: 1rem;
+  font-size: 1.4rem;
 }
 
 .category-menu-item .name {
-  font-size: 0.85rem;
+  font-size: 1rem;
   font-weight: 500;
 }
 
