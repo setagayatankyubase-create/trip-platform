@@ -94,6 +94,67 @@
   <script src="data.js?v=3_2025-12-21"></script>
   <script src="app.js"></script>
   <script>
+    // サイドバーを読み込み
+    async function loadSidebar() {
+      try {
+        const indexUrl = "/data/columns_index.json";
+        const indexRes = await fetch(indexUrl, { cache: "no-store" });
+        if (!indexRes.ok) return;
+
+        const indexData = await indexRes.json();
+        const columnsIndex = Array.isArray(indexData?.columns_index) 
+          ? indexData.columns_index 
+          : Array.isArray(indexData) 
+          ? indexData 
+          : [];
+
+        // 最近の記事（最新5件、日付でソート）
+        const recentArticles = [...columnsIndex]
+          .sort((a, b) => {
+            const dateA = a.date ? new Date(a.date) : new Date(0);
+            const dateB = b.date ? new Date(b.date) : new Date(0);
+            return dateB - dateA;
+          })
+          .slice(0, 5);
+
+        const recentEl = document.getElementById('recent-articles-sidebar');
+        if (recentEl && recentArticles.length > 0) {
+          recentEl.innerHTML = recentArticles.map(col => {
+            const date = col.date ? new Date(col.date) : new Date();
+            const dateStr = `${date.getFullYear()}.${date.getMonth() + 1}.${date.getDate()}`;
+            const detailUrl = `column-detail.html?slug=${encodeURIComponent(col.slug || col.id)}`;
+
+            return `
+              <a href="${detailUrl}" style="display: block; padding: 12px 0; border-bottom: 1px solid var(--border); text-decoration: none; color: var(--text); transition: opacity 0.2s;">
+                <div style="width: 100%;">
+                  <div style="font-size: 0.9rem; font-weight: 600; line-height: 1.4; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${col.title || 'タイトルなし'}</div>
+                  <div style="font-size: 0.75rem; color: var(--text-secondary);">${dateStr}</div>
+                </div>
+              </a>
+            `;
+          }).join('');
+          
+          // 最後の要素のborder-bottomを削除
+          const lastItem = recentEl.querySelector('a:last-child');
+          if (lastItem) {
+            lastItem.style.borderBottom = 'none';
+          }
+        } else if (recentEl) {
+          recentEl.innerHTML = '<p style="color: var(--text-secondary); font-size: 0.9rem;">記事はありません</p>';
+        }
+
+        // カテゴリ一覧（簡単な実装として、コラム一覧へのリンク）
+        const categoryEl = document.getElementById('category-list-sidebar');
+        if (categoryEl) {
+          categoryEl.innerHTML = `
+            <li style="padding: 8px 0; border-bottom: 1px solid var(--border);"><a href="column.html" style="color: var(--text); text-decoration: none; font-size: 0.9rem; transition: color 0.2s; display: block;">すべてのコラム</a></li>
+          `;
+        }
+      } catch (error) {
+        console.error('Error loading sidebar:', error);
+      }
+    }
+
     // ローカルデータからコラム記事を取得
     async function loadColumns() {
       try {
