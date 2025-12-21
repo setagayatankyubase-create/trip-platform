@@ -607,6 +607,33 @@ const FavoriteManager = {
 
 // イベントカードのレンダリング
 const CardRenderer = {
+  // 複数日程を持つイベントを、各日程ごとに展開する
+  expandEventsByDates(events) {
+    const expanded = [];
+    events.forEach(event => {
+      // dates配列を取得
+      let dates = Array.isArray(event.dates) ? event.dates : [];
+      if ((!dates || dates.length === 0) && event.next_date) {
+        dates = [{ date: event.next_date }];
+      }
+
+      if (dates.length === 0) {
+        // 日程がない場合はそのまま追加
+        expanded.push(event);
+      } else {
+        // 各日程ごとにイベントを展開
+        dates.forEach(dateObj => {
+          expanded.push({
+            ...event,
+            _displayDate: dateObj.date, // 表示用の日付を保存
+            dates: [dateObj] // このカード用の日程配列
+          });
+        });
+      }
+    });
+    return expanded;
+  },
+
   // 画像URLを一覧表示向けに軽量化（主に Unsplash 想定）
   optimizeImageUrl(url) {
     if (!url || typeof url !== 'string') return url;
@@ -703,6 +730,24 @@ const CardRenderer = {
     // インデックスデータでは city が area 相当として使われる
     const area = event.area || event.city || "";
 
+    // 日程情報のフォーマット（最大2つ表示）
+    let datesHtml = '';
+    if (dates.length > 0) {
+      const displayDates = dates.slice(0, 2); // 最初の2つだけ表示
+      datesHtml = displayDates.map(d => {
+        const date = new Date(d.date);
+        const month = date.getMonth() + 1;
+        const day = date.getDate();
+        const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+        const weekday = weekdays[date.getDay()];
+        const time = d.time ? ` ${d.time}` : '';
+        return `${month}/${day}(${weekday})${time}`;
+      }).join(' / ');
+      if (dates.length > 2) {
+        datesHtml += ` 他${dates.length - 2}日程`;
+      }
+    }
+
     return `
       <a href="experience.html?id=${event.id}" class="card-link" data-event-id="${event.id}">
         <div class="card" data-event-id="${event.id}">
@@ -721,6 +766,7 @@ const CardRenderer = {
             </div>
             <div class="card-title">${event.title}</div>
             <div class="card-location">${area}, ${event.prefecture || ''}</div>
+            ${datesHtml ? `<div class="card-date">${datesHtml}</div>` : ''}
             <div class="card-price">¥ ${event.price.toLocaleString()}</div>
           </div>
         </div>
