@@ -5,7 +5,10 @@ const DATA_BASE = "/data";
 
 // 例: "https://raw.githubusercontent.com/owner/repo/main"
 const sanitizeBase = (s) => String(s || "").trim().replace(/\/+$/, "");
-const GITHUB_RAW_BASE = sanitizeBase(window.GITHUB_RAW_BASE || "");
+const GITHUB_RAW_BASE = sanitizeBase(
+  (window && window.GITHUB_RAW_BASE) ||
+  "https://raw.githubusercontent.com/setagayatankyubase-create/trip-platform/main"
+);
 
 // キャッシュ無効化用バージョン（構造変えたら必ず上げる）
 const EVENT_CACHE_VERSION = "v3_2025-12-21";
@@ -201,11 +204,9 @@ window.loadEventIndex = function loadEventIndex() {
     console.warn("eventIndex cache read error:", e);
   }
 
-  // 2) /data → 壊れてたら raw へ（当面は raw 優先）
+  // 2) raw 優先（サイトの /data が古い場合の応急処置）
   _eventIndexLoadingPromise = (async () => {
-    const primaryUrl = (window.GITHUB_RAW_BASE)
-      ? `${window.GITHUB_RAW_BASE}/data/events_index.json`
-      : `/data/events_index.json`;
+    const primaryUrl = `${GITHUB_RAW_BASE}/data/events_index.json`;
 
     let arr = [];
     try {
@@ -219,7 +220,7 @@ window.loadEventIndex = function loadEventIndex() {
     // その場合は /data にフォールバック
     const primaryRate = organizerIdValidRate(arr);
 
-    if (primaryRate < 0.9 && window.GITHUB_RAW_BASE) {
+    if (primaryRate < 0.9) {
       // primary が GitHub raw の場合、/data にフォールバック
       const fallbackUrl = `${DATA_BASE}/events_index.json`;
       console.warn("[FALLBACK] primary rate low, trying /data. primary rate=", primaryRate, fallbackUrl);
@@ -298,8 +299,8 @@ window.loadEventMeta = function loadEventMeta() {
     let areas      = Array.isArray(metaJson?.areas) ? metaJson.areas : [];
 
     // organizers が空なら raw に逃げる（/data が古い・未更新対策）
-    if (organizers.length === 0 && window.GITHUB_RAW_BASE) {
-      const fallbackUrl = `${window.GITHUB_RAW_BASE}/data/meta.json`;
+    if (organizers.length === 0) {
+      const fallbackUrl = `${GITHUB_RAW_BASE}/data/meta.json`;
       try {
         console.warn("[META FALLBACK] using GitHub raw:", fallbackUrl);
         const fb = await fetchJsonStrict_(fallbackUrl);
