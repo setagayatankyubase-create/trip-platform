@@ -787,9 +787,16 @@
     }
 
     // ヒーロー画像の自動切り替えを設定（fuji.jpgとwinter.jpgのみ）
+    let heroImageInterval = null;
     function setupHeroImages() {
       const container = document.getElementById('column-hero-images-container');
       if (!container) return;
+
+      // 既存のインターバルをクリア
+      if (heroImageInterval) {
+        clearInterval(heroImageInterval);
+        heroImageInterval = null;
+      }
 
       // fuji.jpgとwinter.jpgのみを使用
       const images = [
@@ -797,7 +804,7 @@
         '/assets/winter.jpg'
       ];
 
-      // 画像要素を作成
+      // 画像要素を作成（既存の内容をクリア）
       container.innerHTML = '';
       images.forEach((src, index) => {
         const img = document.createElement('img');
@@ -815,7 +822,7 @@
       const imageElements = Array.from(container.querySelectorAll('.column-hero-image'));
       
       if (imageElements.length > 1) {
-        setInterval(() => {
+        heroImageInterval = setInterval(() => {
           imageElements.forEach(img => img.classList.remove('active'));
           currentIndex = (currentIndex + 1) % imageElements.length;
           imageElements[currentIndex].classList.add('active');
@@ -915,8 +922,7 @@
           }
         }
 
-        // 画像を設定（fuji.jpgとwinter.jpgを自動切り替え）
-        setupHeroImages();
+        // 画像は既にDOMContentLoadedで設定済み
 
         // カテゴリを設定
         if (column.category) {
@@ -975,6 +981,9 @@
         if (yearElement) {
           yearElement.textContent = new Date().getFullYear();
         }
+
+        // まず画像を設定（記事読み込み前に表示）
+        setupHeroImages();
 
         await loadColumnDetail();
       } catch (error) {
