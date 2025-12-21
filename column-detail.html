@@ -27,10 +27,27 @@
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
     }
 
+    #column-hero-images-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
     .column-hero-image {
       width: 100%;
       height: 100%;
       object-fit: cover;
+      position: absolute;
+      top: 0;
+      left: 0;
+      opacity: 0;
+      transition: opacity 1.5s ease-in-out;
+    }
+
+    .column-hero-image.active {
+      opacity: 1;
     }
 
     .column-hero-overlay {
@@ -559,7 +576,7 @@
       </nav>
 
       <div class="column-hero" id="column-hero">
-        <img id="column-hero-image" class="column-hero-image" alt="" style="display: none;">
+        <div id="column-hero-images-container"></div>
         <div class="column-hero-overlay">
           <div class="column-detail-category" id="column-category">コラム</div>
           <h1 class="column-hero-title" id="column-hero-title"></h1>
@@ -680,7 +697,7 @@
 
     // シェア用タイトルを取得
     function getShareTitle() {
-      const titleEl = document.getElementById('column-title');
+      const titleEl = document.getElementById('column-hero-title') || document.getElementById('column-title');
       return titleEl ? titleEl.textContent : '';
     }
 
@@ -769,6 +786,59 @@
       }
     }
 
+    // ヒーロー画像の自動切り替えを設定
+    function setupHeroImages(customImage) {
+      const container = document.getElementById('column-hero-images-container');
+      if (!container) return;
+
+      // デフォルト画像リスト（winterとfuji）
+      const defaultImages = [
+        '/assets/fuji.jpg',
+        '/assets/winter.jpg'
+      ];
+
+      // カスタム画像がある場合は最初に追加、その後デフォルト画像
+      const images = customImage ? [customImage, ...defaultImages] : defaultImages;
+
+      // 重複を除去
+      const uniqueImages = [...new Set(images)];
+
+      // 画像要素を作成
+      container.innerHTML = '';
+      uniqueImages.forEach((src, index) => {
+        const img = document.createElement('img');
+        img.src = src;
+        img.className = 'column-hero-image';
+        img.alt = '';
+        if (index === 0) {
+          img.classList.add('active');
+        }
+        img.onerror = function() {
+          // 画像が読み込めない場合は非表示
+          this.style.display = 'none';
+        };
+        container.appendChild(img);
+      });
+
+      // 最初の有効な画像を表示
+      const firstValidImage = container.querySelector('.column-hero-image:not([style*="display: none"])');
+      if (firstValidImage) {
+        firstValidImage.classList.add('active');
+      }
+
+      // 自動切り替え（5秒ごと）
+      let currentIndex = 0;
+      const imageElements = Array.from(container.querySelectorAll('.column-hero-image:not([style*="display: none"])'));
+      
+      if (imageElements.length > 1) {
+        setInterval(() => {
+          imageElements.forEach(img => img.classList.remove('active'));
+          currentIndex = (currentIndex + 1) % imageElements.length;
+          imageElements[currentIndex].classList.add('active');
+        }, 5000);
+      }
+    }
+
     // シェアボタンのURLを設定
     function setupShareButtons() {
       const url = encodeURIComponent(getShareUrl());
@@ -833,30 +903,36 @@
         // タイトルを設定
         const title = column.title || 'タイトルなし';
         document.title = `${title} | そとなび`;
-        document.getElementById('column-title').textContent = title;
-        document.getElementById('breadcrumb-title').textContent = title;
+        const titleEl = document.getElementById('column-hero-title');
+        if (titleEl) titleEl.textContent = title;
+        const breadcrumbEl = document.getElementById('breadcrumb-title');
+        if (breadcrumbEl) breadcrumbEl.textContent = title;
 
         // 日付を設定
         if (column.date) {
           const date = new Date(column.date);
           const dateStr = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
-          document.getElementById('column-date').textContent = dateStr;
+          const dateMetaEl = document.getElementById('column-date-meta');
+          if (dateMetaEl) dateMetaEl.textContent = dateStr;
+          const heroMetaEl = document.getElementById('column-hero-meta');
+          if (heroMetaEl) {
+            heroMetaEl.innerHTML = `<span>${dateStr}</span>`;
+          }
         }
 
         // 著者を設定
         if (column.author) {
-          document.getElementById('column-author').textContent = column.author;
-        } else {
-          document.getElementById('column-author').style.display = 'none';
+          const authorMetaEl = document.getElementById('column-author-meta');
+          if (authorMetaEl) authorMetaEl.textContent = column.author;
+          const heroMetaEl = document.getElementById('column-hero-meta');
+          if (heroMetaEl) {
+            const existingContent = heroMetaEl.innerHTML;
+            heroMetaEl.innerHTML = existingContent ? `${existingContent} <span>•</span> <span>${column.author}</span>` : `<span>${column.author}</span>`;
+          }
         }
 
-        // 画像を設定
-        if (column.image) {
-          const imgEl = document.getElementById('column-image');
-          imgEl.src = column.image;
-          imgEl.alt = title;
-          imgEl.style.display = 'block';
-        }
+        // 画像を設定（自動切り替え）
+        setupHeroImages(column.image || null);
 
         // カテゴリを設定
         if (column.category) {
@@ -876,6 +952,10 @@
         // 本文を設定
         if (column.content) {
           document.getElementById('column-content').innerHTML = column.content;
+          // 読了時間を計算
+          const readingTime = calculateReadingTime(column.content);
+          const readingTimeEl = document.getElementById('reading-time');
+          if (readingTimeEl) readingTimeEl.textContent = readingTime;
         } else {
           document.getElementById('column-content').innerHTML = `
             <div style="text-align: center; padding: 40px; color: #6c7a72;">
@@ -893,11 +973,15 @@
         await loadSidebar(columnId);
       } catch (error) {
         console.error('Error loading column detail:', error);
-        document.getElementById('column-content').innerHTML = `
-          <div style="text-align: center; padding: 40px; color: #d32f2f;">
-            記事の読み込みに失敗しました。
-          </div>
-        `;
+        const contentEl = document.getElementById('column-content');
+        if (contentEl) {
+          contentEl.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: #d32f2f;">
+              記事の読み込みに失敗しました。<br>
+              <small style="color: #999; margin-top: 10px; display: block;">${error.message || ''}</small>
+            </div>
+          `;
+        }
       }
     }
 
