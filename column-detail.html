@@ -791,21 +791,15 @@
       const container = document.getElementById('column-hero-images-container');
       if (!container) return;
 
-      // デフォルト画像リスト（winterとfuji）
-      const defaultImages = [
+      // fuji.jpgとwinter.jpgのみを使用
+      const images = [
         '/assets/fuji.jpg',
         '/assets/winter.jpg'
       ];
 
-      // カスタム画像がある場合は最初に追加、その後デフォルト画像
-      const images = customImage ? [customImage, ...defaultImages] : defaultImages;
-
-      // 重複を除去
-      const uniqueImages = [...new Set(images)];
-
       // 画像要素を作成
       container.innerHTML = '';
-      uniqueImages.forEach((src, index) => {
+      images.forEach((src, index) => {
         const img = document.createElement('img');
         img.src = src;
         img.className = 'column-hero-image';
@@ -813,22 +807,12 @@
         if (index === 0) {
           img.classList.add('active');
         }
-        img.onerror = function() {
-          // 画像が読み込めない場合は非表示
-          this.style.display = 'none';
-        };
         container.appendChild(img);
       });
 
-      // 最初の有効な画像を表示
-      const firstValidImage = container.querySelector('.column-hero-image:not([style*="display: none"])');
-      if (firstValidImage) {
-        firstValidImage.classList.add('active');
-      }
-
       // 自動切り替え（5秒ごと）
       let currentIndex = 0;
-      const imageElements = Array.from(container.querySelectorAll('.column-hero-image:not([style*="display: none"])'));
+      const imageElements = Array.from(container.querySelectorAll('.column-hero-image'));
       
       if (imageElements.length > 1) {
         setInterval(() => {
