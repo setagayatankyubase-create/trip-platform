@@ -229,9 +229,8 @@ body {
   transition: background 0.2s;
   border-radius: 50px 0 0 50px;
   position: relative;
-  height: 56px;
-  box-sizing: border-box;
   flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 .category-menu-button:hover {
@@ -333,8 +332,8 @@ body {
   border: none;
   font-size: 0.95rem;
   outline: none;
-  height: 56px;
   box-sizing: border-box;
+  line-height: 1.2;
 }
 
 .hero-search-input::placeholder {
@@ -352,11 +351,11 @@ body {
   cursor: pointer;
   transition: background 0.2s;
   white-space: nowrap;
-  height: 56px;
   box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
+  line-height: 1.2;
 }
 
 .hero-search-button:hover {
