@@ -62,7 +62,17 @@ const EventPageRenderer = {
   renderGallery(event) {
     const mainImage = document.getElementById('event-main-image');
     if (mainImage) {
-      const imageUrl = event.image || event.thumb || event.mainImage || '';
+      // イベント画像URLを取得（GitHubから、または既存URLを使用）
+      let imageUrl = event.image || event.thumb || event.mainImage || '';
+      
+      // GitHubの画像URL生成関数が利用可能な場合
+      if (typeof window.getEventImageUrl === 'function' && event.id) {
+        // 既存のURLがGitHubのパス（/images/）でない場合のみ、GitHubから取得
+        if (!imageUrl || (!imageUrl.startsWith('/images/') && !imageUrl.includes('/images/'))) {
+          imageUrl = window.getEventImageUrl(event.id, 'jpg');
+        }
+      }
+      
       if (imageUrl) {
         mainImage.style.backgroundImage = `url('${imageUrl}')`;
       }
@@ -226,9 +236,20 @@ const EventPageRenderer = {
     if (!organizer) return;
 
     if (organizerInfo) {
+      // 提供元ロゴURLを取得（GitHubから、または既存URLを使用）
+      let logoUrl = organizer.logo || '';
+      
+      // GitHubの画像URL生成関数が利用可能な場合
+      if (typeof window.getOrganizerLogoUrl === 'function' && organizer.id) {
+        // 既存のURLがGitHubのパス（/images/）でない場合のみ、GitHubから取得
+        if (!logoUrl || (!logoUrl.startsWith('/images/') && !logoUrl.includes('/images/'))) {
+          logoUrl = window.getOrganizerLogoUrl(organizer.id, 'jpg');
+        }
+      }
+      
       organizerInfo.innerHTML = `
         <div style="display: flex; gap: 16px; align-items: flex-start;">
-          <img src="${organizer.logo}" alt="${organizer.name}" style="width: 80px; height: 80px; border-radius: 8px; object-fit: cover; background: #f0f0f0;">
+          <img src="${logoUrl}" alt="${organizer.name}" style="width: 80px; height: 80px; border-radius: 8px; object-fit: cover; background: #f0f0f0;">
           <div>
             <h4 style="margin: 0 0 8px 0;">${organizer.name}</h4>
             <p style="margin: 0; color: #6c7a72; font-size: 0.9rem;">${organizer.description}</p>

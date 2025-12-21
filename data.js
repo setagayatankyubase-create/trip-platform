@@ -30,6 +30,45 @@ const normalizeId = (v) => {
   return s.length > 0 ? s : undefined;
 };
 
+// GitHubから画像URLを生成するヘルパー関数
+// GitHub Pagesを使用する場合は相対パス、GitHub Rawを使用する場合は完全URLを返す
+function getGitHubImageUrl(imagePath) {
+  if (!imagePath) return '';
+  
+  // 既に完全なURL（http:// または https://）の場合はそのまま返す
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    return imagePath;
+  }
+  
+  // 相対パスの場合、GitHub Pagesの場合はそのまま、GitHub Rawの場合は完全URLに変換
+  // GitHub Pagesを使用する場合（推奨）
+  // 例: /images/events/evt-001.jpg
+  if (imagePath.startsWith('/')) {
+    return imagePath;
+  }
+  
+  // 相対パスでない場合は、/images/プレフィックスを追加
+  // 例: events/evt-001.jpg -> /images/events/evt-001.jpg
+  return `/images/${imagePath}`;
+}
+
+// イベント画像URLを取得
+function getEventImageUrl(eventId, extension = 'jpg') {
+  if (!eventId) return '';
+  return getGitHubImageUrl(`events/${eventId}.${extension}`);
+}
+
+// 提供元ロゴURLを取得
+function getOrganizerLogoUrl(organizerId, extension = 'jpg') {
+  if (!organizerId) return '';
+  return getGitHubImageUrl(`organizers/${organizerId}.${extension}`);
+}
+
+// グローバルに公開
+window.getGitHubImageUrl = getGitHubImageUrl;
+window.getEventImageUrl = getEventImageUrl;
+window.getOrganizerLogoUrl = getOrganizerLogoUrl;
+
 // index配列の正規化（organizerId / organizer_id どちらでも organizerId に統一）
 const normalizeIndex = (arr) =>
   (Array.isArray(arr) ? arr : []).map(e => ({

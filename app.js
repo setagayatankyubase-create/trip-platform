@@ -634,27 +634,55 @@ const CardRenderer = {
     return expanded;
   },
 
-  // 画像URLを一覧表示向けに軽量化（主に Unsplash 想定）
-  optimizeImageUrl(url) {
-    if (!url || typeof url !== 'string') return url;
-
-    try {
-      const u = new URL(url);
-      // Unsplash など images.unsplash.com の場合はパラメータで圧縮
-      if (u.hostname.includes('images.unsplash.com')) {
-        // 既存クエリを維持しつつ、必要なパラメータだけ上書き
-        u.searchParams.set('auto', 'format');
-        u.searchParams.set('fit', 'crop');
-        u.searchParams.set('w', '600');
-        u.searchParams.set('q', '70');
-        return u.toString();
-      }
-    } catch {
-      // URLパースに失敗した場合はそのまま返す
-      return url;
+  // 画像URLを処理（GitHubから取得、または既存URLを使用）
+  optimizeImageUrl(url, eventId = null) {
+    // GitHubの画像URL生成関数が利用可能な場合
+    if (typeof window.getEventImageUrl === 'function' && eventId) {
+      // イベントIDがある場合は、GitHubから画像を取得
+      const githubUrl = window.getEventImageUrl(eventId, 'jpg');
+      // フォールバック: jpgが存在しない場合、pngを試す
+      // 実際の実装では、画像の存在確認はできないので、jpgを優先
+      return githubUrl;
     }
-
-    return url;
+    
+    // 既存のURLがある場合はそのまま返す（後方互換性のため）
+    if (url && typeof url === 'string') {
+      // 既に完全なURL（http:// または https://）の場合はそのまま返す
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        // GitHubの画像URL（/images/で始まる）の場合はそのまま返す
+        if (url.includes('/images/')) {
+          return url;
+        }
+        
+        // Unsplash などの外部サービスは、既存の最適化処理を適用
+        try {
+          const u = new URL(url);
+          if (u.hostname.includes('images.unsplash.com')) {
+            u.searchParams.set('auto', 'format');
+            u.searchParams.set('fit', 'crop');
+            u.searchParams.set('w', '600');
+            u.searchParams.set('q', '70');
+            return u.toString();
+          }
+        } catch {
+          // URLパースに失敗した場合はそのまま返す
+          return url;
+        }
+        return url;
+      }
+      
+      // 相対パスの場合
+      if (url.startsWith('/')) {
+        return url;
+      }
+    }
+    
+    // eventIdがある場合の最終的なフォールバック
+    if (eventId && typeof window.getEventImageUrl === 'function') {
+      return window.getEventImageUrl(eventId, 'jpg');
+    }
+    
+    return url || '';
   },
 
   getRatingHtml(event) {
@@ -725,7 +753,8 @@ const CardRenderer = {
     const favoriteTitle = isFavorite ? 'お気に入りから削除' : 'お気に入りに追加';
     const favoriteFill = isFavorite ? 'currentColor' : 'none';
 
-    const optimizedImage = this.optimizeImageUrl(event.image);
+    // イベント画像URLを取得（GitHubから、または既存URLを使用）
+    const optimizedImage = this.optimizeImageUrl(event.image, event.id);
 
     // インデックスデータでは city が area 相当として使われる
     const area = event.area || event.city || "";

@@ -76,10 +76,20 @@
 
       container.innerHTML = eventData.organizers.map(org => {
         const events = eventData.events.filter(e => (e.organizerId || e.organizer_id) === org.id);
+        
+        // 提供元ロゴURLを取得（GitHubから、または既存URLを使用）
+        let logoUrl = org.logo || '';
+        if (typeof window.getOrganizerLogoUrl === 'function' && org.id) {
+          // 既存のURLがGitHubのパス（/images/）でない場合のみ、GitHubから取得
+          if (!logoUrl || (!logoUrl.startsWith('/images/') && !logoUrl.includes('/images/'))) {
+            logoUrl = window.getOrganizerLogoUrl(org.id, 'jpg');
+          }
+        }
+        
         return `
           <div class="organizer-card">
             <div class="organizer-header">
-              <img src="${org.logo}" alt="${org.name}" class="organizer-logo">
+              <img src="${logoUrl}" alt="${org.name}" class="organizer-logo">
               <div class="organizer-info" style="flex: 1;">
                 <h3 style="margin: 0 0 8px 0;">
                   <a href="organizer-detail.html?id=${org.id}" style="color: inherit; text-decoration: none;">
