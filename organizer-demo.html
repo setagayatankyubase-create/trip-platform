@@ -363,8 +363,19 @@
       // ヘッダー
       const header = document.getElementById('organizer-header');
       if (header) {
+        // 提供元ロゴURLを取得（GitHubから、または既存URLを使用）
+        let logoUrl = organizer.logo || '';
+        
+        // GitHubの画像URL生成関数が利用可能な場合
+        if (typeof window.getOrganizerLogoUrl === 'function' && organizer.id) {
+          // 既存のURLが完全なURL（http:// または https://）でない場合、GitHubから取得
+          if (!logoUrl || (!logoUrl.startsWith('http://') && !logoUrl.startsWith('https://') && !logoUrl.startsWith('/assets/images/'))) {
+            logoUrl = window.getOrganizerLogoUrl(organizer.id, 'jpg');
+          }
+        }
+        
         header.innerHTML = `
-          ${organizer.logo ? `<img src="${organizer.logo}" alt="${organizer.name || ''}" class="organizer-logo">` : ''}
+          ${logoUrl ? `<img src="${logoUrl}" alt="${organizer.name || ''}" class="organizer-logo">` : ''}
           <div class="organizer-info">
             <h1>${organizer.name || 'デモ提供元'}<span class="demo-badge">デモ</span></h1>
             <p style="color: #6c7a72; line-height: 1.6;">${organizer.description || ''}</p>
@@ -460,21 +471,32 @@
             const price = event.price ? event.price.toLocaleString() : '0';
             const image = event.image || 'https://via.placeholder.com/800x600?text=No+Image';
             
-            return `
-              <a href="experience-demo.html?id=${event.id}" class="card-link" data-event-id="${event.id}">
-                <div class="card" data-event-id="${event.id}">
-                  <div class="card-image-wrapper">
-                    <img src="${image}" alt="${event.title}" loading="lazy">
-                  </div>
-                  <div class="card-body">
-                    ${badgesHtml ? `<div class="card-badges">${badgesHtml}</div>` : ''}
-                    <div class="card-title">${event.title}</div>
-                    <div class="card-location">${area}, ${event.prefecture || ''}</div>
-                    <div class="card-price">¥ ${price}</div>
-                  </div>
+          // イベント画像URLを取得（GitHubから、または既存URLを使用）
+          let imageUrl = image || event.image || '';
+          
+          // GitHubの画像URL生成関数が利用可能な場合
+          if (typeof window.getEventImageUrl === 'function' && event.id) {
+            // 既存のURLが完全なURL（http:// または https://）でない場合、GitHubから取得
+            if (!imageUrl || (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://') && !imageUrl.startsWith('/assets/images/'))) {
+              imageUrl = window.getEventImageUrl(event.id, 'jpg');
+            }
+          }
+          
+          return `
+            <a href="experience-demo.html?id=${event.id}" class="card-link" data-event-id="${event.id}">
+              <div class="card" data-event-id="${event.id}">
+                <div class="card-image-wrapper">
+                  <img src="${imageUrl}" alt="${event.title}" loading="lazy">
                 </div>
-              </a>
-            `;
+                <div class="card-body">
+                  ${badgesHtml ? `<div class="card-badges">${badgesHtml}</div>` : ''}
+                  <div class="card-title">${event.title}</div>
+                  <div class="card-location">${area}, ${event.prefecture || ''}</div>
+                  <div class="card-price">¥ ${price}</div>
+                </div>
+              </div>
+            </a>
+          `;
           }).join('');
           
           console.log('[organizer-demo.html] Events HTML length:', eventsHtml.length);

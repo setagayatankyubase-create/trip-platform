@@ -67,8 +67,8 @@ const EventPageRenderer = {
       
       // GitHubの画像URL生成関数が利用可能な場合
       if (typeof window.getEventImageUrl === 'function' && event.id) {
-        // 既存のURLがGitHubのパス（/assets/images/）でない場合のみ、GitHubから取得
-        if (!imageUrl || (!imageUrl.startsWith('/assets/images/') && !imageUrl.includes('/assets/images/'))) {
+        // 既存のURLが完全なURL（http:// または https://）でない場合、GitHubから取得
+        if (!imageUrl || (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://') && !imageUrl.startsWith('/assets/images/'))) {
           imageUrl = window.getEventImageUrl(event.id, 'jpg');
         }
       }
@@ -86,13 +86,17 @@ const EventPageRenderer = {
       // 1枚目のサブ画像（evt-001b.jpg）
       if (thumbElements[0]) {
         const subImageUrl1 = window.getEventSubImageUrl(event.id, 1, 'jpg');
-        thumbElements[0].style.backgroundImage = `url('${subImageUrl1}')`;
+        if (subImageUrl1) {
+          thumbElements[0].style.backgroundImage = `url('${subImageUrl1}')`;
+        }
       }
       
       // 2枚目のサブ画像（evt-001c.jpg）
       if (thumbElements[1]) {
         const subImageUrl2 = window.getEventSubImageUrl(event.id, 2, 'jpg');
-        thumbElements[1].style.backgroundImage = `url('${subImageUrl2}')`;
+        if (subImageUrl2) {
+          thumbElements[1].style.backgroundImage = `url('${subImageUrl2}')`;
+        }
       }
     }
   },
@@ -259,8 +263,8 @@ const EventPageRenderer = {
       
       // GitHubの画像URL生成関数が利用可能な場合
       if (typeof window.getOrganizerLogoUrl === 'function' && organizer.id) {
-        // 既存のURLがGitHubのパス（/images/）でない場合のみ、GitHubから取得
-        if (!logoUrl || (!logoUrl.startsWith('/images/') && !logoUrl.includes('/images/'))) {
+        // 既存のURLが完全なURL（http:// または https://）でない場合、GitHubから取得
+        if (!logoUrl || (!logoUrl.startsWith('http://') && !logoUrl.startsWith('https://') && !logoUrl.startsWith('/assets/images/'))) {
           logoUrl = window.getOrganizerLogoUrl(organizer.id, 'jpg');
         }
       }
