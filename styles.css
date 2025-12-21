@@ -182,27 +182,24 @@ body {
   border-radius: 50px;
   overflow: hidden;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  position: relative;
 }
 
 .category-menu-button {
   background: var(--primary);
   border: none;
-  padding: 8px 12px;
+  padding: 0 20px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: background 0.2s;
-  border-radius: 8px;
+  border-radius: 50px 0 0 50px;
   position: relative;
 }
 
 .category-menu-button:hover {
   background: var(--hover);
-}
-
-.header-search-wrapper .category-menu-button {
-  border-radius: 8px;
 }
 
 .hamburger-icon {
@@ -253,10 +250,9 @@ body {
   transform: translateY(-10px);
 }
 
-/* 親要素（hero-category-wrapper、search-wrapper、search-category-wrapper）にホバー時、またはメニュー自体にホバー時に表示 */
-.hero-category-wrapper:hover .category-menu,
+/* 親要素（search-wrapper、search-bar-wrapper）にホバー時、またはメニュー自体にホバー時に表示 */
 .search-wrapper:hover .category-menu,
-.search-category-wrapper:hover .category-menu {
+.search-bar-wrapper:hover .category-menu {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
@@ -342,7 +338,7 @@ body {
 
 .search-form {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr auto;
+  grid-template-columns: auto 2fr 1fr 1fr 1fr auto;
   gap: 8px;
   align-items: end;
 }
