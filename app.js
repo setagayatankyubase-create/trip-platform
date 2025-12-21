@@ -769,8 +769,24 @@ const CardRenderer = {
         const day = date.getDate();
         const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
         const weekday = weekdays[date.getDay()];
-        const time = d.time ? ` ${d.time}` : '';
-        return `${month}/${day}(${weekday})${time}`;
+        
+        // 時間部分を抽出（Dateオブジェクトの文字列表現を除外）
+        let timeStr = '';
+        if (d.time) {
+          const timeValue = String(d.time);
+          // "GMT"や"Standard Time"が含まれている場合は、時間部分のみ抽出
+          if (timeValue.includes('GMT') || timeValue.includes('Standard Time')) {
+            const timeMatch = timeValue.match(/(\d{1,2}):(\d{2})/);
+            if (timeMatch) {
+              timeStr = ` ${timeMatch[0]}`;
+            }
+          } else {
+            // 通常の時間文字列の場合
+            timeStr = ` ${timeValue}`;
+          }
+        }
+        
+        return `${month}/${day}(${weekday})${timeStr}`;
       }).join(' / ');
       if (dates.length > 2) {
         datesHtml += ` 他${dates.length - 2}日程`;
