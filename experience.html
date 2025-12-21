@@ -246,6 +246,10 @@
         margin-top: 16px;
       }
     }
+
+    /* bookingカードが左カラムに引きずられて伸びるのを強制停止 */
+    .grid { align-items: start !important; }
+    .card.booking { height: auto !important; min-height: 0 !important; }
   </style>
   <script>
     // GitHub raw URL（全ページ共通設定）
