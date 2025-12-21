@@ -35,9 +35,6 @@
 
     <div id="column-list" style="display: grid; gap: 24px; margin-top: 24px;">
       <!-- 記事一覧がここに動的に生成されます -->
-      <div style="text-align: center; padding: 40px; color: #6c7a72;">
-        コラム記事は準備中です。
-      </div>
     </div>
   </main>
 
@@ -64,8 +61,62 @@
 
   <script src="data.js?v=3_2025-12-21"></script>
   <script src="app.js"></script>
-  <script src="column.js"></script>
   <script>
+    // WordPress APIからコラム記事を取得
+    async function loadColumns() {
+      try {
+        const url = "https://blog.sotonavi.com/wp-json/wp/v2/posts?per_page=6&_fields=id,slug,title,excerpt,date,link";
+        const res = await fetch(url);
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        const posts = await res.json();
+
+        const el = document.getElementById("column-list");
+        if (!el) return;
+
+        if (posts.length === 0) {
+          el.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: #6c7a72;">
+              コラム記事は準備中です。
+            </div>
+          `;
+          return;
+        }
+
+        el.innerHTML = posts.map(p => {
+          // HTMLタグを除去してテキストのみ取得
+          const excerptText = p.excerpt.rendered
+            .replace(/<[^>]*>/g, '')
+            .replace(/&nbsp;/g, ' ')
+            .trim();
+          
+          // 日付をフォーマット
+          const date = new Date(p.date);
+          const dateStr = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+          
+          return `
+            <article class="column-item">
+              <div class="column-item-date">${dateStr}</div>
+              <h3 class="column-item-title">${p.title.rendered}</h3>
+              <div class="column-item-excerpt">${excerptText}</div>
+              <a href="${p.link}" target="_blank" rel="noopener" class="column-item-link">続きを読む →</a>
+            </article>
+          `;
+        }).join("");
+      } catch (error) {
+        console.error('Error loading columns:', error);
+        const el = document.getElementById("column-list");
+        if (el) {
+          el.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: #d32f2f;">
+              コラム記事の読み込みに失敗しました。
+            </div>
+          `;
+        }
+      }
+    }
+
     document.addEventListener('DOMContentLoaded', async () => {
       try {
         const yearElement = document.getElementById('current-year');
@@ -73,8 +124,8 @@
           yearElement.textContent = new Date().getFullYear();
         }
 
-        // コラム記事を読み込み
-        await ColumnManager.loadColumns();
+        // WordPress APIからコラム記事を読み込み
+        await loadColumns();
 
         
         // 検索処理（ヘッダー検索欄用）
