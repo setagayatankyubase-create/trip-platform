@@ -636,21 +636,12 @@ const CardRenderer = {
 
   // 画像URLを処理（GitHubから取得、または既存URLを使用）
   optimizeImageUrl(url, eventId = null) {
-    // GitHubの画像URL生成関数が利用可能な場合
-    if (typeof window.getEventImageUrl === 'function' && eventId) {
-      // イベントIDがある場合は、GitHubから画像を取得
-      const githubUrl = window.getEventImageUrl(eventId, 'jpg');
-      // フォールバック: jpgが存在しない場合、pngを試す
-      // 実際の実装では、画像の存在確認はできないので、jpgを優先
-      return githubUrl;
-    }
-    
     // 既存のURLがある場合はそのまま返す（後方互換性のため）
-    if (url && typeof url === 'string') {
+    if (url && typeof url === 'string' && url.trim() !== '') {
       // 既に完全なURL（http:// または https://）の場合はそのまま返す
       if (url.startsWith('http://') || url.startsWith('https://')) {
-        // GitHubの画像URL（/images/で始まる）の場合はそのまま返す
-        if (url.includes('/images/')) {
+        // GitHubの画像URL（/assets/images/で始まる）の場合はそのまま返す
+        if (url.includes('/assets/images/')) {
           return url;
         }
         
@@ -671,17 +662,24 @@ const CardRenderer = {
         return url;
       }
       
-      // 相対パスの場合
+      // 相対パスの場合（/assets/images/で始まる場合）
+      if (url.startsWith('/assets/images/')) {
+        return url;
+      }
+      
+      // その他の相対パスの場合
       if (url.startsWith('/')) {
         return url;
       }
     }
     
-    // eventIdがある場合の最終的なフォールバック
+    // 画像がない場合（urlが空、null、または空白のみ）かつeventIdがある場合は、GitHubから取得
     if (eventId && typeof window.getEventImageUrl === 'function') {
-      return window.getEventImageUrl(eventId, 'jpg');
+      const githubUrl = window.getEventImageUrl(eventId, 'jpg');
+      return githubUrl;
     }
     
+    // フォールバック: 空文字列を返す
     return url || '';
   },
 

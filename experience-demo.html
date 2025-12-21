@@ -693,31 +693,11 @@
           }
         }
         
-        // ヘッダー検索欄の表示切り替え
-        let isHeaderSearchVisible = false;
-        const SHOW_THRESHOLD = 150;
-        const HIDE_THRESHOLD = 80;
-
-        function handleScroll() {
-          const header = document.getElementById('main-header');
-          const headerSearch = document.getElementById('header-search');
-          if (!header || !headerSearch) return;
-
-          const y = window.scrollY || window.pageYOffset || 0;
-
-          if (!isHeaderSearchVisible && y > SHOW_THRESHOLD) {
-            isHeaderSearchVisible = true;
-            header.classList.add('scrolled');
-            headerSearch.style.display = 'block';
-          } else if (isHeaderSearchVisible && y < HIDE_THRESHOLD) {
-            isHeaderSearchVisible = false;
-            header.classList.remove('scrolled');
-            headerSearch.style.display = 'none';
-          }
+        // デモページでは検索欄を常に非表示
+        const headerSearch = document.getElementById('header-search');
+        if (headerSearch) {
+          headerSearch.style.display = 'none';
         }
-        
-        window.addEventListener('scroll', handleScroll);
-        handleScroll();
 
         // 検索処理（ヘッダー検索欄用）
         window.handleSearch = function handleSearch(event) {

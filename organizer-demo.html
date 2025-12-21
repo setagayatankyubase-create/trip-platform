@@ -442,65 +442,38 @@
         meta.innerHTML = metaHtml;
       }
       
-      // イベント一覧
+      // イベント一覧（公開版と同じUIを使用）
       const eventCount = document.getElementById('event-count');
       if (eventCount) {
-        eventCount.textContent = `${events.length}件`;
+        eventCount.textContent = `${events.length}件のイベント`;
       }
-      
-      console.log('[organizer-demo.html] renderOrganizerDetail - events:', events);
-      console.log('[organizer-demo.html] renderOrganizerDetail - events.length:', events.length);
       
       const eventsContainer = document.getElementById('organizer-events');
       if (eventsContainer) {
         if (events.length === 0) {
-          eventsContainer.innerHTML = '<p style="color: #6c7a72; padding: 40px; text-align: center;">この提供元のイベントはありません</p>';
-        } else {
-          // デモ用のイベントカードを手動でレンダリング（experience-demo.htmlにリンク）
-          const eventsHtml = events.map(event => {
-            console.log('[organizer-demo.html] Rendering event:', event);
-            let badgesHtml = '';
-            if (event.isRecommended) {
-              badgesHtml += '<span class="badge recommended">おすすめ</span>';
-            }
-            if (event.isNew) {
-              badgesHtml += '<span class="badge new">新着</span>';
-            }
-            
-            const area = event.area || event.city || '';
-            const price = event.price ? event.price.toLocaleString() : '0';
-            const image = event.image || 'https://via.placeholder.com/800x600?text=No+Image';
-            
-          // イベント画像URLを取得（GitHubから、または既存URLを使用）
-          let imageUrl = image || event.image || '';
-          
-          // GitHubの画像URL生成関数が利用可能な場合
-          if (typeof window.getEventImageUrl === 'function' && event.id) {
-            // 既存のURLが完全なURL（http:// または https://）でない場合、GitHubから取得
-            if (!imageUrl || (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://') && !imageUrl.startsWith('/assets/images/'))) {
-              imageUrl = window.getEventImageUrl(event.id, 'jpg');
-            }
-          }
-          
-          return `
-            <a href="experience-demo.html?id=${event.id}" class="card-link" data-event-id="${event.id}">
-              <div class="card" data-event-id="${event.id}">
-                <div class="card-image-wrapper">
-                  <img src="${imageUrl}" alt="${event.title}" loading="lazy">
-                </div>
-                <div class="card-body">
-                  ${badgesHtml ? `<div class="card-badges">${badgesHtml}</div>` : ''}
-                  <div class="card-title">${event.title}</div>
-                  <div class="card-location">${area}, ${event.prefecture || ''}</div>
-                  <div class="card-price">¥ ${price}</div>
-                </div>
-              </div>
-            </a>
+          eventsContainer.innerHTML = `
+            <div class="empty-state" style="grid-column: 1 / -1;">
+              <div class="empty-state-icon">📅</div>
+              <h3>現在開催中のイベントはありません</h3>
+            </div>
           `;
-          }).join('');
-          
-          console.log('[organizer-demo.html] Events HTML length:', eventsHtml.length);
-          eventsContainer.innerHTML = eventsHtml;
+        } else {
+          // CardRenderer.renderListを使用（公開版と同じUI）
+          if (typeof CardRenderer !== 'undefined' && CardRenderer.renderList) {
+            CardRenderer.renderList(events, 'organizer-events');
+            
+            // デモページ用にリンク先を experience.html から experience-demo.html に変更
+            const links = eventsContainer.querySelectorAll('.card-link[href^="experience.html"]');
+            links.forEach(link => {
+              const href = link.getAttribute('href');
+              if (href && href.startsWith('experience.html')) {
+                link.setAttribute('href', href.replace('experience.html', 'experience-demo.html'));
+              }
+            });
+          } else {
+            // フォールバック（CardRendererが利用できない場合）
+            eventsContainer.innerHTML = '<p style="color: #6c7a72; padding: 40px; text-align: center;">イベントの読み込みに失敗しました</p>';
+          }
           
           // クリック計測を追加（必要に応じて）
           const links = eventsContainer.querySelectorAll('.card-link');
@@ -588,31 +561,11 @@
         // 提供元詳細をレンダリング
         renderOrganizerDetail(demoData.organizer, demoData.events || []);
         
-        // ヘッダー検索欄の表示切り替え
-        let isHeaderSearchVisible = false;
-        const SHOW_THRESHOLD = 150;
-        const HIDE_THRESHOLD = 80;
-
-        function handleScroll() {
-          const header = document.getElementById('main-header');
-          const headerSearch = document.getElementById('header-search');
-          if (!header || !headerSearch) return;
-
-          const y = window.scrollY || window.pageYOffset || 0;
-
-          if (!isHeaderSearchVisible && y > SHOW_THRESHOLD) {
-            isHeaderSearchVisible = true;
-            header.classList.add('scrolled');
-            headerSearch.style.display = 'block';
-          } else if (isHeaderSearchVisible && y < HIDE_THRESHOLD) {
-            isHeaderSearchVisible = false;
-            header.classList.remove('scrolled');
-            headerSearch.style.display = 'none';
-          }
+        // デモページでは検索欄を常に非表示
+        const headerSearch = document.getElementById('header-search');
+        if (headerSearch) {
+          headerSearch.style.display = 'none';
         }
-        
-        window.addEventListener('scroll', handleScroll);
-        handleScroll();
 
         // 検索処理（ヘッダー検索欄用）
         window.handleSearch = function handleSearch(event) {
