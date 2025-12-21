@@ -18,12 +18,6 @@
         <a href="index.html" class="logo">
           <img src="assets/sotonavi-logo.png" alt="そとなび" class="logo-image">
         </a>
-        <div class="header-search" id="header-search" style="display: none;">
-          <form class="header-search-form" onsubmit="handleSearch(event)">
-            <input type="text" placeholder="行きたい自然体験・場所を探す" name="q" class="header-search-input">
-            <button type="submit" class="header-search-button">検索</button>
-          </form>
-        </div>
       </div>
       <div class="nav-links">
         <a href="list.html">イベント一覧</a>
@@ -394,32 +388,6 @@
         // デモ認証チェック（セッション中に既に認証済みの場合）
         checkDemoAuth();
 
-        // ヘッダー検索欄の表示切り替え（ヒステリシス付きで点滅を防止）
-        let isHeaderSearchVisible = false;
-        const SHOW_THRESHOLD = 150; // この位置を超えたら表示
-        const HIDE_THRESHOLD = 80;  // この位置より上に戻ったら非表示
-
-        function handleScroll() {
-          const header = document.getElementById('main-header');
-          const headerSearch = document.getElementById('header-search');
-          if (!header || !headerSearch) return;
-
-          const y = window.scrollY || window.pageYOffset || 0;
-
-          if (!isHeaderSearchVisible && y > SHOW_THRESHOLD) {
-            isHeaderSearchVisible = true;
-            header.classList.add('scrolled');
-            headerSearch.style.display = 'block';
-          } else if (isHeaderSearchVisible && y < HIDE_THRESHOLD) {
-            isHeaderSearchVisible = false;
-            header.classList.remove('scrolled');
-            headerSearch.style.display = 'none';
-          }
-        }
-
-        window.addEventListener('scroll', handleScroll);
-        // 初期位置に応じて一度判定
-        handleScroll();
         
         // 検索処理（ヘッダー検索欄用）
         window.handleSearch = function handleSearch(event) {
