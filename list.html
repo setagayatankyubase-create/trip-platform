@@ -26,8 +26,21 @@
       </div>
     </div>
     <div class="search-bar">
-      <form class="search-form" id="main-search-form" onsubmit="handleSearch(event)">
-        <input type="text" id="search-query" placeholder="行きたい自然体験・場所を探す" name="q">
+      <div class="search-bar-wrapper" style="position: relative; display: flex; align-items: center; gap: 8px;">
+        <div class="search-category-wrapper" style="position: relative;">
+          <button type="button" class="category-menu-button" id="category-menu-button" aria-label="カテゴリメニュー">
+            <span class="hamburger-icon">
+              <span></span>
+              <span></span>
+              <span></span>
+            </span>
+          </button>
+          <div class="category-menu" id="category-menu">
+            <div class="category-menu-content" id="category-menu-list"></div>
+          </div>
+        </div>
+        <form class="search-form" id="main-search-form" onsubmit="handleSearch(event)" style="flex: 1;">
+          <input type="text" id="search-query" placeholder="行きたい自然体験・場所を探す" name="q">
         <select id="search-category" name="category">
           <option value="">すべてのカテゴリ</option>
         </select>
@@ -613,6 +626,20 @@
     }
 
     // 初期化
+    // カテゴリメニューを初期化（ホバーで表示されるので、事前にレンダリングしておく）
+    function initCategoryMenu() {
+      const menuList = document.getElementById('category-menu-list');
+      if (!menuList) return;
+
+      if (!window.eventData || !window.eventData.categories) return;
+      menuList.innerHTML = window.eventData.categories.map(cat => `
+        <a href="list.html?category=${cat.id}" class="category-menu-item">
+          <span class="icon">${cat.icon}</span>
+          <span>${cat.name}</span>
+        </a>
+      `).join('');
+    }
+
     document.addEventListener('DOMContentLoaded', async () => {
       try {
         // 一覧用インデックス＋メタデータのみを読み込み
@@ -623,6 +650,7 @@
           yearElement.textContent = new Date().getFullYear();
         }
         populateOptions();
+        initCategoryMenu(); // カテゴリメニューを初期化
         checkMobile();
         loadEvents();
         window.addEventListener('resize', checkMobile);

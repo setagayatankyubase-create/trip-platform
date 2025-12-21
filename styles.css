@@ -253,9 +253,10 @@ body {
   transform: translateY(-10px);
 }
 
-/* 親要素（header-search-wrapperまたはsearch-wrapper）にホバー時、またはメニュー自体にホバー時に表示 */
+/* 親要素（header-search-wrapper、search-wrapper、search-category-wrapper）にホバー時、またはメニュー自体にホバー時に表示 */
 .header-search-wrapper:hover .category-menu,
-.search-wrapper:hover .category-menu {
+.search-wrapper:hover .category-menu,
+.search-category-wrapper:hover .category-menu {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
