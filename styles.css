@@ -151,10 +151,14 @@ body {
   height: 500px;
   background: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)),
     url('/assets/winter.jpg') center/cover;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 60px;
+  transition: background-image 1.5s ease-in-out;
 }
 
 .hero-content {

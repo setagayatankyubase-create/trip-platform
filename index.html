@@ -39,7 +39,7 @@
   <!-- Hero Section -->
   <section class="hero-section">
     <div class="hero-content">
-      <h1 class="hero-title">東京のすぐそばに、まだ知らない自然がある</h1>
+      <h1 class="hero-title">東京のすぐそばに、まだ知らない<br>自然がある</h1>
       <div class="search-wrapper" style="position: relative;">
         <form class="hero-search-form" id="main-search-form" onsubmit="handleSearch(event)">
           <button type="button" class="category-menu-button" id="category-menu-button" aria-label="カテゴリメニュー">
@@ -446,8 +446,30 @@
       });
     }
 
+    // ヒーロー背景画像の自動切り替え
+    function setupHeroBackground() {
+      const heroSection = document.querySelector('.hero-section');
+      if (!heroSection) return;
+
+      const images = [
+        '/assets/winter.jpg',
+        '/assets/fuji.jpg'
+      ];
+      let currentIndex = 0;
+
+      function changeBackground() {
+        currentIndex = (currentIndex + 1) % images.length;
+        heroSection.style.backgroundImage = `linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url('${images[currentIndex]}')`;
+      }
+
+      // 5秒ごとに切り替え
+      setInterval(changeBackground, 5000);
+    }
+
     // 初期化（イベントデータ読み込み → 描画）
     document.addEventListener('DOMContentLoaded', async () => {
+      // ヒーロー背景画像の自動切り替えを開始
+      setupHeroBackground();
       try {
         // イベントデータを読み込み（data.js で定義）
         await loadEventData();
