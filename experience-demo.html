@@ -236,6 +236,24 @@
     <div id="demo-error" class="demo-error" style="display: none;">
       <h2>アクセスが拒否されました</h2>
       <p>このページはデモ用の限定公開ページです。<br>パスワード認証が必要です。</p>
+      <div style="max-width: 400px; margin: 32px auto 0;">
+        <form id="demo-password-form" onsubmit="handlePasswordSubmit(event)" style="display: flex; flex-direction: column; gap: 16px;">
+          <input 
+            type="password" 
+            id="demo-password-input" 
+            placeholder="パスワードを入力"
+            autocomplete="off"
+            style="padding: 12px 16px; border: 2px solid var(--border); border-radius: 8px; font-size: 1rem; outline: none;"
+            required
+          >
+          <button 
+            type="submit"
+            style="padding: 12px 24px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer;"
+          >
+            認証して表示
+          </button>
+        </form>
+      </div>
       <p style="margin-top: 24px;">
         <a href="organizer-list.html" style="color: var(--primary); text-decoration: underline;">提供元一覧に戻る</a>
       </p>
@@ -349,6 +367,28 @@
     // デモ用設定（GAS APIのURL）
     const DEMO_GAS_API_URL = 'https://script.google.com/macros/s/AKfycbyyjVTkFqxOf32P3pT2d9XfzPAir2ssEMj9u7-6kO1allkXUo1ey0bQbdcENK2Rl4lr-w/exec';
     
+    // パスワードフォームの送信処理（即座にリロード）
+    function handlePasswordSubmit(event) {
+      event.preventDefault();
+      const passwordInput = document.getElementById('demo-password-input');
+      const password = passwordInput.value.trim();
+      
+      if (!password) {
+        alert('パスワードを入力してください');
+        return;
+      }
+      
+      // パスワードをsessionStorageに保存（有効期限: 24時間）
+      const authData = {
+        password: password,
+        expiresAt: Date.now() + (24 * 60 * 60 * 1000) // 24時間
+      };
+      sessionStorage.setItem('demo_auth', JSON.stringify(authData));
+      
+      // 即座にリロード（データ取得はリロード後の処理で行う）
+      window.location.reload();
+    }
+
     // セッション中に既に認証済みかチェック（有効期限も確認）
     function getDemoPassword() {
       try {

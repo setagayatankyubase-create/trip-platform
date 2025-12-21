@@ -258,6 +258,18 @@
         const target = new Date(params.date);
         target.setHours(0, 0, 0, 0);
         filtered = filtered.filter(e => {
+          // dates配列を優先的にチェック（複数日程に対応）
+          if (e.dates && Array.isArray(e.dates) && e.dates.length > 0) {
+            const matched = e.dates.some(d => {
+              if (!d.date) return false;
+              const eventDate = new Date(d.date);
+              eventDate.setHours(0, 0, 0, 0);
+              return eventDate.getTime() === target.getTime();
+            });
+            if (matched) return true;
+          }
+          
+          // フォールバック: next_date / date_min / date_max をチェック
           const next = e.next_date ? new Date(e.next_date) : null;
           if (next) {
             next.setHours(0, 0, 0, 0);
@@ -285,6 +297,18 @@
         endOfWeek.setDate(startOfWeek.getDate() + 6);
 
         filtered = filtered.filter(e => {
+          // dates配列を優先的にチェック（複数日程に対応）
+          if (e.dates && Array.isArray(e.dates) && e.dates.length > 0) {
+            const matched = e.dates.some(d => {
+              if (!d.date) return false;
+              const eventDate = new Date(d.date);
+              eventDate.setHours(0, 0, 0, 0);
+              return eventDate >= startOfWeek && eventDate <= endOfWeek;
+            });
+            if (matched) return true;
+          }
+          
+          // フォールバック: next_date をチェック
           const next = e.next_date ? new Date(e.next_date) : null;
           if (!next) return false;
           next.setHours(0, 0, 0, 0);
@@ -351,27 +375,53 @@
             if (text.includes(q)) score += 4;
           }
 
-          // 日程の近さ（next_date / date_min / date_max）
+          // 日程の近さ（dates配列 / next_date / date_min / date_max）
           if (targetStart && targetEnd) {
-            let base = null;
-            if (event.next_date) {
-              base = new Date(event.next_date);
-            } else if (event.date_min) {
-              base = new Date(event.date_min);
+            let bestScore = 0;
+            
+            // dates配列を優先的にチェック（複数日程に対応）
+            if (event.dates && Array.isArray(event.dates) && event.dates.length > 0) {
+              event.dates.forEach(d => {
+                if (!d.date) return;
+                const eventDate = new Date(d.date);
+                eventDate.setHours(0, 0, 0, 0);
+                
+                if (eventDate >= targetStart && eventDate <= targetEnd) {
+                  bestScore = Math.max(bestScore, 5); // 期間内なら最高スコア
+                } else {
+                  const center = new Date((targetStart.getTime() + targetEnd.getTime()) / 2);
+                  const diffDays = Math.abs(eventDate - center) / (1000 * 60 * 60 * 24);
+                  if (diffDays <= 7) {
+                    bestScore = Math.max(bestScore, Math.max(1, 4 - Math.floor(diffDays)));
+                  }
+                }
+              });
             }
+            
+            // フォールバック: next_date / date_min
+            if (bestScore === 0) {
+              let base = null;
+              if (event.next_date) {
+                base = new Date(event.next_date);
+              } else if (event.date_min) {
+                base = new Date(event.date_min);
+              }
 
-            if (base) {
-              base.setHours(0, 0, 0, 0);
-              if (base >= targetStart && base <= targetEnd) {
-                score += 5;
-              } else {
-                const center = new Date((targetStart.getTime() + targetEnd.getTime()) / 2);
-                const diffDays = Math.abs(base - center) / (1000 * 60 * 60 * 24);
-                if (diffDays <= 7) {
-                  score += Math.max(1, 4 - Math.floor(diffDays)); // 0〜7日差なら 1〜4点
+              if (base) {
+                base.setHours(0, 0, 0, 0);
+                if (base >= targetStart && base <= targetEnd) {
+                  bestScore = 5;
+                } else {
+                  const center = new Date((targetStart.getTime() + targetEnd.getTime()) / 2);
+                  const diffDays = Math.abs(base - center) / (1000 * 60 * 60 * 24);
+                  if (diffDays <= 7) {
+                    bestScore = Math.max(1, 4 - Math.floor(diffDays));
+                  }
                 }
               }
             }
+            
+            score += bestScore;
           }
 
           return { event, score };
