@@ -705,6 +705,14 @@
       return titleEl ? titleEl.textContent : '';
     }
 
+    // 読了時間を計算
+    function calculateReadingTime(text) {
+      const wordsPerMinute = 300;
+      const textLength = text.replace(/<[^>]*>/g, '').split(/\s+/).length;
+      const minutes = Math.ceil(textLength / wordsPerMinute);
+      return `${minutes}分`;
+    }
+
     // サイドバーを読み込み
     async function loadSidebar(currentId) {
       try {
