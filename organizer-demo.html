@@ -261,8 +261,25 @@
       }
     }
     
-    // デモデータを取得
+    // デモデータを取得（キャッシュ機能付き）
     async function fetchDemoData(password) {
+      const CACHE_KEY = 'demo_data_cache_organizer';
+      const CACHE_EXPIRY = 5 * 60 * 1000; // 5分間キャッシュ
+      
+      // キャッシュをチェック
+      try {
+        const cachedStr = sessionStorage.getItem(CACHE_KEY);
+        if (cachedStr) {
+          const cached = JSON.parse(cachedStr);
+          if (Date.now() < cached.expiresAt && cached.password === password) {
+            console.log('[organizer-demo] Using cached demo data');
+            return cached.data;
+          }
+        }
+      } catch (e) {
+        // キャッシュの読み込みに失敗した場合は無視して続行
+      }
+      
       try {
         const url = new URL(DEMO_GAS_API_URL);
         url.searchParams.set('password', password);
@@ -276,6 +293,18 @@
         
         if (!data.success) {
           throw new Error(data.error || 'データの取得に失敗しました');
+        }
+        
+        // キャッシュに保存
+        try {
+          sessionStorage.setItem(CACHE_KEY, JSON.stringify({
+            data: data,
+            password: password,
+            expiresAt: Date.now() + CACHE_EXPIRY
+          }));
+        } catch (e) {
+          // キャッシュの保存に失敗した場合は無視
+          console.warn('[organizer-demo] Failed to cache demo data:', e);
         }
         
         return data;
