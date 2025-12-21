@@ -190,24 +190,57 @@
         </a>
       `).join('');
 
-      // ホバー時に位置を更新
+      const menu = document.querySelector('.category-menu');
       const searchWrapper = document.querySelector('.search-wrapper');
+      let hideTimer = null;
+
+      // メニューを表示する関数
+      function showMenu() {
+        if (hideTimer) {
+          clearTimeout(hideTimer);
+          hideTimer = null;
+        }
+        positionCategoryMenu();
+        menu.style.opacity = '1';
+        menu.style.visibility = 'visible';
+        menu.style.pointerEvents = 'auto';
+        menu.style.transform = 'translateY(0)';
+      }
+
+      // メニューを非表示にする関数（3秒後）
+      function hideMenu() {
+        if (hideTimer) {
+          clearTimeout(hideTimer);
+        }
+        hideTimer = setTimeout(() => {
+          menu.style.opacity = '0';
+          menu.style.visibility = 'hidden';
+          menu.style.pointerEvents = 'none';
+          menu.style.transform = 'translateY(-10px)';
+          hideTimer = null;
+        }, 3000); // 3秒後
+      }
+
+      // 検索バーにカーソルが入った時
       if (searchWrapper) {
-        searchWrapper.addEventListener('mouseenter', () => {
-          positionCategoryMenu();
-        });
+        searchWrapper.addEventListener('mouseenter', showMenu);
+        searchWrapper.addEventListener('mouseleave', hideMenu);
+      }
+
+      // メニュー自体にカーソルが入った時
+      if (menu) {
+        menu.addEventListener('mouseenter', showMenu);
+        menu.addEventListener('mouseleave', hideMenu);
       }
 
       // リサイズ/スクロール時にも位置を更新
       window.addEventListener('resize', () => {
-        const menu = document.querySelector('.category-menu');
         if (menu && menu.style.visibility !== 'hidden') {
           positionCategoryMenu();
         }
       });
 
       window.addEventListener('scroll', () => {
-        const menu = document.querySelector('.category-menu');
         if (menu && menu.style.visibility !== 'hidden') {
           positionCategoryMenu();
         }

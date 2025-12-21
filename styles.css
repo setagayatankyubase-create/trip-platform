@@ -299,15 +299,8 @@ body {
   position: relative;
 }
 
-/* 親要素（search-wrapper、search-bar-wrapper）にホバー時、またはメニュー自体にホバー時に表示 */
-.search-wrapper:hover .category-menu,
-.search-bar-wrapper:hover .category-menu,
-.category-menu:hover {
-  opacity: 1;
-  visibility: visible;
-  pointer-events: auto;
-  transform: translateY(0);
-}
+/* メニューの表示はJavaScriptで制御するため、:hoverは削除 */
+/* カーソルが離れても3秒間は開いたままにする機能をJavaScriptで実装 */
 
 .category-menu-content {
   display: grid;
