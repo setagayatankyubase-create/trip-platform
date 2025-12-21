@@ -11,74 +11,307 @@
     window.GITHUB_RAW_BASE = "https://raw.githubusercontent.com/setagayatankyubase-create/trip-platform/main";
   </script>
   <style>
+    .column-detail-wrapper {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    .breadcrumbs {
+      padding: 20px 0 10px 0;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    .breadcrumbs a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+
+    .breadcrumbs a:hover {
+      text-decoration: underline;
+    }
+
+    .breadcrumbs span {
+      margin: 0 8px;
+      color: var(--text-secondary);
+    }
+
     .column-detail-header {
       margin-bottom: 32px;
     }
-    .column-detail-date {
-      color: var(--text-secondary);
-      font-size: 0.9rem;
-      margin-bottom: 12px;
+
+    .column-detail-category {
+      display: inline-block;
+      background: var(--primary);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-bottom: 16px;
     }
+
     .column-detail-title {
-      font-size: 2rem;
+      font-size: 2.2rem;
       font-weight: 700;
       color: var(--text);
       margin: 0 0 16px 0;
       line-height: 1.4;
     }
+
+    .column-detail-meta {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    .column-detail-date {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
     .column-detail-author {
       color: var(--text-secondary);
       font-size: 0.9rem;
-      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
+
+    .column-detail-author::before {
+      content: "著者:";
+      font-weight: 600;
+    }
+
     .column-detail-image {
       width: 100%;
-      max-width: 800px;
-      height: 400px;
+      height: 450px;
       object-fit: cover;
       border-radius: 12px;
       margin-bottom: 32px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
+
     .column-detail-content {
-      max-width: 800px;
-      margin: 0 auto;
-      line-height: 1.8;
+      line-height: 2;
       color: var(--text);
+      font-size: 1rem;
     }
+
+    .column-detail-content > *:first-child {
+      margin-top: 0;
+    }
+
     .column-detail-content h2 {
-      font-size: 1.5rem;
+      font-size: 1.8rem;
       font-weight: 700;
-      margin: 32px 0 16px 0;
+      margin: 48px 0 24px 0;
       color: var(--text);
-      border-bottom: 2px solid var(--primary);
-      padding-bottom: 8px;
+      padding-bottom: 12px;
+      border-bottom: 3px solid var(--primary);
+      position: relative;
     }
+
+    .column-detail-content h2::before {
+      content: "";
+      position: absolute;
+      bottom: -3px;
+      left: 0;
+      width: 60px;
+      height: 3px;
+      background: var(--accent);
+    }
+
     .column-detail-content h3 {
+      font-size: 1.4rem;
+      font-weight: 600;
+      margin: 36px 0 16px 0;
+      color: var(--text);
+    }
+
+    .column-detail-content h4 {
       font-size: 1.2rem;
       font-weight: 600;
       margin: 24px 0 12px 0;
       color: var(--text);
     }
+
     .column-detail-content p {
-      margin-bottom: 16px;
+      margin-bottom: 24px;
+      line-height: 2;
     }
+
+    .column-detail-content img {
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+      margin: 24px 0;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
     .column-detail-content ul,
     .column-detail-content ol {
-      margin-bottom: 16px;
-      padding-left: 24px;
+      margin: 24px 0;
+      padding-left: 32px;
     }
+
     .column-detail-content li {
-      margin-bottom: 8px;
+      margin-bottom: 12px;
+      line-height: 2;
     }
-    .column-detail-back {
+
+    .column-detail-content blockquote {
+      border-left: 4px solid var(--primary);
+      padding: 16px 24px;
+      margin: 24px 0;
+      background: #f0f5f1;
+      border-radius: 4px;
+      font-style: italic;
+    }
+
+    .column-detail-content strong {
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .column-detail-content a {
+      color: var(--primary);
+      text-decoration: underline;
+    }
+
+    .column-detail-content a:hover {
+      color: var(--hover);
+    }
+
+    .column-detail-footer {
+      margin-top: 48px;
+      padding-top: 32px;
+      border-top: 2px solid var(--border);
+    }
+
+    .column-detail-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 32px;
+    }
+
+    .column-detail-tag {
       display: inline-block;
+      background: #f0f5f1;
+      color: var(--text);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+
+    .column-detail-tag:hover {
+      background: var(--border);
+    }
+
+    .column-detail-share {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 32px;
+    }
+
+    .column-detail-share-label {
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .column-detail-share-buttons {
+      display: flex;
+      gap: 12px;
+    }
+
+    .share-button {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      font-size: 1.2rem;
+      transition: transform 0.2s;
+    }
+
+    .share-button:hover {
+      transform: scale(1.1);
+    }
+
+    .share-button.twitter {
+      background: #1DA1F2;
+      color: white;
+    }
+
+    .share-button.facebook {
+      background: #1877F2;
+      color: white;
+    }
+
+    .share-button.line {
+      background: #00C300;
+      color: white;
+    }
+
+    .column-detail-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
       margin-bottom: 24px;
       color: var(--primary);
       text-decoration: none;
       font-weight: 600;
+      transition: color 0.2s;
     }
+
     .column-detail-back:hover {
+      color: var(--hover);
       text-decoration: underline;
+    }
+
+    .column-detail-back::before {
+      content: "←";
+      font-size: 1.2rem;
+    }
+
+    @media (max-width: 768px) {
+      .column-detail-wrapper {
+        padding: 0 16px;
+      }
+
+      .column-detail-title {
+        font-size: 1.6rem;
+      }
+
+      .column-detail-image {
+        height: 250px;
+      }
+
+      .column-detail-content h2 {
+        font-size: 1.4rem;
+        margin: 32px 0 16px 0;
+      }
+
+      .column-detail-content h3 {
+        font-size: 1.2rem;
+      }
+
+      .column-detail-meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
     }
   </style>
 </head>
@@ -87,7 +320,7 @@
     <div class="nav">
       <div class="nav-left">
         <a href="index.html" class="logo">
-          <img src="assets/sotonavi-logo.png" alt="そとなび" class="logo-image">
+          <img src="assets/logo.png" alt="そとなび" class="logo-image">
         </a>
       </div>
       <div class="nav-links">
@@ -99,18 +332,54 @@
   </header>
 
   <main class="container">
-    <a href="column.html" class="column-detail-back">← コラム一覧に戻る</a>
-    
-    <div class="column-detail-header">
-      <div class="column-detail-date" id="column-date"></div>
-      <h1 class="column-detail-title" id="column-title"></h1>
-      <div class="column-detail-author" id="column-author"></div>
-    </div>
+    <div class="column-detail-wrapper">
+      <nav class="breadcrumbs">
+        <a href="index.html">ホーム</a>
+        <span>></span>
+        <a href="column.html">コラム</a>
+        <span>></span>
+        <span id="breadcrumb-title">記事</span>
+      </nav>
 
-    <img id="column-image" class="column-detail-image" alt="" style="display: none;">
+      <a href="column.html" class="column-detail-back">コラム一覧に戻る</a>
 
-    <div class="column-detail-content" id="column-content">
-      <!-- 記事内容がここに動的に生成されます -->
+      <article>
+        <div class="column-detail-header">
+          <div class="column-detail-category" id="column-category">コラム</div>
+          <h1 class="column-detail-title" id="column-title"></h1>
+          <div class="column-detail-meta">
+            <div class="column-detail-date" id="column-date"></div>
+            <div class="column-detail-author" id="column-author"></div>
+          </div>
+        </div>
+
+        <img id="column-image" class="column-detail-image" alt="" style="display: none;">
+
+        <div class="column-detail-content" id="column-content">
+          <!-- 記事内容がここに動的に生成されます -->
+        </div>
+
+        <div class="column-detail-footer">
+          <div class="column-detail-tags" id="column-tags">
+            <!-- タグがここに動的に生成されます -->
+          </div>
+
+          <div class="column-detail-share">
+            <span class="column-detail-share-label">シェア</span>
+            <div class="column-detail-share-buttons">
+              <a href="#" class="share-button twitter" id="share-twitter" target="_blank" rel="noopener" aria-label="Twitterでシェア">
+                <span>🐦</span>
+              </a>
+              <a href="#" class="share-button facebook" id="share-facebook" target="_blank" rel="noopener" aria-label="Facebookでシェア">
+                <span>f</span>
+              </a>
+              <a href="#" class="share-button line" id="share-line" target="_blank" rel="noopener" aria-label="LINEでシェア">
+                <span>L</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </article>
     </div>
   </main>
 
@@ -142,6 +411,38 @@
     function getSlugFromUrl() {
       const params = new URLSearchParams(window.location.search);
       return params.get('slug');
+    }
+
+    // シェア用URLを生成
+    function getShareUrl() {
+      return window.location.href;
+    }
+
+    // シェア用タイトルを取得
+    function getShareTitle() {
+      const titleEl = document.getElementById('column-title');
+      return titleEl ? titleEl.textContent : '';
+    }
+
+    // シェアボタンのURLを設定
+    function setupShareButtons() {
+      const url = encodeURIComponent(getShareUrl());
+      const title = encodeURIComponent(getShareTitle());
+      const text = encodeURIComponent(`${getShareTitle()} - そとなび`);
+
+      const twitterEl = document.getElementById('share-twitter');
+      const facebookEl = document.getElementById('share-facebook');
+      const lineEl = document.getElementById('share-line');
+
+      if (twitterEl) {
+        twitterEl.href = `https://twitter.com/intent/tweet?url=${url}&text=${text}`;
+      }
+      if (facebookEl) {
+        facebookEl.href = `https://www.facebook.com/sharer/sharer.php?u=${url}`;
+      }
+      if (lineEl) {
+        lineEl.href = `https://social-plugins.line.me/lineit/share?url=${url}`;
+      }
     }
 
     // コラム記事詳細を読み込み
@@ -185,8 +486,10 @@
         const column = await res.json();
 
         // タイトルを設定
-        document.title = `${column.title || 'コラム'} | そとなび`;
-        document.getElementById('column-title').textContent = column.title || 'タイトルなし';
+        const title = column.title || 'タイトルなし';
+        document.title = `${title} | そとなび`;
+        document.getElementById('column-title').textContent = title;
+        document.getElementById('breadcrumb-title').textContent = title;
 
         // 日付を設定
         if (column.date) {
@@ -197,15 +500,32 @@
 
         // 著者を設定
         if (column.author) {
-          document.getElementById('column-author').textContent = `著者: ${column.author}`;
+          document.getElementById('column-author').textContent = column.author;
+        } else {
+          document.getElementById('column-author').style.display = 'none';
         }
 
         // 画像を設定
         if (column.image) {
           const imgEl = document.getElementById('column-image');
           imgEl.src = column.image;
-          imgEl.alt = column.title || '';
+          imgEl.alt = title;
           imgEl.style.display = 'block';
+        }
+
+        // カテゴリを設定
+        if (column.category) {
+          document.getElementById('column-category').textContent = column.category;
+        }
+
+        // タグを設定
+        const tagsEl = document.getElementById('column-tags');
+        if (column.tags && Array.isArray(column.tags) && column.tags.length > 0) {
+          tagsEl.innerHTML = column.tags.map(tag => 
+            `<a href="column.html?tag=${encodeURIComponent(tag)}" class="column-detail-tag">#${tag}</a>`
+          ).join('');
+        } else {
+          tagsEl.style.display = 'none';
         }
 
         // 本文を設定
@@ -218,6 +538,9 @@
             </div>
           `;
         }
+
+        // シェアボタンを設定
+        setupShareButtons();
       } catch (error) {
         console.error('Error loading column detail:', error);
         document.getElementById('column-content').innerHTML = `
