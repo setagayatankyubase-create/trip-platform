@@ -30,6 +30,13 @@ const normalizeId = (v) => {
   return s.length > 0 ? s : undefined;
 };
 
+// index配列の正規化（organizerId / organizer_id どちらでも organizerId に統一）
+const normalizeIndex = (arr) =>
+  (Array.isArray(arr) ? arr : []).map(e => ({
+    ...e,
+    organizerId: normalizeId(e.organizerId || e.organizer_id),
+  }));
+
 // 「IDの健全性」：有効率で判定（some()は危険）
 const organizerIdValidRate = (arr) => {
   const a = Array.isArray(arr) ? arr : [];
@@ -190,12 +197,16 @@ window.loadEventIndex = function loadEventIndex() {
       if (parsed?.timestamp && parsed?.data && parsed?.version === EVENT_CACHE_VERSION) {
         const age = Date.now() - parsed.timestamp;
         if (age < CACHE_TTL_MS) {
-          const rate = organizerIdValidRate(parsed.data);
-          if (rate >= 0.9) {
+          // キャッシュが organizerId を含まない場合は破棄
+          if (
+            Array.isArray(parsed.data) &&
+            parsed.data.length > 0 &&
+            !("organizerId" in parsed.data[0])
+          ) {
+            console.warn("[CACHE] index cache missing organizerId. ignore.");
+          } else {
             window.eventIndex = parsed.data;
             return Promise.resolve(window.eventIndex);
-          } else {
-            console.warn("[CACHE] eventIndex organizerId rate low. Ignore cache.", rate);
           }
         }
       }
@@ -240,11 +251,9 @@ window.loadEventIndex = function loadEventIndex() {
       }
     }
 
-    // 3) organizerId 正規化
-    const index = (arr || []).map(e => ({
-      ...e,
-      organizerId: normalizeId(e.organizerId),
-    }));
+    // 3) organizerId 正規化（organizerId / organizer_id どちらでも organizerId に統一）
+    const raw = Array.isArray(arr) ? arr : [];
+    const index = normalizeIndex(raw);
 
     // 4) まだ全滅ならエラーを見える化（原因は生成/配信/パス）
     const finalRate = organizerIdValidRate(index);
