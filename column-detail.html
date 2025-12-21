@@ -96,9 +96,6 @@
       }
     }
 
-    .column-content-wrapper {
-      max-width: 700px;
-    }
 
     .column-meta-bar {
       display: flex;
@@ -243,6 +240,7 @@
     }
 
     .column-detail-content {
+      max-width: 700px;
       line-height: 2;
       color: var(--text);
       font-size: 1.05rem;
@@ -561,6 +559,13 @@
     .sidebar-list-item a:hover {
       color: var(--primary);
     }
+
+    /* デバッグ用（右が表示されているか確認するため） */
+    /* コメントを外して確認したら、またコメントに戻す */
+    /*
+    .column-sidebar { outline: 3px solid red; }
+    .column-detail-main { outline: 3px solid blue; }
+    */
   </style>
 </head>
 <body>
@@ -764,7 +769,10 @@
         // columns_indexから記事一覧を取得
         const indexUrl = "/data/columns_index.json";
         const indexRes = await fetch(indexUrl, { cache: "no-store" });
-        if (!indexRes.ok) return;
+        if (!indexRes.ok) {
+          console.error('[column-detail] columns_index.json failed:', indexRes.status, indexRes.statusText);
+          return;
+        }
 
         const indexData = await indexRes.json();
         const columnsIndex = Array.isArray(indexData?.columns_index) 
@@ -919,9 +927,11 @@
         const url = `/data/columns/${columnId}.json`;
         const res = await fetch(url, { cache: "no-store" });
         if (!res.ok) {
+          console.error('[column-detail] column json failed:', url, res.status);
           throw new Error(`HTTP error! status: ${res.status}`);
         }
-        const column = await res.json();
+        const raw = await res.json();
+        const column = raw.column || raw; // ラッパー形式（{column: {...}}）にも対応
 
         // タイトルを設定
         const title = column.title || 'タイトルなし';
