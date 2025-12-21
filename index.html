@@ -27,6 +27,18 @@
         <a href="index.html" class="logo">
           <img src="assets/sotonavi-logo.png" alt="そとなび" class="logo-image">
         </a>
+        <div class="header-search-wrapper" style="position: relative;">
+          <button type="button" class="category-menu-button" id="category-menu-button" aria-label="カテゴリメニュー">
+            <span class="hamburger-icon">
+              <span></span>
+              <span></span>
+              <span></span>
+            </span>
+          </button>
+          <div class="category-menu" id="category-menu">
+            <div class="category-menu-content" id="category-menu-list"></div>
+          </div>
+        </div>
         <div class="header-search" id="header-search" style="display: none;">
           <form class="header-search-form" onsubmit="handleSearch(event)">
             <input type="text" placeholder="行きたい自然体験・場所を探す" name="q" class="header-search-input">
@@ -46,22 +58,10 @@
   <section class="hero-section">
     <div class="hero-content">
       <h1 class="hero-title">東京のすぐそばに、まだ知らない自然がある</h1>
-      <div class="search-wrapper" style="position: relative;">
-        <form class="hero-search-form" id="main-search-form" onsubmit="handleSearch(event)">
-          <button type="button" class="category-menu-button" id="category-menu-button" aria-label="カテゴリメニュー">
-            <span class="hamburger-icon">
-              <span></span>
-              <span></span>
-              <span></span>
-            </span>
-          </button>
-          <input type="text" id="search-query" placeholder="行きたい自然体験・場所を探す" name="q" class="hero-search-input">
-          <button type="submit" class="hero-search-button">検索</button>
-        </form>
-        <div class="category-menu" id="category-menu">
-          <div class="category-menu-content" id="category-menu-list"></div>
-        </div>
-      </div>
+      <form class="hero-search-form" id="main-search-form" onsubmit="handleSearch(event)">
+        <input type="text" id="search-query" placeholder="行きたい自然体験・場所を探す" name="q" class="hero-search-input">
+        <button type="submit" class="hero-search-button">検索</button>
+      </form>
       <p class="hero-subtext">週末の外日和を、そとなびで</p>
     </div>
   </section>

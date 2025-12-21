@@ -159,22 +159,24 @@ const EventPageRenderer = {
       const dateObj = new Date(d.date);
       if (isNaN(dateObj.getTime())) return;
       
+      const year = dateObj.getFullYear();
       const month = dateObj.getMonth() + 1;
       const day = dateObj.getDate();
       const weekday = ['日', '月', '火', '水', '木', '金', '土'][dateObj.getDay()];
       const timeStr = d.time || '';
+      const dateStr = `${year}年${month}月${day}日（${weekday}）${timeStr}`;
 
       if (datesList) {
         const li = document.createElement('li');
         li.style.cssText = 'margin-bottom: 12px; font-size: 1rem;';
-        li.innerHTML = `<span>${month}/${day}(${weekday}) ${timeStr}</span>`;
+        li.innerHTML = `<span>${dateStr}</span>`;
         datesList.appendChild(li);
       }
 
       if (bookingDateSelect) {
         const option = document.createElement('option');
         option.value = d.date;
-        option.textContent = `${month}/${day}(${weekday}) ${timeStr}`;
+        option.textContent = dateStr;
         bookingDateSelect.appendChild(option);
       }
     });
