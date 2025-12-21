@@ -31,7 +31,7 @@ const normalizeId = (v) => {
 };
 
 // GitHubから画像URLを生成するヘルパー関数
-// GitHub Pagesを使用する場合は相対パス、GitHub Rawを使用する場合は完全URLを返す
+// assets/images/配下の画像を取得
 function getGitHubImageUrl(imagePath) {
   if (!imagePath) return '';
   
@@ -42,14 +42,14 @@ function getGitHubImageUrl(imagePath) {
   
   // 相対パスの場合、GitHub Pagesの場合はそのまま、GitHub Rawの場合は完全URLに変換
   // GitHub Pagesを使用する場合（推奨）
-  // 例: /images/events/evt-001.jpg
+  // 例: /assets/images/events/evt-001.jpg
   if (imagePath.startsWith('/')) {
     return imagePath;
   }
   
-  // 相対パスでない場合は、/images/プレフィックスを追加
-  // 例: events/evt-001.jpg -> /images/events/evt-001.jpg
-  return `/images/${imagePath}`;
+  // 相対パスでない場合は、/assets/images/プレフィックスを追加
+  // 例: events/evt-001.jpg -> /assets/images/events/evt-001.jpg
+  return `/assets/images/${imagePath}`;
 }
 
 // イベント画像URLを取得
