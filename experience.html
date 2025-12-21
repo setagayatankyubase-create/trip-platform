@@ -64,6 +64,7 @@
       gap: 18px;
       margin-top: 12px;
       align-items: start;
+      grid-auto-rows: max-content;
     }
     .card {
       background: var(--card);
@@ -72,6 +73,9 @@
       padding: 24px;
     }
     .card.booking {
+      align-self: start;
+      height: auto !important;
+      min-height: 0 !important;
       padding: 16px 16px 0 16px;
       margin-bottom: 0;
       padding-bottom: 0;
@@ -142,6 +146,9 @@
       padding-bottom: 0;
     }
     .card.booking {
+      align-self: start;
+      height: auto !important;
+      min-height: 0 !important;
       padding: 16px 16px 0 16px;
       margin-bottom: 0;
       padding-bottom: 0;
