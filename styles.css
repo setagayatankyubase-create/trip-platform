@@ -207,6 +207,7 @@ body {
 
 .hero-search-form {
   display: flex;
+  align-items: center;
   gap: 0;
   max-width: 700px;
   margin: 0 auto 16px;
@@ -332,6 +333,8 @@ body {
   border: none;
   font-size: 0.95rem;
   outline: none;
+  height: 56px;
+  box-sizing: border-box;
 }
 
 .hero-search-input::placeholder {
@@ -349,6 +352,11 @@ body {
   cursor: pointer;
   transition: background 0.2s;
   white-space: nowrap;
+  height: 56px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .hero-search-button:hover {
