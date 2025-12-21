@@ -636,7 +636,7 @@ const CardRenderer = {
     let reviewCount = event.reviewCount;
     
     if (!rating || !reviewCount) {
-      const organizer = eventData.organizers.find(o => o.id === event.organizerId);
+      const organizer = eventData.organizers.find(o => o.id === (event.organizerId || event.organizer_id));
       if (organizer) {
         rating = organizer.rating;
         reviewCount = organizer.reviewCount;

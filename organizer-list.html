@@ -276,7 +276,7 @@
           const eventId = link.getAttribute('data-event-id');
           if (typeof ClickTracker !== 'undefined' && ClickTracker.track) {
             const event = events.find(ev => ev.id === eventId);
-            const organizerId = event ? event.organizerId : '';
+            const organizerId = event ? (event.organizerId || event.organizer_id || '') : '';
             ClickTracker.track(eventId, organizerId);
           }
         });
@@ -348,7 +348,7 @@
       }
 
       container.innerHTML = eventData.organizers.map(org => {
-        const events = eventData.events.filter(e => e.organizerId === org.id);
+        const events = eventData.events.filter(e => (e.organizerId || e.organizer_id) === org.id);
         return `
           <div class="organizer-card">
             <div class="organizer-header">
