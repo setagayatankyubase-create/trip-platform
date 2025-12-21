@@ -634,17 +634,20 @@ const CardRenderer = {
     return expanded;
   },
 
-  // 画像URLを処理（GitHubから取得、または既存URLを使用）
+  // 画像URLを処理（GitHubを優先、なければ既存URLを使用）
   optimizeImageUrl(url, eventId = null) {
-    // 既存のURLがある場合はそのまま返す（後方互換性のため）
+    // eventIdがある場合は、GitHubの画像を優先
+    if (eventId && typeof window.getEventImageUrl === 'function') {
+      const githubUrl = window.getEventImageUrl(eventId, 'jpg');
+      if (githubUrl) {
+        return githubUrl;
+      }
+    }
+    
+    // GitHubの画像がない場合、既存のURLを使用（フォールバック）
     if (url && typeof url === 'string' && url.trim() !== '') {
-      // 既に完全なURL（http:// または https://）の場合はそのまま返す
+      // 完全なURL（http:// または https://）の場合
       if (url.startsWith('http://') || url.startsWith('https://')) {
-        // GitHubの画像URL（/assets/images/で始まる）の場合はそのまま返す
-        if (url.includes('/assets/images/')) {
-          return url;
-        }
-        
         // Unsplash などの外部サービスは、既存の最適化処理を適用
         try {
           const u = new URL(url);
@@ -662,21 +665,10 @@ const CardRenderer = {
         return url;
       }
       
-      // 相対パスの場合（/assets/images/で始まる場合）
-      if (url.startsWith('/assets/images/')) {
-        return url;
-      }
-      
-      // その他の相対パスの場合
+      // 相対パスの場合
       if (url.startsWith('/')) {
         return url;
       }
-    }
-    
-    // 画像がない場合（urlが空、null、または空白のみ）かつeventIdがある場合は、GitHubから取得
-    if (eventId && typeof window.getEventImageUrl === 'function') {
-      const githubUrl = window.getEventImageUrl(eventId, 'jpg');
-      return githubUrl;
     }
     
     // フォールバック: 空文字列を返す

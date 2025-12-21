@@ -62,18 +62,20 @@ const EventPageRenderer = {
   renderGallery(event) {
     const mainImage = document.getElementById('event-main-image');
     if (mainImage) {
-      // イベント画像URLを取得（GitHubから、または既存URLを使用）
+      // イベント画像URLを取得（GitHubを優先、なければ既存URLを使用）
       const rawImageUrl = event.image || event.thumb || event.mainImage || '';
       
-      // CardRenderer.optimizeImageUrlを使用（画像がない場合もGitHubから取得）
+      // CardRenderer.optimizeImageUrlを使用（GitHubを優先）
       let imageUrl = '';
       if (typeof CardRenderer !== 'undefined' && CardRenderer.optimizeImageUrl) {
         imageUrl = CardRenderer.optimizeImageUrl(rawImageUrl, event.id);
       } else {
-        // CardRendererが利用できない場合のフォールバック
-        imageUrl = rawImageUrl;
-        if (!imageUrl && event.id && typeof window.getEventImageUrl === 'function') {
+        // CardRendererが利用できない場合のフォールバック（GitHubを優先）
+        if (event.id && typeof window.getEventImageUrl === 'function') {
           imageUrl = window.getEventImageUrl(event.id, 'jpg');
+        }
+        if (!imageUrl) {
+          imageUrl = rawImageUrl;
         }
       }
       
