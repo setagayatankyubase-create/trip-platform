@@ -500,6 +500,63 @@
         }
       }
 
+      // 日付検索の場合、詳細JSONから dates 配列を補完
+      if (params.date && index.length > 0) {
+        try {
+          const target = new Date(params.date);
+          target.setHours(0, 0, 0, 0);
+          
+          // date_min と date_max で候補を絞り込み（範囲内にある可能性のあるイベントのみ）
+          // ただし、date_min/date_maxが範囲外でも念のためチェック（next_dateも考慮）
+          const candidateIds = index
+            .filter(e => {
+              // date_min/date_maxがある場合は範囲内かチェック
+              if (e.date_min && e.date_max) {
+                const min = new Date(e.date_min);
+                const max = new Date(e.date_max);
+                min.setHours(0, 0, 0, 0);
+                max.setHours(0, 0, 0, 0);
+                // 範囲内なら候補
+                if (target >= min && target <= max) return true;
+              }
+              // date_min/date_maxがない、または範囲外でも、next_dateが一致する可能性を考慮
+              if (e.next_date) {
+                const next = new Date(e.next_date);
+                next.setHours(0, 0, 0, 0);
+                // next_dateが一致する場合は候補（ただし、date_min/date_maxがある場合は既にチェック済み）
+                if (next.getTime() === target.getTime() && (!e.date_min || !e.date_max)) return true;
+              }
+              // どちらもない場合は詳細を確認
+              return !e.date_min && !e.date_max && !e.next_date;
+            })
+            .map(e => e.id)
+            .filter(Boolean);
+          
+          // 候補の詳細JSONを読み込んで dates 配列を補完
+          const detailPromises = candidateIds.map(id => 
+            loadEventDetail(id).catch(() => null)
+          );
+          const details = await Promise.all(detailPromises);
+          const detailMap = {};
+          details.forEach(d => {
+            if (d && d.id && d.dates && Array.isArray(d.dates)) {
+              detailMap[d.id] = d;
+            }
+          });
+          
+          // index に dates 配列を補完
+          index = index.map(item => {
+            const detail = detailMap[item.id];
+            if (detail && detail.dates) {
+              return { ...item, dates: detail.dates };
+            }
+            return item;
+          });
+        } catch (e) {
+          console.warn('Failed to enrich dates:', e);
+        }
+      }
+
       // 検索・フィルタ適用
       currentEvents = filterIndexEvents(index, params, urlParams);
 
