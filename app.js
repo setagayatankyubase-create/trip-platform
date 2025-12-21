@@ -773,16 +773,32 @@ const CardRenderer = {
         // 時間部分を抽出（Dateオブジェクトの文字列表現を除外）
         let timeStr = '';
         if (d.time) {
-          const timeValue = String(d.time);
+          let timeValue;
+          
+          // Dateオブジェクトの場合は、時間部分のみ取得
+          if (d.time instanceof Date) {
+            const hours = String(d.time.getHours()).padStart(2, '0');
+            const minutes = String(d.time.getMinutes()).padStart(2, '0');
+            timeValue = `${hours}:${minutes}`;
+          } else {
+            timeValue = String(d.time);
+          }
+          
           // "GMT"や"Standard Time"が含まれている場合は、時間部分のみ抽出
           if (timeValue.includes('GMT') || timeValue.includes('Standard Time')) {
             const timeMatch = timeValue.match(/(\d{1,2}):(\d{2})/);
             if (timeMatch) {
               timeStr = ` ${timeMatch[0]}`;
             }
-          } else {
-            // 通常の時間文字列の場合
+          } else if (timeValue.match(/^\d{1,2}:\d{2}$/)) {
+            // 既に "HH:MM" 形式の場合はそのまま使用
             timeStr = ` ${timeValue}`;
+          } else if (timeValue.match(/\d{1,2}:\d{2}/)) {
+            // 時間形式を含む場合は抽出
+            const timeMatch = timeValue.match(/(\d{1,2}):(\d{2})/);
+            if (timeMatch) {
+              timeStr = ` ${timeMatch[0]}`;
+            }
           }
         }
         
