@@ -153,7 +153,7 @@ body {
   align-items: center;
   justify-content: center;
   margin-bottom: 60px;
-  overflow: visible;
+  overflow: visible !important;
 }
 
 .hero-section-background {
@@ -196,6 +196,7 @@ body {
   padding: 0 20px;
   z-index: 2;
   position: relative;
+  overflow: visible !important;
 }
 
 .hero-title {
@@ -273,9 +274,7 @@ body {
 }
 
 .category-menu {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
+  position: fixed;
   margin-top: 0;
   background: #fff;
   border-radius: 12px;

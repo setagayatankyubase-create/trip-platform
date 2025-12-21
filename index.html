@@ -165,6 +165,26 @@
           <span>${cat.name}</span>
         </a>
       `).join('');
+
+      // カテゴリメニューの位置を計算（fixed position用）
+      function updateCategoryMenuPosition() {
+        const searchWrapper = document.querySelector('.search-wrapper');
+        const categoryMenu = document.getElementById('category-menu');
+        if (!searchWrapper || !categoryMenu) return;
+
+        const rect = searchWrapper.getBoundingClientRect();
+        categoryMenu.style.left = rect.left + 'px';
+        categoryMenu.style.top = (rect.bottom + 8) + 'px';
+        categoryMenu.style.width = Math.min(rect.width, 500) + 'px';
+      }
+
+      // ホバー時に位置を更新
+      const searchWrapper = document.querySelector('.search-wrapper');
+      if (searchWrapper) {
+        searchWrapper.addEventListener('mouseenter', updateCategoryMenuPosition);
+        window.addEventListener('resize', updateCategoryMenuPosition);
+        window.addEventListener('scroll', updateCategoryMenuPosition);
+      }
     }
 
 
