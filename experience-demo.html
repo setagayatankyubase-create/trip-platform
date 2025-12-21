@@ -420,26 +420,65 @@
     // デモ用設定（GAS APIのURL）
     const DEMO_GAS_API_URL = 'https://script.google.com/macros/s/AKfycbyyjVTkFqxOf32P3pT2d9XfzPAir2ssEMj9u7-6kO1allkXUo1ey0bQbdcENK2Rl4lr-w/exec';
     
-    // パスワードフォームの送信処理（即座にリロード）
-    function handlePasswordSubmit(event) {
+    // パスワードフォームの送信処理（データを事前に読み込んでからリロード）
+    async function handlePasswordSubmit(event) {
       event.preventDefault();
       const passwordInput = document.getElementById('demo-password-input');
       const password = passwordInput.value.trim();
+      const submitBtn = event.target.querySelector('button[type="submit"]');
       
       if (!password) {
         alert('パスワードを入力してください');
         return;
       }
       
-      // パスワードをsessionStorageに保存（有効期限: 24時間）
-      const authData = {
-        password: password,
-        expiresAt: Date.now() + (24 * 60 * 60 * 1000) // 24時間
-      };
-      sessionStorage.setItem('demo_auth', JSON.stringify(authData));
+      // ボタンを無効化してローディング表示
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'データ読み込み中...';
+      }
       
-      // 即座にリロード（データ取得はリロード後の処理で行う）
-      window.location.reload();
+      try {
+        // パスワード認証とデータ取得を一度に実行
+        const url = new URL(DEMO_GAS_API_URL);
+        url.searchParams.set('password', password);
+        
+        const response = await fetch(url.toString());
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (!data.success) {
+          throw new Error(data.error || '認証に失敗しました');
+        }
+        
+        // パスワードとデータをsessionStorageに保存
+        const authData = {
+          password: password,
+          expiresAt: Date.now() + (24 * 60 * 60 * 1000) // 24時間
+        };
+        sessionStorage.setItem('demo_auth', JSON.stringify(authData));
+        
+        // 全データをキャッシュに保存（有効期限: 24時間）
+        const CACHE_KEY = 'demo_data_cache';
+        sessionStorage.setItem(CACHE_KEY, JSON.stringify({
+          data: data,
+          password: password,
+          expiresAt: Date.now() + (24 * 60 * 60 * 1000) // 24時間
+        }));
+        
+        // リロード
+        window.location.reload();
+      } catch (error) {
+        console.error('Password authentication error:', error);
+        alert(error.message || '認証に失敗しました。パスワードを確認してください。');
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = '認証して表示';
+        }
+      }
     }
 
     // セッション中に既に認証済みかチェック（有効期限も確認）
@@ -463,12 +502,11 @@
       }
     }
     
-    // デモデータを取得（キャッシュ機能付き）
+    // デモデータを取得（共有キャッシュから高速取得）
     async function fetchDemoData(password) {
-      const CACHE_KEY = 'demo_data_cache_experience';
-      const CACHE_EXPIRY = 5 * 60 * 1000; // 5分間キャッシュ
+      const CACHE_KEY = 'demo_data_cache';
       
-      // キャッシュをチェック
+      // キャッシュをチェック（即座に返す）
       try {
         const cachedStr = sessionStorage.getItem(CACHE_KEY);
         if (cachedStr) {
@@ -482,6 +520,7 @@
         // キャッシュの読み込みに失敗した場合は無視して続行
       }
       
+      // キャッシュがない場合はAPIから取得（通常は発生しないが、念のため）
       try {
         const url = new URL(DEMO_GAS_API_URL);
         url.searchParams.set('password', password);
@@ -502,10 +541,9 @@
           sessionStorage.setItem(CACHE_KEY, JSON.stringify({
             data: data,
             password: password,
-            expiresAt: Date.now() + CACHE_EXPIRY
+            expiresAt: Date.now() + (24 * 60 * 60 * 1000) // 24時間
           }));
         } catch (e) {
-          // キャッシュの保存に失敗した場合は無視
           console.warn('[experience-demo] Failed to cache demo data:', e);
         }
         
