@@ -231,10 +231,9 @@ body {
 
 .category-menu {
   position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  margin-top: 8px;
+  top: calc(100% + 8px);
+  left: 0;
+  margin-top: 0;
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
@@ -246,29 +245,15 @@ body {
   visibility: hidden;
   pointer-events: none;
   transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
-  transform: translateX(-50%) translateY(-10px);
+  transform: translateY(-10px);
 }
 
-/* 親要素（formを含むdiv）にホバー時、またはメニュー自体にホバー時に表示 */
-.category-menu-button:hover ~ .category-menu,
-.category-menu:hover {
+/* 親要素（search-wrapper）にホバー時、またはメニュー自体にホバー時に表示 */
+.search-wrapper:hover .category-menu {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
-  transform: translateX(-50%) translateY(0);
-}
-
-/* 親divにホバーした時もメニューを表示 */
-.hero-search-form + .category-menu {
-  display: block;
-}
-
-/* 親のdivにホバー時のスタイル */
-.hero-section > div[style*="position: relative"]:hover .category-menu {
-  opacity: 1;
-  visibility: visible;
-  pointer-events: auto;
-  transform: translateX(-50%) translateY(0);
+  transform: translateY(0);
 }
 
 .category-menu-content {
