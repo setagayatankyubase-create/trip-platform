@@ -153,7 +153,7 @@ body {
   align-items: center;
   justify-content: center;
   margin-bottom: 60px;
-  overflow: visible !important;
+  overflow: hidden;
 }
 
 .hero-section-background {
@@ -196,7 +196,6 @@ body {
   padding: 0 20px;
   z-index: 2;
   position: relative;
-  overflow: visible !important;
 }
 
 .hero-title {
@@ -275,6 +274,8 @@ body {
 
 .category-menu {
   position: fixed;
+  top: 0;
+  left: 0;
   margin-top: 0;
   background: #fff;
   border-radius: 12px;
@@ -288,12 +289,14 @@ body {
   pointer-events: none;
   transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
   transform: translateY(-10px);
+  max-height: 70vh;
+  overflow-y: auto;
 }
 
 /* search-wrapperとsearch-bar-wrapperはoverflow: visibleにしてメニューが切れないようにする */
 .search-wrapper,
 .search-bar-wrapper {
-  overflow: visible !important;
+  overflow: visible;
   position: relative;
 }
 

@@ -43,7 +43,7 @@
     <div class="hero-section-background" id="hero-bg-2" style="background-image: url('/assets/fuji.jpg');"></div>
     <div class="hero-content">
       <h1 class="hero-title">東京のすぐそばに、まだ知らない<br>自然がある</h1>
-      <div class="search-wrapper" style="position: relative;">
+      <div class="search-wrapper">
         <form class="hero-search-form" id="main-search-form" onsubmit="handleSearch(event)">
           <button type="button" class="category-menu-button" id="category-menu-button" aria-label="カテゴリメニュー">
             <span class="hamburger-icon">
@@ -153,6 +153,30 @@
       `).join('');
     }
 
+    // カテゴリメニューの位置を計算（fixed position用）
+    function positionCategoryMenu() {
+      const btn = document.getElementById('category-menu-button');
+      const menu = document.querySelector('.category-menu');
+      if (!btn || !menu) return;
+
+      const rect = btn.getBoundingClientRect();
+      const gap = 8;
+
+      menu.style.top = `${rect.bottom + gap}px`;
+      menu.style.left = `${rect.left}px`;
+
+      // 右にはみ出す場合の保険
+      const menuRect = menu.getBoundingClientRect();
+      const overflowRight = menuRect.right - window.innerWidth;
+      if (overflowRight > 0) {
+        menu.style.left = `${Math.max(8, rect.left - overflowRight - 8)}px`;
+      }
+
+      // 下にはみ出す場合は max-height を調整
+      const available = window.innerHeight - (rect.bottom + gap) - 8;
+      menu.style.maxHeight = `${Math.max(120, available)}px`;
+    }
+
     // カテゴリメニューを初期化（ホバーで表示されるので、事前にレンダリングしておく）
     function initCategoryMenu() {
       const menuList = document.getElementById('category-menu-list');
@@ -166,25 +190,28 @@
         </a>
       `).join('');
 
-      // カテゴリメニューの位置を計算（fixed position用）
-      function updateCategoryMenuPosition() {
-        const searchWrapper = document.querySelector('.search-wrapper');
-        const categoryMenu = document.getElementById('category-menu');
-        if (!searchWrapper || !categoryMenu) return;
-
-        const rect = searchWrapper.getBoundingClientRect();
-        categoryMenu.style.left = rect.left + 'px';
-        categoryMenu.style.top = (rect.bottom + 8) + 'px';
-        categoryMenu.style.width = Math.min(rect.width, 500) + 'px';
-      }
-
       // ホバー時に位置を更新
       const searchWrapper = document.querySelector('.search-wrapper');
       if (searchWrapper) {
-        searchWrapper.addEventListener('mouseenter', updateCategoryMenuPosition);
-        window.addEventListener('resize', updateCategoryMenuPosition);
-        window.addEventListener('scroll', updateCategoryMenuPosition);
+        searchWrapper.addEventListener('mouseenter', () => {
+          positionCategoryMenu();
+        });
       }
+
+      // リサイズ/スクロール時にも位置を更新
+      window.addEventListener('resize', () => {
+        const menu = document.querySelector('.category-menu');
+        if (menu && menu.style.visibility !== 'hidden') {
+          positionCategoryMenu();
+        }
+      });
+
+      window.addEventListener('scroll', () => {
+        const menu = document.querySelector('.category-menu');
+        if (menu && menu.style.visibility !== 'hidden') {
+          positionCategoryMenu();
+        }
+      }, { passive: true });
     }
 
 
