@@ -790,7 +790,7 @@
       }
     }
 
-    // ヒーロー画像の自動切り替えを設定（fuji.jpgとwinter.jpgのみ）
+    // ヒーロー画像を設定（winter.jpgのみ）
     let heroImageInterval = null;
     function setupHeroImages() {
       const container = document.getElementById('column-hero-images-container');
@@ -802,36 +802,15 @@
         heroImageInterval = null;
       }
 
-      // fuji.jpgとwinter.jpgのみを使用
-      const images = [
-        '/assets/fuji.jpg',
-        '/assets/winter.jpg'
-      ];
+      // winter.jpgのみを使用
+      const img = document.createElement('img');
+      img.src = '/assets/winter.jpg';
+      img.className = 'column-hero-image active';
+      img.alt = '';
 
       // 画像要素を作成（既存の内容をクリア）
       container.innerHTML = '';
-      images.forEach((src, index) => {
-        const img = document.createElement('img');
-        img.src = src;
-        img.className = 'column-hero-image';
-        img.alt = '';
-        if (index === 0) {
-          img.classList.add('active');
-        }
-        container.appendChild(img);
-      });
-
-      // 自動切り替え（5秒ごと）
-      let currentIndex = 0;
-      const imageElements = Array.from(container.querySelectorAll('.column-hero-image'));
-      
-      if (imageElements.length > 1) {
-        heroImageInterval = setInterval(() => {
-          imageElements.forEach(img => img.classList.remove('active'));
-          currentIndex = (currentIndex + 1) % imageElements.length;
-          imageElements[currentIndex].classList.add('active');
-        }, 5000);
-      }
+      container.appendChild(img);
     }
 
     // シェアボタンのURLを設定
