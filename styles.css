@@ -311,7 +311,7 @@ body {
 .category-menu-item {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   padding: 24px 28px;
   border-radius: 12px;
   cursor: pointer;
@@ -321,7 +321,6 @@ body {
   user-select: none;
   -webkit-tap-highlight-color: transparent;
   min-height: 64px;
-  font-size: 1rem;
 }
 
 .category-menu-item:hover {
@@ -335,11 +334,11 @@ body {
 }
 
 .category-menu-item .icon {
-  font-size: 1.4rem;
+  font-size: 1.1rem;
 }
 
 .category-menu-item .name {
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 500;
 }
 
