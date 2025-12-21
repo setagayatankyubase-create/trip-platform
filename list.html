@@ -50,11 +50,6 @@
 
     <!-- フィルタ（デスクトップ） -->
     <div class="filters" id="desktop-filters">
-      <select id="filter-weekday" onchange="applyFilters()">
-        <option value="">開催日</option>
-        <option value="this-week">今週</option>
-        <option value="next-week">来週</option>
-      </select>
     </div>
 
     <!-- マップ -->
@@ -94,18 +89,6 @@
         <label style="display: block; margin-bottom: 8px; font-weight: 600;">エリア</label>
         <select id="mobile-filter-area" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 10px;">
           <option value="">すべてのエリア</option>
-        </select>
-      </div>
-      <div style="margin-bottom: 16px;">
-        <label style="display: block; margin-bottom: 8px; font-weight: 600;">開催日</label>
-        <input type="date" id="mobile-filter-date" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 10px;">
-      </div>
-      <div style="margin-bottom: 16px;">
-        <label style="display: block; margin-bottom: 8px; font-weight: 600;">開催週</label>
-        <select id="mobile-filter-weekday" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 10px;">
-          <option value="">指定なし</option>
-          <option value="this-week">今週</option>
-          <option value="next-week">来週</option>
         </select>
       </div>
       <div style="display: flex; gap: 10px;">
@@ -177,7 +160,6 @@
         category: document.getElementById('search-category')?.value || '',
         area: document.getElementById('search-area')?.value || '',
         date: document.getElementById('search-date')?.value || '',
-        weekday: document.getElementById('filter-weekday')?.value || ''
       };
       URLManager.updateParams(params);
       await loadEvents();
@@ -190,7 +172,6 @@
         category: document.getElementById('mobile-filter-category')?.value || '',
         area: document.getElementById('mobile-filter-area')?.value || '',
         date: document.getElementById('mobile-filter-date')?.value || '',
-        weekday: document.getElementById('mobile-filter-weekday')?.value || ''
       };
       URLManager.updateParams(params);
       BottomSheet.close();
@@ -532,11 +513,9 @@
       document.getElementById('search-category').value = params.category || '';
       document.getElementById('search-date').value = params.date || '';
       document.getElementById('search-area').value = params.area || '';
-      document.getElementById('filter-weekday').value = params.weekday || '';
       document.getElementById('mobile-filter-category').value = params.category || '';
       document.getElementById('mobile-filter-area').value = params.area || '';
       document.getElementById('mobile-filter-date').value = params.date || '';
-      document.getElementById('mobile-filter-weekday').value = params.weekday || '';
     }
 
     // カテゴリ・エリアの選択肢を設定（eventMeta / eventIndex ベース）
