@@ -17,11 +17,120 @@
       padding: 0 20px;
     }
 
+    .column-hero {
+      position: relative;
+      width: 100%;
+      height: 500px;
+      margin-bottom: 40px;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    }
+
+    .column-hero-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .column-hero-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+      padding: 60px 40px 40px;
+      color: white;
+    }
+
+    .column-hero-title {
+      font-size: 2.8rem;
+      font-weight: 700;
+      margin: 0 0 16px 0;
+      line-height: 1.2;
+      color: white;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+
+    .column-hero-meta {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      font-size: 0.95rem;
+      opacity: 0.95;
+    }
+
     .column-detail-main {
       display: grid;
-      grid-template-columns: 2fr 1fr;
-      gap: 32px;
-      margin-top: 24px;
+      grid-template-columns: 1fr 320px;
+      gap: 48px;
+      margin-top: 40px;
+    }
+
+    .column-content-wrapper {
+      max-width: 700px;
+    }
+
+    .column-meta-bar {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      padding: 20px 0;
+      border-bottom: 2px solid var(--border);
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+    }
+
+    .column-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    .column-meta-item strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .table-of-contents {
+      background: #f8f9fa;
+      border-left: 4px solid var(--primary);
+      padding: 24px;
+      border-radius: 8px;
+      margin: 32px 0;
+    }
+
+    .table-of-contents h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin: 0 0 16px 0;
+      color: var(--text);
+    }
+
+    .table-of-contents ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .table-of-contents li {
+      margin-bottom: 12px;
+    }
+
+    .table-of-contents a {
+      color: var(--text);
+      text-decoration: none;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      transition: color 0.2s;
+      display: block;
+      padding: 4px 0;
+    }
+
+    .table-of-contents a:hover {
+      color: var(--primary);
     }
 
     .breadcrumbs {
@@ -50,11 +159,11 @@
 
     .column-detail-category {
       display: inline-block;
-      background: var(--primary);
-      color: white;
-      padding: 4px 12px;
-      border-radius: 4px;
-      font-size: 0.75rem;
+      background: rgba(255, 255, 255, 0.9);
+      color: var(--primary);
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 0.85rem;
       font-weight: 600;
       margin-bottom: 16px;
     }
@@ -107,7 +216,7 @@
     .column-detail-content {
       line-height: 2;
       color: var(--text);
-      font-size: 1rem;
+      font-size: 1.05rem;
     }
 
     .column-detail-content > *:first-child {
@@ -115,11 +224,11 @@
     }
 
     .column-detail-content h2 {
-      font-size: 1.8rem;
+      font-size: 2rem;
       font-weight: 700;
-      margin: 48px 0 24px 0;
+      margin: 56px 0 24px 0;
       color: var(--text);
-      padding-bottom: 12px;
+      padding-bottom: 16px;
       border-bottom: 3px solid var(--primary);
       position: relative;
     }
@@ -129,15 +238,15 @@
       position: absolute;
       bottom: -3px;
       left: 0;
-      width: 60px;
+      width: 80px;
       height: 3px;
       background: var(--accent);
     }
 
     .column-detail-content h3 {
-      font-size: 1.4rem;
+      font-size: 1.5rem;
       font-weight: 600;
-      margin: 36px 0 16px 0;
+      margin: 40px 0 16px 0;
       color: var(--text);
     }
 
@@ -449,20 +558,38 @@
         <span id="breadcrumb-title">記事</span>
       </nav>
 
-      <a href="column.html" class="column-detail-back">コラム一覧に戻る</a>
+      <div class="column-hero" id="column-hero">
+        <img id="column-hero-image" class="column-hero-image" alt="" style="display: none;">
+        <div class="column-hero-overlay">
+          <div class="column-detail-category" id="column-category">コラム</div>
+          <h1 class="column-hero-title" id="column-hero-title"></h1>
+          <div class="column-hero-meta" id="column-hero-meta"></div>
+        </div>
+      </div>
 
       <div class="column-detail-main">
-        <article>
-          <div class="column-detail-header">
-            <div class="column-detail-category" id="column-category">コラム</div>
-            <h1 class="column-detail-title" id="column-title"></h1>
-            <div class="column-detail-meta">
-              <div class="column-detail-date" id="column-date"></div>
-              <div class="column-detail-author" id="column-author"></div>
+        <div class="column-content-wrapper">
+          <div class="column-meta-bar">
+            <div class="column-meta-item">
+              <strong>公開日:</strong>
+              <span id="column-date-meta"></span>
+            </div>
+            <div class="column-meta-item">
+              <strong>著者:</strong>
+              <span id="column-author-meta"></span>
+            </div>
+            <div class="column-meta-item">
+              <strong>読了時間:</strong>
+              <span id="reading-time"></span>
             </div>
           </div>
 
-          <img id="column-image" class="column-detail-image" alt="" style="display: none;">
+          <div class="table-of-contents" id="table-of-contents" style="display: none;">
+            <h3>目次</h3>
+            <ul id="toc-list"></ul>
+          </div>
+
+          <article>
 
           <div class="column-detail-content" id="column-content">
             <!-- 記事内容がここに動的に生成されます -->
@@ -759,6 +886,8 @@
 
         // シェアボタンを設定
         setupShareButtons();
+        // 目次を生成
+        generateTableOfContents();
 
         // サイドバーを読み込み
         await loadSidebar(columnId);
