@@ -38,6 +38,8 @@
 
   <!-- Hero Section -->
   <section class="hero-section">
+    <div class="hero-section-background" id="hero-bg-1" style="background-image: url('/assets/winter.jpg'); opacity: 1;"></div>
+    <div class="hero-section-background" id="hero-bg-2" style="background-image: url('/assets/fuji.jpg');"></div>
     <div class="hero-content">
       <h1 class="hero-title">東京のすぐそばに、まだ知らない<br>自然がある</h1>
       <div class="search-wrapper" style="position: relative;">
@@ -446,20 +448,35 @@
       });
     }
 
-    // ヒーロー背景画像の自動切り替え
+    // ヒーロー背景画像の自動切り替え（滑らかなフェード）
     function setupHeroBackground() {
-      const heroSection = document.querySelector('.hero-section');
-      if (!heroSection) return;
-
+      // 画像を事前に読み込む
       const images = [
         '/assets/winter.jpg',
         '/assets/fuji.jpg'
       ];
-      let currentIndex = 0;
+      
+      images.forEach(src => {
+        const img = new Image();
+        img.src = src;
+      });
+
+      const bg1 = document.getElementById('hero-bg-1');
+      const bg2 = document.getElementById('hero-bg-2');
+      if (!bg1 || !bg2) return;
+
+      let currentBg = bg1;
+      let nextBg = bg2;
 
       function changeBackground() {
-        currentIndex = (currentIndex + 1) % images.length;
-        heroSection.style.backgroundImage = `linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url('${images[currentIndex]}')`;
+        // 次の画像を表示
+        nextBg.classList.add('active');
+        currentBg.classList.remove('active');
+        
+        // 次の切り替えのために入れ替え
+        const temp = currentBg;
+        currentBg = nextBg;
+        nextBg = temp;
       }
 
       // 5秒ごとに切り替え
