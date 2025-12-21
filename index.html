@@ -134,7 +134,8 @@
       const container = document.getElementById('category-list');
       if (!container) return;
 
-      container.innerHTML = eventData.categories.map(cat => `
+      if (!window.eventData || !window.eventData.categories) return;
+      container.innerHTML = window.eventData.categories.map(cat => `
         <a href="list.html?category=${cat.id}" class="cat">
           <span>${cat.icon}</span>
           <span>${cat.name}</span>
@@ -188,8 +189,8 @@
       const eventCounts = {};
       weekDays.forEach(date => {
         const dateStr = date.toISOString().split('T')[0];
-        const count = eventData.events.filter(event =>
-          event.dates.some(d => d.date === dateStr)
+        const count = (window.eventData?.events || []).filter(event =>
+          event.dates && Array.isArray(event.dates) && event.dates.some(d => d.date === dateStr)
         ).length;
         eventCounts[dateStr] = count;
       });
@@ -273,7 +274,7 @@
       // eventIndex を優先、なければ eventData.events から構築
       let source = Array.isArray(window.eventIndex) && window.eventIndex.length > 0
         ? window.eventIndex
-        : (Array.isArray(eventData?.events) ? eventData.events : []);
+        : (Array.isArray(window.eventData?.events) ? window.eventData.events : []);
       
       // next_date が無い場合、最初の数件の詳細JSONから日付を補完
       if (source.length > 0 && !source[0].next_date && !source[0].date_min && (!source[0].dates || source[0].dates.length === 0)) {
@@ -325,17 +326,12 @@
         })
         .slice(0, MAX_HOME_EVENTS);
 
-      // 直近開催：eventData.events から、今日以降のイベントを日付の近い順にソート
-      // eventData.events を使う（dates が確実に設定されている）
-      const eventsForUpcoming = Array.isArray(eventData?.events) && eventData.events.length > 0
-        ? eventData.events
-        : [];
-      
-      console.log('[renderEventBlocks] eventsForUpcoming:', eventsForUpcoming.length);
-      if (eventsForUpcoming.length > 0) {
-        console.log('[renderEventBlocks] first event:', eventsForUpcoming[0]);
-        console.log('[renderEventBlocks] first event dates:', eventsForUpcoming[0].dates);
-        console.log('[renderEventBlocks] first event next_date:', eventsForUpcoming[0].next_date);
+      // 直近開催：source（eventIndex、日付補完済み）から、今日以降のイベントを日付の近い順にソート
+      console.log('[renderEventBlocks] source for upcoming:', source.length);
+      if (source.length > 0) {
+        console.log('[renderEventBlocks] first event:', source[0]);
+        console.log('[renderEventBlocks] first event dates:', source[0].dates);
+        console.log('[renderEventBlocks] first event next_date:', source[0].next_date);
       }
       console.log('[renderEventBlocks] today:', today.toISOString().split('T')[0]);
       
@@ -365,7 +361,7 @@
         return null;
       };
       
-      const upcomingCandidatesWithDates = eventsForUpcoming.map(event => {
+      const upcomingCandidatesWithDates = source.map(event => {
         const eventDate = getEventDate(event);
         return { event, eventDate };
       });
