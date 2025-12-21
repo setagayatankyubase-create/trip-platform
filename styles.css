@@ -207,7 +207,7 @@ body {
 
 .hero-search-form {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 0;
   max-width: 700px;
   margin: 0 auto 16px;
@@ -218,22 +218,16 @@ body {
   position: relative;
 }
 
-.hero-search-form > * {
-  position: relative;
-  z-index: 1;
-}
-
 .category-menu-button {
   background: var(--primary);
   border: none;
-  padding: 18px 20px;
+  padding: 0 20px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: background 0.2s;
   border-radius: 50px 0 0 50px;
-  position: relative;
   flex-shrink: 0;
   box-sizing: border-box;
 }
@@ -370,6 +364,7 @@ body {
   align-items: center;
   justify-content: center;
   line-height: 1.2;
+  flex-shrink: 0;
 }
 
 .hero-search-button:hover {

@@ -163,7 +163,25 @@ const EventPageRenderer = {
       const month = dateObj.getMonth() + 1;
       const day = dateObj.getDate();
       const weekday = ['日', '月', '火', '水', '木', '金', '土'][dateObj.getDay()];
-      const timeStr = d.time || '';
+      
+      // timeStrを処理：Dateオブジェクトの文字列表現を削除
+      let timeStr = '';
+      if (d.time) {
+        // Dateオブジェクトの文字列表現（GMT+0900などが含まれる）を除外
+        const timeValue = String(d.time);
+        // "GMT"や"Standard Time"が含まれている場合は、時間部分のみ抽出
+        if (timeValue.includes('GMT') || timeValue.includes('Standard Time')) {
+          // 時間部分のみ抽出（例: "10:00"）
+          const timeMatch = timeValue.match(/(\d{1,2}):(\d{2})/);
+          if (timeMatch) {
+            timeStr = ` ${timeMatch[0]}`;
+          }
+        } else {
+          // 通常の時間文字列の場合
+          timeStr = ` ${timeValue}`;
+        }
+      }
+      
       const dateStr = `${year}年${month}月${day}日（${weekday}）${timeStr}`;
 
       if (datesList) {
