@@ -311,7 +311,7 @@ body {
 
 .category-menu-content {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: 12px;
 }
 
@@ -319,7 +319,7 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 14px;
+  padding: 16px 18px;
   border-radius: 8px;
   cursor: pointer;
   transition: background 0.2s, transform 0.1s;
@@ -327,6 +327,7 @@ body {
   color: var(--text);
   user-select: none;
   -webkit-tap-highlight-color: transparent;
+  min-height: 48px;
 }
 
 .category-menu-item:hover {
