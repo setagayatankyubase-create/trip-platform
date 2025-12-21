@@ -713,6 +713,40 @@
       return `${minutes}分`;
     }
 
+    // 目次を生成
+    function generateTableOfContents() {
+      const content = document.getElementById('column-content');
+      const headings = content.querySelectorAll('h2, h3');
+      const tocList = document.getElementById('toc-list');
+      const tocContainer = document.getElementById('table-of-contents');
+
+      if (headings.length === 0) {
+        if (tocContainer) tocContainer.style.display = 'none';
+        return;
+      }
+
+      if (tocContainer) tocContainer.style.display = 'block';
+      if (!tocList) return;
+
+      tocList.innerHTML = '';
+
+      headings.forEach((heading, index) => {
+        const id = `heading-${index}`;
+        heading.id = id;
+
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+        a.href = `#${id}`;
+        a.textContent = heading.textContent;
+        a.addEventListener('click', (e) => {
+          e.preventDefault();
+          heading.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+        li.appendChild(a);
+        tocList.appendChild(li);
+      });
+    }
+
     // サイドバーを読み込み
     async function loadSidebar(currentId) {
       try {
