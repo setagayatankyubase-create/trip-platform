@@ -316,13 +316,20 @@ body {
   padding: 10px 12px;
   border-radius: 8px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.2s, transform 0.1s;
   text-decoration: none;
   color: var(--text);
+  user-select: none;
 }
 
 .category-menu-item:hover {
   background: #f0f5f1;
+  transform: translateY(-1px);
+}
+
+.category-menu-item:active {
+  background: #d4ede4;
+  transform: translateY(0);
 }
 
 .category-menu-item .icon {
