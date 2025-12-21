@@ -311,16 +311,15 @@ body {
 .category-menu-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 24px 28px;
-  border-radius: 12px;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
   cursor: pointer;
   transition: background 0.2s, transform 0.1s;
   text-decoration: none;
   color: var(--text);
   user-select: none;
   -webkit-tap-highlight-color: transparent;
-  min-height: 64px;
 }
 
 .category-menu-item:hover {
