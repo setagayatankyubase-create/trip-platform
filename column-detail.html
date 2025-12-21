@@ -786,8 +786,8 @@
       }
     }
 
-    // ヒーロー画像の自動切り替えを設定
-    function setupHeroImages(customImage) {
+    // ヒーロー画像の自動切り替えを設定（fuji.jpgとwinter.jpgのみ）
+    function setupHeroImages() {
       const container = document.getElementById('column-hero-images-container');
       if (!container) return;
 
@@ -915,8 +915,8 @@
           }
         }
 
-        // 画像を設定（自動切り替え）
-        setupHeroImages(column.image || null);
+        // 画像を設定（fuji.jpgとwinter.jpgを自動切り替え）
+        setupHeroImages();
 
         // カテゴリを設定
         if (column.category) {
