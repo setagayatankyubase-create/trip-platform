@@ -87,6 +87,13 @@
       grid-template-columns: 1fr 320px;
       gap: 48px;
       margin-top: 40px;
+      align-items: start;
+    }
+    
+    @media (min-width: 769px) {
+      .column-detail-main {
+        grid-template-columns: 1fr 320px !important;
+      }
     }
 
     .column-content-wrapper {
@@ -452,7 +459,7 @@
       }
 
       .column-detail-main {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr !important;
       }
     }
 
