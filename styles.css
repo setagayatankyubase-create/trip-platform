@@ -228,7 +228,9 @@ body {
   transition: background 0.2s;
   border-radius: 50px 0 0 50px;
   position: relative;
-  min-height: 56px;
+  height: 56px;
+  box-sizing: border-box;
+  flex-shrink: 0;
 }
 
 .category-menu-button:hover {
