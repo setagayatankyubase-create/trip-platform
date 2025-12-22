@@ -624,97 +624,24 @@
         const organizer = demoData.organizer || null;
 
         // イベント詳細をレンダリング（event-template.jsのEventPageRendererを使用）
-        if (typeof EventPageRenderer !== 'undefined') {
-          // デモデータのexternal_linkをexternalLinkに変換（EventPageRenderer.renderBookingで使用）
-          if (event.external_link && !event.externalLink) {
-            event.externalLink = event.external_link;
-          }
-          
-          EventPageRenderer.render(event, organizer);
-          
-          // デモバッジを追加
-          const badgesContainer = document.getElementById('event-badges');
-          if (badgesContainer) {
-            badgesContainer.innerHTML = '<span class="demo-badge">デモ</span>' + badgesContainer.innerHTML;
-          }
-          
-          // 提供元リンクを更新（デモ用）
-          const organizerLink = document.getElementById('organizer-link');
-          if (organizerLink && organizer && organizer.id) {
-            organizerLink.href = `organizer-demo.html?id=${organizer.id}`;
-          }
-          
-          // 外部リンクボタンを確実に設定（EventPageRenderer.renderBookingのフォールバック）
-          const externalBtn = document.getElementById('external-booking-btn');
-          if (externalBtn) {
-            const externalLink = event.externalLink || event.external_link;
-            if (externalLink) {
-              externalBtn.href = externalLink;
-              externalBtn.style.display = 'block';
-            } else {
-              externalBtn.style.display = 'none';
-            }
-          }
-        } else {
-          // EventPageRendererが使えない場合は手動でレンダリング
-          const titleEl = document.getElementById('event-title');
-          if (titleEl) titleEl.textContent = event.title + ' <span class="demo-badge">デモ</span>';
-          
-          const descEl = document.getElementById('event-description');
-          if (descEl) descEl.textContent = event.description || '';
-          
-          const durationEl = document.getElementById('event-duration');
-          if (durationEl) durationEl.textContent = event.duration || '';
-          
-          const locationEl = document.getElementById('event-location');
-          if (locationEl) {
-            locationEl.textContent = event.location && event.location.name ? event.location.name : (event.area || '');
-          }
-          
-          const targetAgeEl = document.getElementById('event-target-age');
-          if (targetAgeEl) targetAgeEl.textContent = event.targetAge || '';
-          
-          const priceEl = document.getElementById('event-price');
-          if (priceEl) priceEl.textContent = event.price ? event.price.toLocaleString() : '0';
-          
-          const highlightsList = document.getElementById('event-highlights');
-          if (highlightsList && event.highlights && event.highlights.length > 0) {
-            highlightsList.innerHTML = event.highlights.map(h => `<li>${h}</li>`).join('');
-          }
-          
-          // 設備
-          const facilityList = document.getElementById('event-facility');
-          if (facilityList) {
-            const facilityRaw = (event.facility || '').trim();
-            if (facilityRaw) {
-              // 半角・全角のパイプで分割
-              const items = facilityRaw.split(/[|｜]/).map(s => s.trim()).filter(Boolean);
-              if (items.length > 0) {
-                facilityList.innerHTML = items.map(item => `<li>${item}</li>`).join('');
-                facilityList.parentElement.style.display = 'block';
-              } else {
-                facilityList.parentElement.style.display = 'none';
-              }
-            } else {
-              facilityList.parentElement.style.display = 'none';
-            }
-          }
-          
-          const notesEl = document.getElementById('event-notes');
-          if (notesEl) notesEl.textContent = event.notes || '';
-          
-          const bookingPrice = document.getElementById('booking-price');
-          if (bookingPrice) bookingPrice.textContent = event.price ? event.price.toLocaleString() : '0';
-          
-          const externalBtn = document.getElementById('external-booking-btn');
-          if (externalBtn && event.external_link) {
-            externalBtn.href = event.external_link;
-          }
-          
-          const mainImage = document.getElementById('event-main-image');
-          if (mainImage && event.image) {
-            mainImage.style.backgroundImage = `url('${event.image}')`;
-          }
+        // デモデータのexternal_linkをexternalLinkに変換（EventPageRenderer.renderBookingで使用）
+        if (event.external_link && !event.externalLink) {
+          event.externalLink = event.external_link;
+        }
+        
+        // 公開版と同じ構成でレンダリング
+        EventPageRenderer.render(event, organizer);
+        
+        // デモバッジを追加
+        const badgesContainer = document.getElementById('event-badges');
+        if (badgesContainer) {
+          badgesContainer.innerHTML = '<span class="demo-badge">デモ</span>' + badgesContainer.innerHTML;
+        }
+        
+        // 提供元リンクを更新（デモ用）
+        const organizerLink = document.getElementById('organizer-link');
+        if (organizerLink && organizer && organizer.id) {
+          organizerLink.href = `organizer-demo.html?id=${organizer.id}`;
         }
         
         // デモページでは検索欄を常に非表示
