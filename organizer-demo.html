@@ -564,21 +564,30 @@
         }
 
         console.log('[organizer-demo.html] Rendering organizer:', demoData.organizer);
+        console.log('[organizer-demo.html] Requested organizerId:', organizerId);
         console.log('[organizer-demo.html] Events count (before filter):', demoData.events ? demoData.events.length : 0);
         console.log('[organizer-demo.html] Events (before filter):', demoData.events);
         
         // 提供元IDでイベントをフィルタリング（複数のフィールド名に対応）
         const filteredEvents = (demoData.events || []).filter(event => {
-          const eventOrganizerId = event.organizerId || event.organizer_id || event.organizerId_demo || event.organizer_id_demo || '';
+          // すべての可能なフィールド名をチェック
+          const eventOrganizerId = event.organizerId || event.organizer_id || event.organizerId_demo || event.organizer_id_demo || event.organizer || '';
+          
+          // デバッグ用ログ
+          console.log('[organizer-demo.html] Checking event:', {
+            eventId: event.id,
+            eventTitle: event.title,
+            eventOrganizerId: eventOrganizerId,
+            requestedOrganizerId: organizerId,
+            organizerId_field: event.organizerId,
+            organizer_id_field: event.organizer_id,
+            organizerId_demo_field: event.organizerId_demo,
+            organizer_id_demo_field: event.organizer_id_demo,
+            organizer_field: event.organizer,
+            match: String(eventOrganizerId) === String(organizerId)
+          });
+          
           const matches = String(eventOrganizerId) === String(organizerId);
-          if (!matches) {
-            console.warn('[organizer-demo.html] Event filtered out:', {
-              eventId: event.id,
-              eventTitle: event.title,
-              eventOrganizerId: eventOrganizerId,
-              requestedOrganizerId: organizerId
-            });
-          }
           return matches;
         });
         
