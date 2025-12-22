@@ -682,14 +682,19 @@ const CardRenderer = {
     let reviewCount = event.reviewCount;
     
     if (!rating || !reviewCount) {
-      const organizer = eventData.organizers.find(o => o.id === (event.organizerId || event.organizer_id));
-      if (organizer) {
-        rating = organizer.rating;
-        reviewCount = organizer.reviewCount;
-      } else {
-        // デフォルト値
-        rating = 4.5;
-        reviewCount = 10;
+      // eventDataが存在し、organizersプロパティがある場合のみ提供元から評価を取得
+      if (typeof eventData !== 'undefined' && eventData && eventData.organizers && Array.isArray(eventData.organizers)) {
+        const organizer = eventData.organizers.find(o => o.id === (event.organizerId || event.organizer_id));
+        if (organizer) {
+          rating = organizer.rating;
+          reviewCount = organizer.reviewCount;
+        }
+      }
+      
+      // 評価がまだ設定されていない場合はデフォルト値を使用
+      if (!rating || !reviewCount) {
+        rating = rating || 4.5;
+        reviewCount = reviewCount || 10;
       }
     }
 
