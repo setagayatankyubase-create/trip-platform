@@ -88,8 +88,21 @@ const EventPageRenderer = {
           // 画像が読み込めない場合のフォールバック処理
           const img = new Image();
           img.onerror = function() {
+            // エラーを抑制
+            this.onerror = null;
             if (fallbackUrl && mainImage) {
-              mainImage.style.backgroundImage = `url('${fallbackUrl.replace(/'/g, "\\'")}')`;
+              // フォールバックURLを試す
+              const fallbackImg = new Image();
+              fallbackImg.onerror = function() {
+                this.onerror = null;
+                // フォールバックも失敗した場合は何もしない（エラーを抑制）
+              };
+              fallbackImg.onload = function() {
+                if (mainImage) {
+                  mainImage.style.backgroundImage = `url('${fallbackUrl.replace(/'/g, "\\'")}')`;
+                }
+              };
+              fallbackImg.src = fallbackUrl;
             }
           };
           img.onload = function() {
@@ -303,7 +316,7 @@ const EventPageRenderer = {
       
       organizerInfo.innerHTML = `
         <div style="display: flex; gap: 16px; align-items: flex-start;">
-          <img src="${logoUrl}" ${fallbackUrl ? `onerror="this.onerror=null; this.src='${fallbackUrl.replace(/'/g, "\\'")}';"` : ''} alt="${organizer.name}" style="width: 80px; height: 80px; border-radius: 8px; object-fit: cover; background: #f0f0f0;">
+          <img src="${logoUrl}" ${fallbackUrl ? `onerror="this.onerror=null; if(this.src!==this.getAttribute('data-fallback')){this.setAttribute('data-fallback','${fallbackUrl.replace(/'/g, "\\'")}'); this.src='${fallbackUrl.replace(/'/g, "\\'")}';}else{this.style.display='none';}"` : 'onerror="this.onerror=null; this.style.display=\'none\';"'} alt="${organizer.name}" style="width: 80px; height: 80px; border-radius: 8px; object-fit: cover; background: #f0f0f0;">
           <div>
             <h4 style="margin: 0 0 8px 0;">${organizer.name}</h4>
             <p style="margin: 0; color: #6c7a72; font-size: 0.9rem;">${organizer.description}</p>

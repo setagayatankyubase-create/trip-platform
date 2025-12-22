@@ -97,7 +97,7 @@
         return `
           <div class="organizer-card">
             <div class="organizer-header">
-              <img src="${logoUrl}" ${fallbackUrl ? `onerror="this.onerror=null; this.src='${fallbackUrl.replace(/'/g, "\\'")}';"` : ''} alt="${org.name}" class="organizer-logo">
+              <img src="${logoUrl}" ${fallbackUrl ? `onerror="this.onerror=null; if(this.src!==this.getAttribute('data-fallback')){this.setAttribute('data-fallback','${fallbackUrl.replace(/'/g, "\\'")}'); this.src='${fallbackUrl.replace(/'/g, "\\'")}';}else{this.style.display='none';}"` : 'onerror="this.onerror=null; this.style.display=\'none\';"'} alt="${org.name}" class="organizer-logo">
               <div class="organizer-info" style="flex: 1;">
                 <h3 style="margin: 0 0 8px 0;">
                   <a href="organizer-detail.html?id=${org.id}" style="color: inherit; text-decoration: none;">

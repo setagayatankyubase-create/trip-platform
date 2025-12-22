@@ -51,7 +51,7 @@ const OrganizerPageRenderer = {
     }
 
     header.innerHTML = `
-      <img src="${logoUrl}" ${fallbackUrl ? `onerror="this.onerror=null; this.src='${fallbackUrl.replace(/'/g, "\\'")}';"` : ''} alt="${organizer.name}" class="organizer-logo">
+      <img src="${logoUrl}" ${fallbackUrl ? `onerror="this.onerror=null; if(this.src!==this.getAttribute('data-fallback')){this.setAttribute('data-fallback','${fallbackUrl.replace(/'/g, "\\'")}'); this.src='${fallbackUrl.replace(/'/g, "\\'")}';}else{this.style.display='none';}"` : 'onerror="this.onerror=null; this.style.display=\'none\';"'} alt="${organizer.name}" class="organizer-logo">
       <div class="organizer-info" style="flex: 1;">
         <h1>${organizer.name}</h1>
         <p style="margin: 0; color: #6c7a72; line-height: 1.6; font-size: 1.05rem;">${organizer.description}</p>

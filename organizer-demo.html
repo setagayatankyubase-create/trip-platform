@@ -387,7 +387,7 @@
         }
         
         header.innerHTML = `
-          ${logoUrl ? `<img src="${logoUrl}" ${fallbackUrl ? `onerror="this.onerror=null; this.src='${fallbackUrl.replace(/'/g, "\\'")}';"` : ''} alt="${organizer.name || ''}" class="organizer-logo">` : ''}
+          ${logoUrl ? `<img src="${logoUrl}" ${fallbackUrl ? `onerror="this.onerror=null; if(this.src!==this.getAttribute('data-fallback')){this.setAttribute('data-fallback','${fallbackUrl.replace(/'/g, "\\'")}'); this.src='${fallbackUrl.replace(/'/g, "\\'")}';}else{this.style.display='none';}"` : 'onerror="this.onerror=null; this.style.display=\'none\';"'} alt="${organizer.name || ''}" class="organizer-logo">` : ''}
           <div class="organizer-info">
             <h1>${organizer.name || 'デモ提供元'}<span class="demo-badge">デモ</span></h1>
             <p style="color: #6c7a72; line-height: 1.6;">${organizer.description || ''}</p>
