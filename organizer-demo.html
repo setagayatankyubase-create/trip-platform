@@ -359,153 +359,6 @@
       }
     }
     
-    // 提供元詳細をレンダリング
-    function renderOrganizerDetail(organizer, events) {
-      // パンくずリスト
-      const breadcrumb = document.getElementById('organizer-name-breadcrumb');
-      if (breadcrumb) {
-        breadcrumb.textContent = organizer.name || '提供元詳細';
-      }
-      
-      // ヘッダー
-      const header = document.getElementById('organizer-header');
-      if (header) {
-        // 提供元ロゴURLを取得（GitHubを優先、なければ既存URLを使用）
-        const originalLogoUrl = organizer.logo || '';
-        let logoUrl = '';
-        let fallbackUrl = null;
-        
-        // GitHubの画像URL生成関数が利用可能な場合、GitHubを優先
-        if (typeof window.getOrganizerLogoUrl === 'function' && organizer.id) {
-          logoUrl = window.getOrganizerLogoUrl(organizer.id, 'jpg');
-          // 既存のURLをフォールバックとして保持
-          if (originalLogoUrl && originalLogoUrl.trim() !== '') {
-            fallbackUrl = originalLogoUrl;
-          }
-        } else {
-          // GitHubのURL生成関数がない場合は既存のURLを使用
-          logoUrl = originalLogoUrl;
-        }
-        
-        header.innerHTML = `
-          ${logoUrl ? `<img src="${logoUrl}" ${fallbackUrl ? `onerror="this.onerror=null; if(this.src!==this.getAttribute('data-fallback')){this.setAttribute('data-fallback','${fallbackUrl.replace(/'/g, "\\'")}'); this.src='${fallbackUrl.replace(/'/g, "\\'")}';}else{this.style.display='none';}"` : 'onerror="this.onerror=null; this.style.display=\'none\';"'} alt="${organizer.name || ''}" class="organizer-logo">` : ''}
-          <div class="organizer-info">
-            <h1>${organizer.name || 'デモ提供元'}<span class="demo-badge">デモ</span></h1>
-            <p style="color: #6c7a72; line-height: 1.6;">${organizer.description || ''}</p>
-          </div>
-        `;
-      }
-      
-      // 説明とメタ情報
-      const description = document.getElementById('organizer-description');
-      if (description) {
-        description.innerHTML = `<p style="line-height: 1.8; margin-bottom: 16px;">${organizer.description || ''}</p>`;
-      }
-      
-      const meta = document.getElementById('organizer-meta');
-      if (meta) {
-        let metaHtml = '';
-        // establishedYearが存在し、有効な値の場合のみ表示
-        if (organizer.establishedYear && organizer.establishedYear !== '' && organizer.establishedYear !== 'undefined') {
-          metaHtml += `
-            <div class="meta-item">
-              <div class="meta-label">設立年</div>
-              <div class="meta-value">${organizer.establishedYear}年</div>
-            </div>
-          `;
-        }
-        // ratingが存在し、有効な値で、レビュー数が1以上の場合のみ表示
-        const rating = parseFloat(organizer.rating) || 0;
-        const reviewCount = parseInt(organizer.reviewCount) || 0;
-        if (rating > 0 && reviewCount > 0) {
-          metaHtml += `
-            <div class="meta-item">
-              <div class="meta-label">評価</div>
-              <div class="meta-value">★${rating} (${reviewCount}件)</div>
-            </div>
-          `;
-        }
-        if (events && events.length > 0) {
-          metaHtml += `
-            <div class="meta-item">
-              <div class="meta-label">開催イベント数</div>
-              <div class="meta-value">${events.length}件</div>
-            </div>
-          `;
-        }
-        // contactが存在し、有効な値の場合のみ表示
-        if (organizer.contact && organizer.contact !== '' && organizer.contact !== 'undefined') {
-          metaHtml += `
-            <div class="meta-item">
-              <div class="meta-label">連絡先</div>
-              <div class="meta-value" style="font-size: 0.95rem;">${organizer.contact}</div>
-            </div>
-          `;
-        }
-        if (organizer.website && organizer.website !== '' && organizer.website !== 'undefined') {
-          metaHtml += `
-            <div class="meta-item">
-              <div class="meta-label">ウェブサイト</div>
-              <div class="meta-value">
-                <a href="${organizer.website}" target="_blank" rel="noopener" style="color: var(--primary); text-decoration: none; font-size: 0.95rem;">
-                  ${organizer.website.replace(/^https?:\/\//, '')} →
-                </a>
-              </div>
-            </div>
-          `;
-        }
-        meta.innerHTML = metaHtml;
-      }
-      
-      // イベント一覧（公開版と同じUIを使用）
-      const eventCount = document.getElementById('event-count');
-      if (eventCount) {
-        eventCount.textContent = `${events.length}件のイベント`;
-      }
-      
-      const eventsContainer = document.getElementById('organizer-events');
-      if (eventsContainer) {
-        if (events.length === 0) {
-          eventsContainer.innerHTML = `
-            <div class="empty-state" style="grid-column: 1 / -1;">
-              <div class="empty-state-icon">📅</div>
-              <h3>現在開催中のイベントはありません</h3>
-            </div>
-          `;
-        } else {
-          // CardRenderer.renderListを使用（公開版と同じUI）
-          if (typeof CardRenderer !== 'undefined' && CardRenderer.renderList) {
-            CardRenderer.renderList(events, 'organizer-events');
-            
-            // デモページ用にリンク先を experience.html から experience-demo.html に変更
-            const links = eventsContainer.querySelectorAll('.card-link[href^="experience.html"]');
-            links.forEach(link => {
-              const href = link.getAttribute('href');
-              if (href && href.startsWith('experience.html')) {
-                link.setAttribute('href', href.replace('experience.html', 'experience-demo.html'));
-              }
-            });
-          } else {
-            // フォールバック（CardRendererが利用できない場合）
-            eventsContainer.innerHTML = '<p style="color: #6c7a72; padding: 40px; text-align: center;">イベントの読み込みに失敗しました</p>';
-          }
-          
-          // クリック計測を追加（必要に応じて）
-          const links = eventsContainer.querySelectorAll('.card-link');
-          links.forEach(link => {
-            link.addEventListener('click', (e) => {
-              const eventId = link.getAttribute('data-event-id');
-              if (typeof ClickTracker !== 'undefined' && ClickTracker.track) {
-                const eventObj = events.find(ev => ev.id === eventId);
-                const organizerId = eventObj ? eventObj.organizerId : '';
-                ClickTracker.track(eventId, organizerId);
-              }
-            });
-          });
-        }
-      }
-    }
-
     (async () => {
       try {
         // 現在の年を設定
@@ -594,8 +447,20 @@
         document.getElementById('demo-error').style.display = 'none';
         document.getElementById('demo-content').style.display = 'block';
         
-        // 通常ページと同じレンダラーを使用
+        // 通常ページと同じレンダラーを使用（公開版と同じUI構造）
         OrganizerPageRenderer.render(demoData.organizer, events);
+        
+        // デモページ用にリンク先を experience.html から experience-demo.html に変更
+        const eventsContainer = document.getElementById('organizer-events');
+        if (eventsContainer) {
+          const links = eventsContainer.querySelectorAll('.card-link[href^="experience.html"]');
+          links.forEach(link => {
+            const href = link.getAttribute('href');
+            if (href && href.startsWith('experience.html')) {
+              link.setAttribute('href', href.replace('experience.html', 'experience-demo.html'));
+            }
+          });
+        }
         
         // デモページでは検索欄を常に非表示
         const headerSearch = document.getElementById('header-search');
