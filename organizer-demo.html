@@ -569,6 +569,11 @@
         console.log('[organizer-demo.html] Events (before filter):', demoData.events);
         
         // 提供元IDでイベントをフィルタリング（複数のフィールド名に対応）
+        // 提供元IDが "demoorg-XXX" 形式の場合、"org-XXX" に変換して比較
+        const normalizedOrganizerId = organizerId.startsWith('demoorg-') 
+          ? organizerId.replace(/^demo/, '') 
+          : organizerId;
+        
         const filteredEvents = (demoData.events || []).filter(event => {
           // すべての可能なフィールド名をチェック
           const eventOrganizerId = event.organizerId || event.organizer_id || event.organizerId_demo || event.organizer_id_demo || event.organizer || '';
@@ -579,15 +584,17 @@
             eventTitle: event.title,
             eventOrganizerId: eventOrganizerId,
             requestedOrganizerId: organizerId,
+            normalizedOrganizerId: normalizedOrganizerId,
             organizerId_field: event.organizerId,
             organizer_id_field: event.organizer_id,
             organizerId_demo_field: event.organizerId_demo,
             organizer_id_demo_field: event.organizer_id_demo,
             organizer_field: event.organizer,
-            match: String(eventOrganizerId) === String(organizerId)
+            match: String(eventOrganizerId) === String(normalizedOrganizerId)
           });
           
-          const matches = String(eventOrganizerId) === String(organizerId);
+          // 正規化された提供元IDと比較
+          const matches = String(eventOrganizerId) === String(normalizedOrganizerId);
           return matches;
         });
         
