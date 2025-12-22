@@ -301,16 +301,19 @@
     }
     
     // デモデータを取得（共有キャッシュから高速取得）
-    async function fetchDemoData(password) {
+    async function fetchDemoData(password, organizerId = null) {
       const CACHE_KEY = 'demo_data_cache';
+      
+      // organizerIdがある場合は、キャッシュキーに含める（提供元ごとにキャッシュを分ける）
+      const cacheKey = organizerId ? `${CACHE_KEY}_${organizerId}` : CACHE_KEY;
       
       // キャッシュをチェック（即座に返す）
       try {
-        const cachedStr = sessionStorage.getItem(CACHE_KEY);
+        const cachedStr = sessionStorage.getItem(cacheKey);
         if (cachedStr) {
           const cached = JSON.parse(cachedStr);
           if (Date.now() < cached.expiresAt && cached.password === password) {
-            console.log('[organizer-demo] Using cached demo data');
+            console.log('[organizer-demo] Using cached demo data for organizer:', organizerId);
             return cached.data;
           }
         }
@@ -322,6 +325,9 @@
       try {
         const url = new URL(DEMO_GAS_API_URL);
         url.searchParams.set('password', password);
+        if (organizerId) {
+          url.searchParams.set('organizer_id', organizerId);
+        }
         
         const response = await fetch(url.toString());
         if (!response.ok) {
@@ -336,7 +342,7 @@
         
         // キャッシュに保存
         try {
-          sessionStorage.setItem(CACHE_KEY, JSON.stringify({
+          sessionStorage.setItem(cacheKey, JSON.stringify({
             data: data,
             password: password,
             expiresAt: Date.now() + (24 * 60 * 60 * 1000) // 24時間
@@ -529,10 +535,11 @@
           return;
         }
 
-        // デモデータを取得
-        const demoData = await fetchDemoData(password);
+        // デモデータを取得（organizerIdをパラメータとして渡す）
+        const demoData = await fetchDemoData(password, organizerId);
         
         console.log('[organizer-demo.html] Demo data received:', demoData);
+        console.log('[organizer-demo.html] Requested organizerId:', organizerId);
         
         if (!demoData || !demoData.success || !demoData.organizer) {
           console.error('[organizer-demo.html] Demo data error:', demoData);
@@ -560,10 +567,19 @@
         console.log('[organizer-demo.html] Events count (before filter):', demoData.events ? demoData.events.length : 0);
         console.log('[organizer-demo.html] Events (before filter):', demoData.events);
         
-        // 提供元IDでイベントをフィルタリング
+        // 提供元IDでイベントをフィルタリング（複数のフィールド名に対応）
         const filteredEvents = (demoData.events || []).filter(event => {
-          const eventOrganizerId = event.organizerId || event.organizer_id;
-          return eventOrganizerId === organizerId;
+          const eventOrganizerId = event.organizerId || event.organizer_id || event.organizerId_demo || event.organizer_id_demo || '';
+          const matches = String(eventOrganizerId) === String(organizerId);
+          if (!matches) {
+            console.warn('[organizer-demo.html] Event filtered out:', {
+              eventId: event.id,
+              eventTitle: event.title,
+              eventOrganizerId: eventOrganizerId,
+              requestedOrganizerId: organizerId
+            });
+          }
+          return matches;
         });
         
         console.log('[organizer-demo.html] Events count (after filter):', filteredEvents.length);
