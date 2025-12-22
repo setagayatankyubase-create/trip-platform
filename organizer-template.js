@@ -33,19 +33,25 @@ const OrganizerPageRenderer = {
     const header = document.getElementById('organizer-header');
     if (!header) return;
 
-    // 提供元ロゴURLを取得（GitHubから、または既存URLを使用）
-    let logoUrl = organizer.logo || '';
+    // 提供元ロゴURLを取得（GitHubを優先、なければ既存URLを使用）
+    const originalLogoUrl = organizer.logo || '';
+    let logoUrl = '';
+    let fallbackUrl = null;
     
-    // GitHubの画像URL生成関数が利用可能な場合
+    // GitHubの画像URL生成関数が利用可能な場合、GitHubを優先
     if (typeof window.getOrganizerLogoUrl === 'function' && organizer.id) {
-      // 既存のURLがGitHubのパス（/images/）でない場合のみ、GitHubから取得
-      if (!logoUrl || (!logoUrl.startsWith('/images/') && !logoUrl.includes('/images/'))) {
-        logoUrl = window.getOrganizerLogoUrl(organizer.id, 'jpg');
+      logoUrl = window.getOrganizerLogoUrl(organizer.id, 'jpg');
+      // 既存のURLをフォールバックとして保持
+      if (originalLogoUrl && originalLogoUrl.trim() !== '') {
+        fallbackUrl = originalLogoUrl;
       }
+    } else {
+      // GitHubのURL生成関数がない場合は既存のURLを使用
+      logoUrl = originalLogoUrl;
     }
 
     header.innerHTML = `
-      <img src="${logoUrl}" alt="${organizer.name}" class="organizer-logo">
+      <img src="${logoUrl}" ${fallbackUrl ? `onerror="this.onerror=null; this.src='${fallbackUrl.replace(/'/g, "\\'")}';"` : ''} alt="${organizer.name}" class="organizer-logo">
       <div class="organizer-info" style="flex: 1;">
         <h1>${organizer.name}</h1>
         <p style="margin: 0; color: #6c7a72; line-height: 1.6; font-size: 1.05rem;">${organizer.description}</p>

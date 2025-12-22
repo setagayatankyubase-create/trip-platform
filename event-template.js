@@ -284,20 +284,26 @@ const EventPageRenderer = {
     if (!organizer) return;
 
     if (organizerInfo) {
-      // 提供元ロゴURLを取得（GitHubから、または既存URLを使用）
-      let logoUrl = organizer.logo || '';
+      // 提供元ロゴURLを取得（GitHubを優先、なければ既存URLを使用）
+      const originalLogoUrl = organizer.logo || '';
+      let logoUrl = '';
+      let fallbackUrl = null;
       
-      // GitHubの画像URL生成関数が利用可能な場合
+      // GitHubの画像URL生成関数が利用可能な場合、GitHubを優先
       if (typeof window.getOrganizerLogoUrl === 'function' && organizer.id) {
-        // 既存のURLが完全なURL（http:// または https://）でない場合、GitHubから取得
-        if (!logoUrl || (!logoUrl.startsWith('http://') && !logoUrl.startsWith('https://') && !logoUrl.startsWith('/assets/images/'))) {
-          logoUrl = window.getOrganizerLogoUrl(organizer.id, 'jpg');
+        logoUrl = window.getOrganizerLogoUrl(organizer.id, 'jpg');
+        // 既存のURLをフォールバックとして保持
+        if (originalLogoUrl && originalLogoUrl.trim() !== '') {
+          fallbackUrl = originalLogoUrl;
         }
+      } else {
+        // GitHubのURL生成関数がない場合は既存のURLを使用
+        logoUrl = originalLogoUrl;
       }
       
       organizerInfo.innerHTML = `
         <div style="display: flex; gap: 16px; align-items: flex-start;">
-          <img src="${logoUrl}" alt="${organizer.name}" style="width: 80px; height: 80px; border-radius: 8px; object-fit: cover; background: #f0f0f0;">
+          <img src="${logoUrl}" ${fallbackUrl ? `onerror="this.onerror=null; this.src='${fallbackUrl.replace(/'/g, "\\'")}';"` : ''} alt="${organizer.name}" style="width: 80px; height: 80px; border-radius: 8px; object-fit: cover; background: #f0f0f0;">
           <div>
             <h4 style="margin: 0 0 8px 0;">${organizer.name}</h4>
             <p style="margin: 0; color: #6c7a72; font-size: 0.9rem;">${organizer.description}</p>
