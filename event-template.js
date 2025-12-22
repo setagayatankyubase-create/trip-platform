@@ -302,8 +302,11 @@ const EventPageRenderer = {
       // facilityが文字列の場合（| または ｜ で区切られている）
       const facilityRaw = (event.facility || '').trim();
       
-      if (!facilityRaw) {
-        facilityList.parentElement.style.display = 'none';
+      // 'undefined'文字列もチェック
+      if (!facilityRaw || facilityRaw === 'undefined') {
+        if (facilityList.parentElement) {
+          facilityList.parentElement.style.display = 'none';
+        }
         return;
       }
 
@@ -311,7 +314,9 @@ const EventPageRenderer = {
       const items = facilityRaw.split(/[|｜]/).map(s => s.trim()).filter(Boolean);
       
       if (items.length === 0) {
-        facilityList.parentElement.style.display = 'none';
+        if (facilityList.parentElement) {
+          facilityList.parentElement.style.display = 'none';
+        }
         return;
       }
 
@@ -322,7 +327,9 @@ const EventPageRenderer = {
         facilityList.appendChild(li);
       });
       
-      facilityList.parentElement.style.display = 'block';
+      if (facilityList.parentElement) {
+        facilityList.parentElement.style.display = 'block';
+      }
     },
 
   // 提供元

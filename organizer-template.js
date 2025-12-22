@@ -64,6 +64,10 @@ const OrganizerPageRenderer = {
     const description = document.getElementById('organizer-description');
     const meta = document.getElementById('organizer-meta');
 
+    // デバッグログ：organizerオブジェクト全体を確認
+    console.log('[organizer-template] Full organizer object:', organizer);
+    console.log('[organizer-template] Organizer keys:', Object.keys(organizer || {}));
+
     if (description) {
       description.innerHTML = `
         <p style="line-height: 1.8; margin-bottom: 16px;">${organizer.description}</p>
@@ -74,10 +78,22 @@ const OrganizerPageRenderer = {
       // 設立年を取得（複数のフィールド名に対応）
       const establishedYear = organizer.establishedYear || organizer.founded_year || organizer.foundedYear || '';
       
+      // デバッグログ（本番環境では削除可能）
+      console.log('[organizer-template] Established year fields:', {
+        establishedYear: organizer.establishedYear,
+        founded_year: organizer.founded_year,
+        foundedYear: organizer.foundedYear,
+        result: establishedYear
+      });
+      
+      // 設立年を表示（数値も文字列も対応）
+      const yearStr = establishedYear ? String(establishedYear).trim() : '';
+      const displayYear = (yearStr && yearStr !== 'undefined' && yearStr !== '') ? `${yearStr}年` : '未設定';
+      
       let metaHtml = `
         <div class="meta-item">
           <div class="meta-label">設立年</div>
-          <div class="meta-value">${establishedYear && establishedYear !== 'undefined' && establishedYear.trim() !== '' ? `${establishedYear}年` : '未設定'}</div>
+          <div class="meta-value">${displayYear}</div>
         </div>
         ${(() => {
           const rating = parseFloat(organizer.rating) || 0;
@@ -117,14 +133,24 @@ const OrganizerPageRenderer = {
           <div class="meta-label">連絡先</div>
           <div class="meta-value" style="font-size: 0.95rem;">
             ${(() => {
-              // contact情報を取得
-              const contact = organizer.contact || organizer.contact_email || '';
-              if (!contact || contact.trim() === '' || contact === 'undefined') {
+              // contact情報を取得（複数のフィールド名に対応）
+              const contact = organizer.contact || organizer.contact_email || organizer.contactEmail || '';
+              
+              // デバッグログ（本番環境では削除可能）
+              console.log('[organizer-template] Contact fields:', {
+                contact: organizer.contact,
+                contact_email: organizer.contact_email,
+                contactEmail: organizer.contactEmail,
+                result: contact
+              });
+              
+              const contactStr = contact ? String(contact).trim() : '';
+              if (!contactStr || contactStr === 'undefined' || contactStr === '') {
                 return '未設定';
               }
               // メールアドレスの場合はクリック可能なリンクにする
-              const isEmail = contact.includes('@');
-              return isEmail ? `<a href="mailto:${contact}" style="color: var(--primary); text-decoration: none;">${contact}</a>` : contact;
+              const isEmail = contactStr.includes('@');
+              return isEmail ? `<a href="mailto:${contactStr}" style="color: var(--primary); text-decoration: none;">${contactStr}</a>` : contactStr;
             })()}
           </div>
         </div>
