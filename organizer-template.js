@@ -76,29 +76,36 @@ const OrganizerPageRenderer = {
           <div class="meta-label">設立年</div>
           <div class="meta-value">${organizer.establishedYear}年</div>
         </div>
+        ${(() => {
+          const rating = parseFloat(organizer.rating) || 0;
+          const reviewCount = parseInt(organizer.reviewCount) || 0;
+          // 評価が有効で、レビュー数が1以上の場合のみ表示
+          if (rating <= 0 || reviewCount <= 0) {
+            return '';
+          }
+          const fullStars = Math.floor(rating);
+          const hasHalfStar = rating % 1 >= 0.5;
+          let starsHtml = '';
+          for (let i = 0; i < 5; i++) {
+            if (i < fullStars) {
+              starsHtml += '<span style="color: #ffc107;">★</span>';
+            } else if (i === fullStars && hasHalfStar) {
+              starsHtml += '<span style="color: #ffc107;">☆</span>';
+            } else {
+              starsHtml += '<span style="color: #ddd;">★</span>';
+            }
+          }
+          return `
         <div class="meta-item">
           <div class="meta-label">評価</div>
           <div class="meta-value">
-            ${(() => {
-              const rating = parseFloat(organizer.rating) || 0;
-              const fullStars = Math.floor(rating);
-              const hasHalfStar = rating % 1 >= 0.5;
-              let starsHtml = '';
-              for (let i = 0; i < 5; i++) {
-                if (i < fullStars) {
-                  starsHtml += '<span style="color: #ffc107;">★</span>';
-                } else if (i === fullStars && hasHalfStar) {
-                  starsHtml += '<span style="color: #ffc107;">☆</span>';
-                } else {
-                  starsHtml += '<span style="color: #ddd;">★</span>';
-                }
-              }
-              return starsHtml;
-            })()}
-            <span style="margin-left: 8px; font-weight: 600; font-size: 1.05rem;">${organizer.rating}</span>
-            <span style="color: #6c7a72; font-size: 0.9em; margin-left: 8px;">(${organizer.reviewCount}件)</span>
+            ${starsHtml}
+            <span style="margin-left: 8px; font-weight: 600; font-size: 1.05rem;">${rating}</span>
+            <span style="color: #6c7a72; font-size: 0.9em; margin-left: 8px;">(${reviewCount}件)</span>
           </div>
         </div>
+          `;
+        })()}
         <div class="meta-item">
           <div class="meta-label">開催イベント数</div>
           <div class="meta-value">${events.length}件</div>

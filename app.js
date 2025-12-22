@@ -690,26 +690,22 @@ const CardRenderer = {
           reviewCount = organizer.reviewCount;
         }
       }
-      
-      // 評価がまだ設定されていない場合はデフォルト値を使用
-      if (!rating || !reviewCount) {
-        rating = rating || 4.5;
-        reviewCount = reviewCount || 10;
-      }
     }
 
-    // API側の型や欠損にかかわらず安全に扱えるように数値化＆フォールバック
+    // API側の型や欠損にかかわらず安全に扱えるように数値化
     const numericRating = Number(rating);
     const numericReviewCount = Number(reviewCount);
 
-    const safeRating = Number.isFinite(numericRating) ? numericRating : 4.5;
-    const safeReviewCount = Number.isFinite(numericReviewCount) ? numericReviewCount : 0;
+    // 評価が有効で、レビュー数が1以上の場合のみ表示
+    if (!Number.isFinite(numericRating) || numericRating <= 0 || !Number.isFinite(numericReviewCount) || numericReviewCount <= 0) {
+      return ''; // 評価がない場合は何も表示しない
+    }
 
     return `
       <div class="card-rating">
         <span class="rating-star">⭐</span>
-        <span class="rating-value">${safeRating.toFixed(2)}</span>
-        <span class="rating-count">(${safeReviewCount}件)</span>
+        <span class="rating-value">${numericRating.toFixed(2)}</span>
+        <span class="rating-count">(${numericReviewCount}件)</span>
       </div>
     `;
   },
