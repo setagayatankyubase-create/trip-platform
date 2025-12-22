@@ -64,10 +64,6 @@ const OrganizerPageRenderer = {
     const description = document.getElementById('organizer-description');
     const meta = document.getElementById('organizer-meta');
 
-    // デバッグログ：organizerオブジェクト全体を確認
-    console.log('[organizer-template] Full organizer object:', organizer);
-    console.log('[organizer-template] Organizer keys:', Object.keys(organizer || {}));
-
     if (description) {
       description.innerHTML = `
         <p style="line-height: 1.8; margin-bottom: 16px;">${organizer.description}</p>
@@ -75,20 +71,17 @@ const OrganizerPageRenderer = {
     }
 
     if (meta) {
-      // 設立年を取得（複数のフィールド名に対応）
-      const establishedYear = organizer.establishedYear || organizer.founded_year || organizer.foundedYear || '';
-      
-      // デバッグログ（本番環境では削除可能）
-      console.log('[organizer-template] Established year fields:', {
-        establishedYear: organizer.establishedYear,
-        founded_year: organizer.founded_year,
-        foundedYear: organizer.foundedYear,
-        result: establishedYear
-      });
+      // 設立年を取得（複数のフィールド名に対応：founded_yearがmeta.jsonで使用されている）
+      const establishedYear = organizer.founded_year || organizer.establishedYear || organizer.foundedYear || '';
       
       // 設立年を表示（数値も文字列も対応）
-      const yearStr = establishedYear ? String(establishedYear).trim() : '';
-      const displayYear = (yearStr && yearStr !== 'undefined' && yearStr !== '') ? `${yearStr}年` : '未設定';
+      let displayYear = '未設定';
+      if (establishedYear) {
+        const yearStr = String(establishedYear).trim();
+        if (yearStr && yearStr !== 'undefined' && yearStr !== 'null' && yearStr !== '') {
+          displayYear = `${yearStr}年`;
+        }
+      }
       
       let metaHtml = `
         <div class="meta-item">
@@ -133,24 +126,19 @@ const OrganizerPageRenderer = {
           <div class="meta-label">連絡先</div>
           <div class="meta-value" style="font-size: 0.95rem;">
             ${(() => {
-              // contact情報を取得（複数のフィールド名に対応）
+              // contact情報を取得（meta.jsonではcontactが使用されている）
               const contact = organizer.contact || organizer.contact_email || organizer.contactEmail || '';
               
-              // デバッグログ（本番環境では削除可能）
-              console.log('[organizer-template] Contact fields:', {
-                contact: organizer.contact,
-                contact_email: organizer.contact_email,
-                contactEmail: organizer.contactEmail,
-                result: contact
-              });
-              
-              const contactStr = contact ? String(contact).trim() : '';
-              if (!contactStr || contactStr === 'undefined' || contactStr === '') {
-                return '未設定';
+              let displayContact = '未設定';
+              if (contact) {
+                const contactStr = String(contact).trim();
+                if (contactStr && contactStr !== 'undefined' && contactStr !== 'null' && contactStr !== '') {
+                  // メールアドレスの場合はクリック可能なリンクにする
+                  const isEmail = contactStr.includes('@');
+                  displayContact = isEmail ? `<a href="mailto:${contactStr}" style="color: var(--primary); text-decoration: none;">${contactStr}</a>` : contactStr;
+                }
               }
-              // メールアドレスの場合はクリック可能なリンクにする
-              const isEmail = contactStr.includes('@');
-              return isEmail ? `<a href="mailto:${contactStr}" style="color: var(--primary); text-decoration: none;">${contactStr}</a>` : contactStr;
+              return displayContact;
             })()}
           </div>
         </div>
