@@ -69,7 +69,7 @@ function getEventSubImageUrl(eventId, index = 1, extension = 'jpg') {
 // 提供元ロゴURLを取得
 function getOrganizerLogoUrl(organizerId, extension = 'jpg') {
   if (!organizerId) return '';
-  return getGitHubImageUrl(`organizers/${organizerId}.${extension}`);
+  return getGitHubImageUrl(`organizer/${organizerId}.${extension}`);
 }
 
 // グローバルに公開
