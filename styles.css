@@ -1438,13 +1438,18 @@ body {
   color: #ccc;
   text-decoration: none;
   font-size: 0.85rem;
-  font-weight: normal !important;
+  font-weight: 400 !important;
   margin-bottom: 10px;
   transition: color 0.2s;
 }
 
 .footer-column a:hover {
   color: #fff;
+  font-weight: 400 !important;
+}
+
+.footer-column a[href="publish.html"] {
+  font-weight: 400 !important;
 }
 
 
