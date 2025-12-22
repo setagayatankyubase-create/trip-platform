@@ -75,12 +75,10 @@ const OrganizerPageRenderer = {
       const establishedYear = organizer.establishedYear || organizer.founded_year || organizer.foundedYear || '';
       
       let metaHtml = `
-        ${establishedYear && establishedYear !== 'undefined' && establishedYear.trim() !== '' ? `
         <div class="meta-item">
           <div class="meta-label">設立年</div>
-          <div class="meta-value">${establishedYear}年</div>
+          <div class="meta-value">${establishedYear && establishedYear !== 'undefined' && establishedYear.trim() !== '' ? `${establishedYear}年` : '未設定'}</div>
         </div>
-        ` : ''}
         ${(() => {
           const rating = parseFloat(organizer.rating) || 0;
           const reviewCount = parseInt(organizer.reviewCount) || 0;
@@ -115,23 +113,21 @@ const OrganizerPageRenderer = {
           <div class="meta-label">開催イベント数</div>
           <div class="meta-value">${events.length}件</div>
         </div>
-        ${(() => {
-          // contact情報がある場合のみ表示
-          const contact = organizer.contact || organizer.contact_email || '';
-          if (!contact || contact.trim() === '' || contact === 'undefined') {
-            return '';
-          }
-          // メールアドレスの場合はクリック可能なリンクにする
-          const isEmail = contact.includes('@');
-          return `
         <div class="meta-item">
           <div class="meta-label">連絡先</div>
           <div class="meta-value" style="font-size: 0.95rem;">
-            ${isEmail ? `<a href="mailto:${contact}" style="color: var(--primary); text-decoration: none;">${contact}</a>` : contact}
+            ${(() => {
+              // contact情報を取得
+              const contact = organizer.contact || organizer.contact_email || '';
+              if (!contact || contact.trim() === '' || contact === 'undefined') {
+                return '未設定';
+              }
+              // メールアドレスの場合はクリック可能なリンクにする
+              const isEmail = contact.includes('@');
+              return isEmail ? `<a href="mailto:${contact}" style="color: var(--primary); text-decoration: none;">${contact}</a>` : contact;
+            })()}
           </div>
         </div>
-          `;
-        })()}
       `;
 
       if (organizer.website) {
