@@ -414,12 +414,14 @@
             </div>
           `;
         }
-        // ratingが存在し、0以外の場合のみ表示
-        if (organizer.rating && organizer.rating !== 0 && organizer.rating !== 'undefined' && !isNaN(organizer.rating)) {
+        // ratingが存在し、有効な値で、レビュー数が1以上の場合のみ表示
+        const rating = parseFloat(organizer.rating) || 0;
+        const reviewCount = parseInt(organizer.reviewCount) || 0;
+        if (rating > 0 && reviewCount > 0) {
           metaHtml += `
             <div class="meta-item">
               <div class="meta-label">評価</div>
-              <div class="meta-value">★${organizer.rating} ${organizer.reviewCount && organizer.reviewCount !== 0 && organizer.reviewCount !== 'undefined' && !isNaN(organizer.reviewCount) ? `(${organizer.reviewCount}件)` : ''}</div>
+              <div class="meta-value">★${rating} (${reviewCount}件)</div>
             </div>
           `;
         }
