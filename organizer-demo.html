@@ -214,6 +214,7 @@
 
   <script src="data.js?v=3_2025-12-21"></script>
   <script src="app.js"></script>
+  <script src="organizer-template.js"></script>
   <script>
     // デモ用設定（GAS APIのURL）
     const DEMO_GAS_API_URL = 'https://script.google.com/macros/s/AKfycbyyjVTkFqxOf32P3pT2d9XfzPAir2ssEMj9u7-6kO1allkXUo1ey0bQbdcENK2Rl4lr-w/exec';
@@ -563,50 +564,25 @@
           return;
         }
 
-        console.log('[organizer-demo.html] Rendering organizer:', demoData.organizer);
-        console.log('[organizer-demo.html] Requested organizerId:', organizerId);
-        console.log('[organizer-demo.html] Events count (before filter):', demoData.events ? demoData.events.length : 0);
-        console.log('[organizer-demo.html] Events (before filter):', demoData.events);
+        // 通常ページと同じ構造でフィルタリング
+        // イベントリストを取得
+        const eventList = demoData.events || [];
         
-        // 提供元IDでイベントをフィルタリング（複数のフィールド名に対応）
-        // 提供元IDが "demoorg-XXX" 形式の場合、"org-XXX" に変換して比較
-        const normalizedOrganizerId = organizerId.startsWith('demoorg-') 
-          ? organizerId.replace(/^demo/, '') 
-          : organizerId;
+        // イベントをフィルタリング（organizerId / organizer_id どちらでも対応）
+        // 通常ページと同じロジックを使用
+        const norm = v => String(v ?? '').trim();
+        const events = eventList.filter(e => norm(e.organizerId || e.organizer_id) === norm(organizerId));
         
-        const filteredEvents = (demoData.events || []).filter(event => {
-          // すべての可能なフィールド名をチェック
-          const eventOrganizerId = event.organizerId || event.organizer_id || event.organizerId_demo || event.organizer_id_demo || event.organizer || '';
-          
-          // デバッグ用ログ
-          console.log('[organizer-demo.html] Checking event:', {
-            eventId: event.id,
-            eventTitle: event.title,
-            eventOrganizerId: eventOrganizerId,
-            requestedOrganizerId: organizerId,
-            normalizedOrganizerId: normalizedOrganizerId,
-            organizerId_field: event.organizerId,
-            organizer_id_field: event.organizer_id,
-            organizerId_demo_field: event.organizerId_demo,
-            organizer_id_demo_field: event.organizer_id_demo,
-            organizer_field: event.organizer,
-            match: String(eventOrganizerId) === String(normalizedOrganizerId)
-          });
-          
-          // 正規化された提供元IDと比較
-          const matches = String(eventOrganizerId) === String(normalizedOrganizerId);
-          return matches;
-        });
-        
-        console.log('[organizer-demo.html] Events count (after filter):', filteredEvents.length);
-        console.log('[organizer-demo.html] Events (after filter):', filteredEvents);
+        console.log('[organizer-demo.html] eventList length:', eventList.length);
+        console.log('[organizer-demo.html] filtered events count:', events.length);
+        console.log('[organizer-demo.html] organizerId:', organizerId);
 
         // コンテンツを表示
         document.getElementById('demo-error').style.display = 'none';
         document.getElementById('demo-content').style.display = 'block';
         
-        // 提供元詳細をレンダリング
-        renderOrganizerDetail(demoData.organizer, filteredEvents);
+        // 通常ページと同じレンダラーを使用
+        OrganizerPageRenderer.render(demoData.organizer, events);
         
         // デモページでは検索欄を常に非表示
         const headerSearch = document.getElementById('header-search');
