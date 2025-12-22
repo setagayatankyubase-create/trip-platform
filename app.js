@@ -635,44 +635,45 @@ const CardRenderer = {
   },
 
   // 画像URLを処理（GitHubを優先、なければ既存URLを使用）
+  // 戻り値: { primary: string, fallback: string | null }
   optimizeImageUrl(url, eventId = null) {
-    // eventIdがある場合は、GitHubの画像を優先
-    if (eventId && typeof window.getEventImageUrl === 'function') {
-      const githubUrl = window.getEventImageUrl(eventId, 'jpg');
-      if (githubUrl) {
-        return githubUrl;
-      }
-    }
+    const originalUrl = (url && typeof url === 'string' && url.trim() !== '') ? url : '';
+    let fallbackUrl = null;
     
-    // GitHubの画像がない場合、既存のURLを使用（フォールバック）
-    if (url && typeof url === 'string' && url.trim() !== '') {
-      // 完全なURL（http:// または https://）の場合
-      if (url.startsWith('http://') || url.startsWith('https://')) {
-        // Unsplash などの外部サービスは、既存の最適化処理を適用
+    // 既存のURLをフォールバック用に準備
+    if (originalUrl) {
+      // Unsplash などの外部サービスは、既存の最適化処理を適用
+      if (originalUrl.startsWith('http://') || originalUrl.startsWith('https://')) {
         try {
-          const u = new URL(url);
+          const u = new URL(originalUrl);
           if (u.hostname.includes('images.unsplash.com')) {
             u.searchParams.set('auto', 'format');
             u.searchParams.set('fit', 'crop');
             u.searchParams.set('w', '600');
             u.searchParams.set('q', '70');
-            return u.toString();
+            fallbackUrl = u.toString();
+          } else {
+            fallbackUrl = originalUrl;
           }
         } catch {
-          // URLパースに失敗した場合はそのまま返す
-          return url;
+          fallbackUrl = originalUrl;
         }
-        return url;
-      }
-      
-      // 相対パスの場合
-      if (url.startsWith('/')) {
-        return url;
+      } else if (originalUrl.startsWith('/')) {
+        fallbackUrl = originalUrl;
       }
     }
     
-    // フォールバック: 空文字列を返す
-    return url || '';
+    // eventIdがある場合は、GitHubの画像を優先
+    if (eventId && typeof window.getEventImageUrl === 'function') {
+      const githubUrl = window.getEventImageUrl(eventId, 'jpg');
+      if (githubUrl) {
+        // GitHubのURLを優先し、既存のURLをフォールバックとして返す
+        return { primary: githubUrl, fallback: fallbackUrl };
+      }
+    }
+    
+    // GitHubのURLがない場合は、既存のURLを優先として返す
+    return { primary: fallbackUrl || originalUrl || '', fallback: null };
   },
 
   getRatingHtml(event) {
@@ -744,7 +745,9 @@ const CardRenderer = {
     const favoriteFill = isFavorite ? 'currentColor' : 'none';
 
     // イベント画像URLを取得（GitHubから、または既存URLを使用）
-    const optimizedImage = this.optimizeImageUrl(event.image, event.id);
+    const imageUrls = this.optimizeImageUrl(event.image, event.id);
+    const optimizedImage = imageUrls.primary;
+    const fallbackImage = imageUrls.fallback;
 
     // インデックスデータでは city が area 相当として使われる
     const area = event.area || event.city || "";
@@ -803,7 +806,7 @@ const CardRenderer = {
       <a href="experience.html?id=${event.id}" class="card-link" data-event-id="${event.id}">
         <div class="card" data-event-id="${event.id}">
           <div class="card-image-wrapper">
-            <img src="${optimizedImage}" alt="${event.title}" loading="lazy">
+            <img src="${optimizedImage}" ${fallbackImage ? `onerror="this.onerror=null; this.src='${fallbackImage.replace(/'/g, "\\'")}';"` : ''} alt="${event.title}" loading="lazy">
             <button class="${favoriteClass}" onclick="toggleFavorite('${event.id}', event)" title="${favoriteTitle}">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="${favoriteFill}" stroke="currentColor" stroke-width="2">
                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>

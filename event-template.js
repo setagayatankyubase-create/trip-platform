@@ -65,22 +65,42 @@ const EventPageRenderer = {
       // イベント画像URLを取得（GitHubを優先、なければ既存URLを使用）
       const rawImageUrl = event.image || event.thumb || event.mainImage || '';
       
-      // CardRenderer.optimizeImageUrlを使用（GitHubを優先）
+      // CardRenderer.optimizeImageUrlを使用（GitHubを優先、なければ既存URL）
       let imageUrl = '';
+      let fallbackUrl = null;
       if (typeof CardRenderer !== 'undefined' && CardRenderer.optimizeImageUrl) {
-        imageUrl = CardRenderer.optimizeImageUrl(rawImageUrl, event.id);
+        const imageUrls = CardRenderer.optimizeImageUrl(rawImageUrl, event.id);
+        imageUrl = imageUrls.primary;
+        fallbackUrl = imageUrls.fallback;
       } else {
         // CardRendererが利用できない場合のフォールバック（GitHubを優先）
         if (event.id && typeof window.getEventImageUrl === 'function') {
           imageUrl = window.getEventImageUrl(event.id, 'jpg');
-        }
-        if (!imageUrl) {
+          fallbackUrl = rawImageUrl || null;
+        } else {
           imageUrl = rawImageUrl;
         }
       }
       
       if (imageUrl) {
-        mainImage.style.backgroundImage = `url('${imageUrl}')`;
+        // background-imageの場合は、onerrorが使えないので、JavaScriptで画像の読み込みを確認
+        if (fallbackUrl) {
+          // 画像が読み込めない場合のフォールバック処理
+          const img = new Image();
+          img.onerror = function() {
+            if (fallbackUrl && mainImage) {
+              mainImage.style.backgroundImage = `url('${fallbackUrl.replace(/'/g, "\\'")}')`;
+            }
+          };
+          img.onload = function() {
+            if (mainImage) {
+              mainImage.style.backgroundImage = `url('${imageUrl}')`;
+            }
+          };
+          img.src = imageUrl;
+        } else {
+          mainImage.style.backgroundImage = `url('${imageUrl}')`;
+        }
       }
     }
     
