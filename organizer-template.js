@@ -71,11 +71,16 @@ const OrganizerPageRenderer = {
     }
 
     if (meta) {
+      // 設立年を取得（複数のフィールド名に対応）
+      const establishedYear = organizer.establishedYear || organizer.founded_year || organizer.foundedYear || '';
+      
       let metaHtml = `
+        ${establishedYear && establishedYear !== 'undefined' && establishedYear.trim() !== '' ? `
         <div class="meta-item">
           <div class="meta-label">設立年</div>
-          <div class="meta-value">${organizer.establishedYear}年</div>
+          <div class="meta-value">${establishedYear}年</div>
         </div>
+        ` : ''}
         ${(() => {
           const rating = parseFloat(organizer.rating) || 0;
           const reviewCount = parseInt(organizer.reviewCount) || 0;

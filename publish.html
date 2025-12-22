@@ -81,7 +81,10 @@
             ログアウト
           </button>
         </div>
-        <div id="demo-list" style="display: grid; gap: 20px; margin-top: 24px;"></div>
+        <div style="margin-top: 24px;">
+          <h3 id="demo-events-title" style="margin: 0 0 16px 0; font-size: 1.2rem; display: none;">デモイベント</h3>
+          <div id="demo-list" class="grid"></div>
+        </div>
       </div>
     </div>
   </main>
@@ -229,8 +232,10 @@
       }
       
       // イベント一覧を表示（公開版と同じUI構造を使用）
+      const demoTitle = document.getElementById('demo-events-title');
       if (events.length === 0) {
-        html += `
+        if (demoTitle) demoTitle.style.display = 'none';
+        html = `
           <div class="empty-state">
             <div class="empty-state-icon">📝</div>
             <h3>デモイベントがありません</h3>
@@ -239,16 +244,16 @@
         `;
         demoList.innerHTML = html;
       } else {
-        html += '<h3 style="margin: 0 0 16px 0; font-size: 1.2rem;">デモイベント</h3>';
-        demoList.innerHTML = html;
+        // タイトルを表示
+        if (demoTitle) demoTitle.style.display = 'block';
         
         // CardRenderer.renderListを使用（公開版と同じUI構造）
+        // renderListはコンテナの中身を完全に置き換える
         if (typeof CardRenderer !== 'undefined' && CardRenderer.renderList) {
           CardRenderer.renderList(events, 'demo-list');
           
           // デモページ用にリンク先を experience.html から experience-demo.html に変更
-          const eventCardsContainer = demoList.querySelector('.grid') || demoList;
-          const links = eventCardsContainer.querySelectorAll('.card-link[href^="experience.html"]');
+          const links = demoList.querySelectorAll('.card-link[href^="experience.html"]');
           links.forEach(link => {
             const href = link.getAttribute('href');
             if (href && href.startsWith('experience.html')) {
@@ -257,7 +262,7 @@
           });
         } else {
           // フォールバック（CardRendererが利用できない場合）
-          demoList.innerHTML += '<p style="color: #6c7a72; padding: 40px; text-align: center;">イベントの読み込みに失敗しました</p>';
+          demoList.innerHTML = '<p style="color: #6c7a72; padding: 40px; text-align: center;">イベントの読み込みに失敗しました</p>';
         }
       }
       
