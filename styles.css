@@ -1438,6 +1438,7 @@ body {
   color: #ccc;
   text-decoration: none;
   font-size: 0.85rem;
+  font-weight: normal;
   margin-bottom: 10px;
   transition: color 0.2s;
 }
