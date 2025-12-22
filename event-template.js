@@ -491,7 +491,7 @@ const EventPageRenderer = {
       const externalLink = event.externalLink || event.external_link;
       if (externalLink) {
         bookingBtn.href = externalLink;
-        bookingBtn.textContent = '公式サイトへ進む';
+        bookingBtn.textContent = '外部サイトへ進む';
         bookingBtn.style.display = 'block';
         
         // 既存のイベントリスナーを削除（重複登録を防ぐ）

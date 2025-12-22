@@ -304,16 +304,16 @@ body {
 
 .category-menu-content {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
 }
 
 .category-menu-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
-  border-radius: 8px;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 6px;
   cursor: pointer;
   transition: background 0.2s, transform 0.1s;
   text-decoration: none;
@@ -333,11 +333,11 @@ body {
 }
 
 .category-menu-item .icon {
-  font-size: 1.1rem;
+  font-size: 0.95rem;
 }
 
 .category-menu-item .name {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 500;
 }
 
