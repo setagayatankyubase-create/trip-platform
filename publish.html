@@ -228,7 +228,7 @@
         `;
       }
       
-      // イベント一覧を表示
+      // イベント一覧を表示（公開版と同じUI構造を使用）
       if (events.length === 0) {
         html += `
           <div class="empty-state">
@@ -237,49 +237,33 @@
             <p>この提供元のデモイベントが登録されていません</p>
           </div>
         `;
+        demoList.innerHTML = html;
       } else {
         html += '<h3 style="margin: 0 0 16px 0; font-size: 1.2rem;">デモイベント</h3>';
-        html += '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">';
+        demoList.innerHTML = html;
         
-        html += events.map(event => {
-          let badgesHtml = '';
-          if (event.isRecommended) {
-            badgesHtml += '<span class="badge recommended">おすすめ</span>';
-          }
-          if (event.isNew) {
-            badgesHtml += '<span class="badge new">新着</span>';
-          }
+        // CardRenderer.renderListを使用（公開版と同じUI構造）
+        if (typeof CardRenderer !== 'undefined' && CardRenderer.renderList) {
+          CardRenderer.renderList(events, 'demo-list');
           
-          const area = event.area || event.city || '';
-          const price = event.price ? event.price.toLocaleString() : '0';
-          const image = event.image || 'https://via.placeholder.com/800x600?text=No+Image';
-          
-          return `
-            <a href="experience-demo.html?id=${event.id}" class="card-link" data-event-id="${event.id}">
-              <div class="card" data-event-id="${event.id}">
-                <div class="card-image-wrapper">
-                  <img src="${image}" alt="${event.title}" loading="lazy">
-                  ${badgesHtml ? `<div class="card-badges">${badgesHtml}</div>` : ''}
-                </div>
-                <div class="card-content">
-                  <h3 class="card-title">${event.title}</h3>
-                  <div class="card-meta">
-                    ${area ? `<span class="card-area">${area}</span>` : ''}
-                    ${price !== '0' ? `<span class="card-price">${price}円</span>` : ''}
-                  </div>
-                </div>
-              </div>
-            </a>
-          `;
-        }).join('');
-        
-        html += '</div>';
+          // デモページ用にリンク先を experience.html から experience-demo.html に変更
+          const eventCardsContainer = demoList.querySelector('.grid') || demoList;
+          const links = eventCardsContainer.querySelectorAll('.card-link[href^="experience.html"]');
+          links.forEach(link => {
+            const href = link.getAttribute('href');
+            if (href && href.startsWith('experience.html')) {
+              link.setAttribute('href', href.replace('experience.html', 'experience-demo.html'));
+            }
+          });
+        } else {
+          // フォールバック（CardRendererが利用できない場合）
+          demoList.innerHTML += '<p style="color: #6c7a72; padding: 40px; text-align: center;">イベントの読み込みに失敗しました</p>';
+        }
       }
       
-      demoList.innerHTML = html;
-      
       // カードクリック時の計測を追加（必要に応じて）
-      const links = demoList.querySelectorAll('.card-link');
+      const eventCardsContainer = demoList.querySelector('.grid') || demoList;
+      const links = eventCardsContainer.querySelectorAll('.card-link');
       links.forEach(link => {
         link.addEventListener('click', (e) => {
           const eventId = link.getAttribute('data-event-id');
