@@ -110,10 +110,23 @@ const OrganizerPageRenderer = {
           <div class="meta-label">開催イベント数</div>
           <div class="meta-value">${events.length}件</div>
         </div>
+        ${(() => {
+          // contact情報がある場合のみ表示
+          const contact = organizer.contact || organizer.contact_email || '';
+          if (!contact || contact.trim() === '' || contact === 'undefined') {
+            return '';
+          }
+          // メールアドレスの場合はクリック可能なリンクにする
+          const isEmail = contact.includes('@');
+          return `
         <div class="meta-item">
           <div class="meta-label">連絡先</div>
-          <div class="meta-value" style="font-size: 0.95rem;">${organizer.contact}</div>
+          <div class="meta-value" style="font-size: 0.95rem;">
+            ${isEmail ? `<a href="mailto:${contact}" style="color: var(--primary); text-decoration: none;">${contact}</a>` : contact}
+          </div>
         </div>
+          `;
+        })()}
       `;
 
       if (organizer.website) {
