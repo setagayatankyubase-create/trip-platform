@@ -82,6 +82,7 @@
           </button>
         </div>
         <div style="margin-top: 24px;">
+          <div id="demo-organizer-container"></div>
           <h3 id="demo-events-title" style="margin: 0 0 16px 0; font-size: 1.2rem; display: none;">デモイベント</h3>
           <div id="demo-list" class="grid"></div>
         </div>
@@ -208,21 +209,44 @@
       const organizer = demoData.organizer;
       const events = demoData.events || [];
       
-      let html = '';
-      
-      // 提供元情報を表示（クリック可能にする）
-      if (organizer) {
-        html += `
+      // 提供元情報を表示（demo-list-containerとは別のコンテナに配置）
+      const demoOrganizerContainer = document.getElementById('demo-organizer-container');
+      if (demoOrganizerContainer && organizer) {
+        // 提供元ロゴURLを取得（GitHubを優先、なければ既存URLを使用）
+        const originalLogoUrl = organizer.logo || '';
+        let logoUrl = '';
+        let fallbackUrl = null;
+        
+        // GitHubの画像URL生成関数が利用可能な場合、GitHubを優先
+        if (typeof window.getOrganizerLogoUrl === 'function' && organizer.id) {
+          logoUrl = window.getOrganizerLogoUrl(organizer.id, 'jpg');
+          if (originalLogoUrl && originalLogoUrl.trim() !== '') {
+            fallbackUrl = originalLogoUrl;
+          }
+        } else {
+          logoUrl = originalLogoUrl;
+        }
+        
+        const establishedYear = organizer.establishedYear || organizer.founded_year || organizer.foundedYear || '';
+        
+        demoOrganizerContainer.innerHTML = `
           <a href="organizer-demo.html?id=${organizer.id}" style="text-decoration: none; color: inherit; display: block; margin-bottom: 32px;">
             <div class="organizer-card" style="cursor: pointer;">
               <div class="organizer-header">
-                ${organizer.logo ? `<img src="${organizer.logo}" alt="${organizer.name || ''}" class="organizer-logo">` : ''}
+                ${logoUrl ? `<img src="${logoUrl}" ${fallbackUrl ? `onerror="this.onerror=null; if(this.src!==this.getAttribute('data-fallback')){this.setAttribute('data-fallback','${fallbackUrl.replace(/'/g, "\\'")}'); this.src='${fallbackUrl.replace(/'/g, "\\'")}';}else{this.style.display='none';}"` : 'onerror="this.onerror=null; this.style.display=\'none\';"'} alt="${organizer.name || ''}" class="organizer-logo">` : ''}
                 <div class="organizer-info" style="flex: 1;">
                   <h3 style="margin: 0 0 8px 0; font-size: 1.5rem;">${organizer.name || 'デモ提供元'}</h3>
                   <p style="margin: 0; color: #6c7a72; line-height: 1.6;">${organizer.description || ''}</p>
-                  <div class="organizer-meta" style="margin-top: 12px;">
-                    ${organizer.establishedYear ? `<span>設立: ${organizer.establishedYear}年</span>` : ''}
-                    ${organizer.rating ? `<span>${organizer.establishedYear ? ' • ' : ''}評価: ★${organizer.rating} ${organizer.reviewCount ? `(${organizer.reviewCount}件)` : ''}</span>` : ''}
+                  <div class="organizer-meta" style="margin-top: 12px; font-size: 0.9rem; color: #6c7a72;">
+                    ${establishedYear && establishedYear !== 'undefined' && establishedYear.trim() !== '' ? `<span>設立: ${establishedYear}年</span>` : ''}
+                    ${(() => {
+                      const rating = parseFloat(organizer.rating) || 0;
+                      const reviewCount = parseInt(organizer.reviewCount) || 0;
+                      if (rating > 0 && reviewCount > 0) {
+                        return `${establishedYear && establishedYear !== 'undefined' && establishedYear.trim() !== '' ? ' • ' : ''}評価: ★${rating} (${reviewCount}件)`;
+                      }
+                      return '';
+                    })()}
                   </div>
                 </div>
               </div>
