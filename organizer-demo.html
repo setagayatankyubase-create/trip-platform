@@ -573,11 +573,22 @@
         // イベントをフィルタリング（organizerId / organizer_id どちらでも対応）
         // 通常ページと同じロジックを使用
         const norm = v => String(v ?? '').trim();
-        const events = eventList.filter(e => norm(e.organizerId || e.organizer_id) === norm(organizerId));
+        
+        // 提供元IDがdemoorg-XXX形式の場合、org-XXXに正規化して比較
+        // デモデータでは、提供元IDがdemoorg-XXXで、イベントのorganizerIdがorg-XXXの形式になっている可能性がある
+        const normalizedOrganizerId = organizerId.startsWith('demoorg-') 
+          ? organizerId.replace(/^demo/, '') 
+          : organizerId;
+        
+        const events = eventList.filter(e => {
+          const eventOrgId = norm(e.organizerId || e.organizer_id);
+          const requestedOrgId = norm(normalizedOrganizerId);
+          return eventOrgId === requestedOrgId;
+        });
         
         console.log('[organizer-demo.html] eventList length:', eventList.length);
         console.log('[organizer-demo.html] filtered events count:', events.length);
-        console.log('[organizer-demo.html] organizerId:', organizerId);
+        console.log('[organizer-demo.html] organizerId:', organizerId, 'normalized:', normalizedOrganizerId);
 
         // コンテンツを表示
         document.getElementById('demo-error').style.display = 'none';

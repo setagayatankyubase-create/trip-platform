@@ -189,6 +189,9 @@ const EventPageRenderer = {
     // ハイライト
     this.renderHighlights(event);
 
+    // 設備
+    this.renderFacility(event);
+
     // 注意事項
     const notesEl = document.getElementById('event-notes');
     if (notesEl) {
@@ -271,23 +274,56 @@ const EventPageRenderer = {
     });
   },
 
-  // ハイライト
-  renderHighlights(event) {
-    const highlightsList = document.getElementById('event-highlights');
-    if (!highlightsList) return;
+    // ハイライト
+    renderHighlights(event) {
+      const highlightsList = document.getElementById('event-highlights');
+      if (!highlightsList) return;
 
-    highlightsList.innerHTML = '';
-    if (event.highlights && event.highlights.length > 0) {
-      event.highlights.forEach(h => {
+      highlightsList.innerHTML = '';
+      if (event.highlights && event.highlights.length > 0) {
+        event.highlights.forEach(h => {
+          const li = document.createElement('li');
+          li.textContent = h;
+          highlightsList.appendChild(li);
+        });
+        highlightsList.parentElement.style.display = 'block';
+      } else {
+        highlightsList.parentElement.style.display = 'none';
+      }
+    },
+
+    // 設備
+    renderFacility(event) {
+      const facilityList = document.getElementById('event-facility');
+      if (!facilityList) return;
+
+      facilityList.innerHTML = '';
+      
+      // facilityが文字列の場合（| または ｜ で区切られている）
+      const facilityRaw = (event.facility || '').trim();
+      
+      if (!facilityRaw) {
+        facilityList.parentElement.style.display = 'none';
+        return;
+      }
+
+      // 半角・全角のパイプで分割
+      const items = facilityRaw.split(/[|｜]/).map(s => s.trim()).filter(Boolean);
+      
+      if (items.length === 0) {
+        facilityList.parentElement.style.display = 'none';
+        return;
+      }
+
+      // リストアイテムを生成
+      items.forEach(item => {
         const li = document.createElement('li');
-        li.textContent = h;
-        highlightsList.appendChild(li);
+        li.textContent = item;
+        facilityList.appendChild(li);
       });
-      highlightsList.parentElement.style.display = 'block';
-    } else {
-      highlightsList.parentElement.style.display = 'none';
-    }
-  },
+      
+      facilityList.parentElement.style.display = 'block';
+    },
 
   // 提供元
   renderOrganizer(organizer) {

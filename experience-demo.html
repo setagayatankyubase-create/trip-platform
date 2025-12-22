@@ -363,6 +363,9 @@
           <h3>ハイライト</h3>
           <ul id="event-highlights"></ul>
 
+          <h3>設備</h3>
+          <ul id="event-facility"></ul>
+
           <h3>注意事項</h3>
           <p id="event-notes"></p>
 
@@ -674,6 +677,24 @@
           const highlightsList = document.getElementById('event-highlights');
           if (highlightsList && event.highlights && event.highlights.length > 0) {
             highlightsList.innerHTML = event.highlights.map(h => `<li>${h}</li>`).join('');
+          }
+          
+          // 設備
+          const facilityList = document.getElementById('event-facility');
+          if (facilityList) {
+            const facilityRaw = (event.facility || '').trim();
+            if (facilityRaw) {
+              // 半角・全角のパイプで分割
+              const items = facilityRaw.split(/[|｜]/).map(s => s.trim()).filter(Boolean);
+              if (items.length > 0) {
+                facilityList.innerHTML = items.map(item => `<li>${item}</li>`).join('');
+                facilityList.parentElement.style.display = 'block';
+              } else {
+                facilityList.parentElement.style.display = 'none';
+              }
+            } else {
+              facilityList.parentElement.style.display = 'none';
+            }
           }
           
           const notesEl = document.getElementById('event-notes');
