@@ -1438,7 +1438,7 @@ body {
   color: #ccc;
   text-decoration: none;
   font-size: 0.85rem;
-  font-weight: normal;
+  font-weight: normal !important;
   margin-bottom: 10px;
   transition: color 0.2s;
 }
