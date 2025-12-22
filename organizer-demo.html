@@ -557,15 +557,24 @@
         }
 
         console.log('[organizer-demo.html] Rendering organizer:', demoData.organizer);
-        console.log('[organizer-demo.html] Events count:', demoData.events ? demoData.events.length : 0);
-        console.log('[organizer-demo.html] Events:', demoData.events);
+        console.log('[organizer-demo.html] Events count (before filter):', demoData.events ? demoData.events.length : 0);
+        console.log('[organizer-demo.html] Events (before filter):', demoData.events);
+        
+        // 提供元IDでイベントをフィルタリング
+        const filteredEvents = (demoData.events || []).filter(event => {
+          const eventOrganizerId = event.organizerId || event.organizer_id;
+          return eventOrganizerId === organizerId;
+        });
+        
+        console.log('[organizer-demo.html] Events count (after filter):', filteredEvents.length);
+        console.log('[organizer-demo.html] Events (after filter):', filteredEvents);
 
         // コンテンツを表示
         document.getElementById('demo-error').style.display = 'none';
         document.getElementById('demo-content').style.display = 'block';
         
         // 提供元詳細をレンダリング
-        renderOrganizerDetail(demoData.organizer, demoData.events || []);
+        renderOrganizerDetail(demoData.organizer, filteredEvents);
         
         // デモページでは検索欄を常に非表示
         const headerSearch = document.getElementById('header-search');
