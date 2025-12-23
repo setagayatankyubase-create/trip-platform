@@ -355,6 +355,12 @@ window.loadEventMeta = function loadEventMeta() {
     let categories = Array.isArray(metaJson?.categories) ? metaJson.categories : [];
     let areas      = Array.isArray(metaJson?.areas) ? metaJson.areas : [];
 
+    // デバッグログ：organizersの最初の要素を確認
+    if (organizers.length > 0) {
+      console.log('[data.js] Sample organizer from meta.json:', organizers[0]);
+      console.log('[data.js] Organizer keys:', Object.keys(organizers[0] || {}));
+    }
+
     // organizers が空なら raw に逃げる（/data が古い・未更新対策）
     if (organizers.length === 0) {
       const fallbackUrl = `${GITHUB_RAW_BASE}/data/meta.json`;
@@ -364,6 +370,12 @@ window.loadEventMeta = function loadEventMeta() {
         organizers = Array.isArray(fb?.organizers) ? fb.organizers : organizers;
         categories = Array.isArray(fb?.categories) ? fb.categories : categories;
         areas      = Array.isArray(fb?.areas) ? fb.areas : areas;
+        
+        // デバッグログ：フォールバックからのorganizersも確認
+        if (organizers.length > 0) {
+          console.log('[data.js] Sample organizer from fallback:', organizers[0]);
+          console.log('[data.js] Fallback organizer keys:', Object.keys(organizers[0] || {}));
+        }
       } catch (e) {
         console.warn("[META FALLBACK] failed:", e.message);
       }

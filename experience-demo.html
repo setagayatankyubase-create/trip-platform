@@ -689,6 +689,21 @@
             organizerLink.href = `organizer-demo.html?id=${organizer.id}`;
           }
           
+          // .card要素を強制的に表示
+          const cardElements = document.querySelectorAll('.card');
+          cardElements.forEach(card => {
+            card.style.display = '';
+            card.style.visibility = 'visible';
+            card.style.opacity = '1';
+          });
+          
+          // .grid要素も確認
+          const gridElements = document.querySelectorAll('.grid');
+          gridElements.forEach(grid => {
+            grid.style.display = '';
+            grid.style.visibility = 'visible';
+          });
+          
           // レンダリング後の状態を確認
           console.log('[experience-demo] Content check:');
           const eventContent = document.getElementById('event-content');
