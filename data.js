@@ -49,11 +49,8 @@ function cloudinaryUrl(publicId, { w = 1200, q = 'auto', f = 'auto' } = {}) {
 }
 
 // ロゴ画像のCloudinary URLを取得
-// public_idをそのまま使用（例: 'logo/logo_tfqqd0' または 'Home/logo/logo_tfqqd0'）
 function getLogoUrl() {
-  // TODO: CloudinaryのMedia Libraryで確認した実際のpublic_idに置き換えてください
-  // 例: 'logo/logo_tfqqd0' または 'Home/logo/logo_tfqqd0'
-  return cloudinaryUrl('logo/logo_tfqqd0', { w: 200 });
+  return cloudinaryUrl('logo_tfqqd0', { w: 200 });
 }
 
 // ヒーロー画像のCloudinary URLを取得
@@ -65,7 +62,7 @@ function getHeroImageUrl(imageId) {
 // ファビコンのCloudinary URLを取得
 function getFaviconUrl() {
   // ロゴと同じpublic_idを使用
-  return cloudinaryUrl('logo/logo_tfqqd0', { w: 32 });
+  return cloudinaryUrl('logo_tfqqd0', { w: 32 });
 }
 
 // イベント画像のCloudinary URLを取得
@@ -100,9 +97,8 @@ if (typeof console !== 'undefined') {
   console.log('[Cloudinary URL Check]');
   console.log('  Logo URL:', getLogoUrl());
   console.log('  Favicon URL:', getFaviconUrl());
-  console.log('  Expected logo public_id: logo/logo_tfqqd0');
+  console.log('  Logo public_id: logo_tfqqd0');
   console.log('  Cloudinary cloud name:', CLOUDINARY_CLOUD_NAME);
-  console.log('  Note: CloudinaryのMedia Libraryで実際のpublic_idを確認してください');
 }
 
 // index配列の正規化（organizerId / organizer_id どちらでも organizerId に統一）
