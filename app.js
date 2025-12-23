@@ -714,7 +714,9 @@ const CardRenderer = {
     const favoriteFill = isFavorite ? 'currentColor' : 'none';
 
     // イベント画像URLを取得（Cloudinaryを使用）
-    const optimizedImage = this.optimizeImageUrl(event.image, { w: 1200 });
+    // events_index.jsonではthumbフィールドが使われている可能性があるため、image/thumb/mainImageの順でチェック
+    const rawImageUrl = event.image || event.thumb || event.mainImage || '';
+    const optimizedImage = this.optimizeImageUrl(rawImageUrl, { w: 1200 });
 
     // インデックスデータでは city が area 相当として使われる
     const area = event.area || event.city || "";
