@@ -65,18 +65,37 @@ function getFaviconUrl() {
   return cloudinaryUrl('logo_tfqqd0', { w: 32 });
 }
 
+// public_idから拡張子を除去（Cloudinaryは拡張子不要）
+function normalizePublicId(id) {
+  if (!id) return '';
+  // .jpg / .jpeg / .png / .webp を削除（アンダースコアや末尾の前に来る拡張子も対応）
+  // 例: 'evt-001.jpg_uqv2y2' → 'evt-001_uqv2y2'
+  // 例: 'events/evt-001/evt-001.jpg' → 'events/evt-001/evt-001'
+  // 例: 'evt-001.jpg' → 'evt-001'
+  let normalized = String(id);
+  // アンダースコアの前にある拡張子を削除（evt-001.jpg_uqv2y2 → evt-001_uqv2y2）
+  normalized = normalized.replace(/\.(jpg|jpeg|png|webp)(?=[_])/i, '');
+  // 末尾の拡張子を削除（evt-001.jpg → evt-001）
+  normalized = normalized.replace(/\.(jpg|jpeg|png|webp)$/i, '');
+  return normalized;
+}
+
 // イベント画像のCloudinary URLを取得
 function getEventImageUrl(imageId, eventId, { w = 1200 } = {}) {
   // imageIdの形式パターン：
   // 1. 完全なpublic_id（例: 'events/evt-001/evt-001_uqv2y2' または 'Home/events/evt-001/evt-001_uqv2y2'）
   // 2. ファイル名のみ（例: 'evt-001.jpg_uqv2y2'）→ eventIdを使って 'events/evt-001/evt-001_uqv2y2' に組み立てる
-  let publicId = imageId;
+  let publicId = normalizePublicId(imageId); // まず拡張子を除去（保険）
+  
   if (publicId && !publicId.includes('/') && eventId) {
-    // 拡張子を除去（.jpg, .png等）してから、フォルダ構造を追加
-    // 例: 'evt-001.jpg_uqv2y2' → 'evt-001_uqv2y2' → 'events/evt-001/evt-001_uqv2y2'
-    publicId = publicId.replace(/\.(jpg|jpeg|png|webp)$/i, '');
+    // フォルダ構造を追加
+    // 例: 'evt-001_uqv2y2' → 'events/evt-001/evt-001_uqv2y2'
     publicId = `events/${eventId}/${publicId}`;
   }
+  
+  // 最終的に拡張子が残っている可能性があるので、もう一度除去（保険）
+  publicId = normalizePublicId(publicId);
+  
   return cloudinaryUrl(publicId, { w });
 }
 

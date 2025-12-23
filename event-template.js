@@ -252,21 +252,29 @@ const EventPageRenderer = {
       const day = dateObj.getDate();
       const weekday = ['日', '月', '火', '水', '木', '金', '土'][dateObj.getDay()];
       
-      // timeStrを処理：Dateオブジェクトの文字列表現を削除
+      // 時間文字列を生成（startTimeとendTimeに対応）
       let timeStr = '';
-      if (d.time) {
+      const startTime = d.startTime || d.time || ''; // d.timeは後方互換性のため
+      const endTime = d.endTime || '';
+      
+      if (startTime || endTime) {
+        const start = String(startTime).trim();
+        const end = String(endTime).trim();
+        
         // Dateオブジェクトの文字列表現（GMT+0900などが含まれる）を除外
-        const timeValue = String(d.time);
-        // "GMT"や"Standard Time"が含まれている場合は、時間部分のみ抽出
-        if (timeValue.includes('GMT') || timeValue.includes('Standard Time')) {
-          // 時間部分のみ抽出（例: "10:00"）
-          const timeMatch = timeValue.match(/(\d{1,2}):(\d{2})/);
-          if (timeMatch) {
-            timeStr = ` ${timeMatch[0]}`;
-          }
-        } else {
-          // 通常の時間文字列の場合
-          timeStr = ` ${timeValue}`;
+        const cleanStart = start.includes('GMT') || start.includes('Standard Time') 
+          ? (start.match(/(\d{1,2}):(\d{2})/)?.[0] || '') 
+          : start;
+        const cleanEnd = end.includes('GMT') || end.includes('Standard Time')
+          ? (end.match(/(\d{1,2}):(\d{2})/)?.[0] || '')
+          : end;
+        
+        if (cleanStart && cleanEnd) {
+          timeStr = ` ${cleanStart}-${cleanEnd}`;
+        } else if (cleanStart) {
+          timeStr = ` ${cleanStart}〜`;
+        } else if (cleanEnd) {
+          timeStr = ` 〜${cleanEnd}`;
         }
       }
       
