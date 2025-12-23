@@ -433,6 +433,9 @@
         // デモデータを取得（organizerIdをパラメータとして渡す）
         const demoData = await fetchDemoData(password, organizerId);
         
+        // デバッグログ：GASからの生データを確認
+        console.log('[DEMO RAW]', demoData?.success, demoData?.events?.length, demoData);
+        
         console.log('[organizer-demo.html] ===== DEMO DATA RECEIVED =====');
         console.log('[organizer-demo.html] Demo data received:', demoData);
         console.log('[organizer-demo.html] Requested organizerId:', organizerId);
@@ -467,14 +470,14 @@
         console.log('[organizer-demo.html] organizerId from URL:', organizerId);
         console.log('[organizer-demo.html] eventList length:', eventList.length);
         
-        // 正規化関数
-        const norm = v => String(v ?? '').trim();
+        // 正規化関数を改善：空白除去も追加（全角/半角スペースに対応）
+        const norm = v => String(v ?? '').trim().replace(/[\s　]+/g, '');
         
         // ID候補（正規化処理は削除 - すべてdemoorg-xxxで統一）
-        const idCandidates = new Set([organizerId]);
+        const idCandidates = new Set([norm(organizerId)]);
         // 提供元のIDも候補に追加
         const organizerOriginalId = norm(demoData.organizer?.id || '');
-        if (organizerOriginalId && organizerOriginalId !== organizerId) {
+        if (organizerOriginalId) {
           idCandidates.add(organizerOriginalId);
         }
         
@@ -492,18 +495,17 @@
         }
         
         // イベントをフィルタリング（複数の列名候補に対応）
-        const filtered = eventList.filter(ev => {
+        let events = eventList.filter(ev => {
           // 複数の列名候補をチェック（organizerId, organizer_id, providerId, provider_id など）
           const oid = ev.organizerId ?? ev.organizer_id ?? ev.providerId ?? ev.provider_id ?? ev.organizer ?? ev.organizerID ?? '';
-          const normalizedOid = norm(oid);
-          return idCandidates.has(normalizedOid);
+          return idCandidates.has(norm(oid));
         });
         
-        const events = filtered;
-        
         console.log('[organizer-demo.html] filtered events count:', events.length);
+        
+        // ★重要：元はあるのに0件なら、二重フィルタを解除
         if (events.length === 0 && eventList.length > 0) {
-          console.warn('[organizer-demo.html] ❌ No events matched!');
+          console.warn('[organizer-demo.html] Filter resulted in 0 but eventList has data. Skipping filter as fallback.');
           console.warn('[organizer-demo.html] Expected organizerId:', Array.from(idCandidates));
           console.warn('[organizer-demo.html] Sample event organizerIds:', eventList.slice(0, 3).map(e => ({
             id: e.id,
@@ -511,6 +513,7 @@
             organizer_id: e.organizer_id || 'N/A',
             providerId: e.providerId || 'N/A'
           })));
+          events = eventList;
         } else if (events.length === 0 && eventList.length === 0) {
           console.warn('[organizer-demo.html] ⚠️ No events available (neither demoData.events nor window.eventData.events)');
         }

@@ -652,14 +652,21 @@
         // デモデータを取得
         const demoData = await fetchDemoData(password);
         
-        if (!demoData || !demoData.success || !demoData.events) {
+        // デバッグログ：GASからの生データを確認
+        console.log('[DEMO RAW]', demoData?.success, demoData?.events?.length, demoData);
+        
+        // イベントリストを取得（フォールバック対応）
+        const list = Array.isArray(demoData?.events) ? demoData.events : [];
+        const fallbackList = (list.length === 0 && window.eventData?.events) ? window.eventData.events : list;
+        
+        if (!demoData || !demoData.success) {
           document.getElementById('demo-error').style.display = 'block';
           document.getElementById('event-content').style.display = 'none';
           return;
         }
         
-        // 指定されたIDのイベントを検索
-        const event = demoData.events.find(e => e.id === eventId);
+        // 指定されたIDのイベントを検索（フォールバックリストから）
+        const event = fallbackList.find(e => e.id === eventId);
         if (!event) {
           document.getElementById('demo-error').style.display = 'block';
           document.getElementById('demo-error').innerHTML = `

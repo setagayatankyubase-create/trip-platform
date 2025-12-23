@@ -201,6 +201,9 @@
       try {
         const demoData = await fetchDemoData(password);
         
+        // デバッグログ：GASからの生データを確認
+        console.log('[DEMO RAW]', demoData?.success, demoData?.events?.length, demoData);
+        
         // パスワードが正しい場合、sessionStorageに保存（有効期限付き）
         try {
           const authData = {
@@ -253,7 +256,8 @@
       }
       
       // イベントを提供元に関連付けてフィルタリング
-      const norm = v => String(v ?? '').trim();
+      // norm関数を改善：空白除去も追加（全角/半角スペースに対応）
+      const norm = v => String(v ?? '').trim().replace(/[\s　]+/g, '');
       let events = eventList;
       
       if (organizer && organizer.id) {
@@ -270,19 +274,22 @@
         events = eventList.filter(e => {
           // 複数の列名候補をチェック（organizerId, organizer_id, providerId, provider_id など）
           const oid = e.organizerId ?? e.organizer_id ?? e.providerId ?? e.provider_id ?? e.organizer ?? e.organizerID ?? '';
-          const normalizedOid = norm(oid);
-          return idCandidates.has(normalizedOid);
+          return idCandidates.has(norm(oid));
         });
         
         console.log('[publish.html] filtered events count:', events.length);
+        
+        // ★重要：元はあるのに0件なら「二重フィルタで落としてる」ので戻す
         if (events.length === 0 && eventList.length > 0) {
-          console.warn('[publish.html] No events matched! Expected organizerId:', Array.from(idCandidates));
+          console.warn('[publish.html] Filter resulted in 0 but eventList has data. Skipping filter as fallback.');
+          console.warn('[publish.html] Expected organizerId:', Array.from(idCandidates));
           console.warn('[publish.html] Sample event organizerIds:', eventList.slice(0, 3).map(e => ({
             id: e.id,
             organizerId: e.organizerId || 'N/A',
             organizer_id: e.organizer_id || 'N/A',
             providerId: e.providerId || 'N/A'
           })));
+          events = eventList;
         }
       }
       
