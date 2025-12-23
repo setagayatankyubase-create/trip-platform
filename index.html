@@ -179,11 +179,19 @@
       const container = document.getElementById('category-list');
       if (!container) return;
 
-      if (!window.eventData || !window.eventData.categories) return;
-      container.innerHTML = window.eventData.categories.map(cat => `
+      // eventMeta.categories を優先、なければ eventData.categories を使用
+      const categories = (window.eventMeta && window.eventMeta.categories) 
+        ? window.eventMeta.categories 
+        : (window.eventData && window.eventData.categories) 
+          ? window.eventData.categories 
+          : null;
+      
+      if (!categories || !Array.isArray(categories) || categories.length === 0) return;
+      
+      container.innerHTML = categories.map(cat => `
         <a href="list.html?category=${cat.id}" class="cat">
-          <span>${cat.icon}</span>
-          <span>${cat.name}</span>
+          <span>${cat.icon || ''}</span>
+          <span>${cat.name || ''}</span>
         </a>
       `).join('');
     }
@@ -217,11 +225,19 @@
       const menuList = document.getElementById('category-menu-list');
       if (!menuList) return;
 
-      if (!window.eventData || !window.eventData.categories) return;
-      menuList.innerHTML = window.eventData.categories.map(cat => `
+      // eventMeta.categories を優先、なければ eventData.categories を使用
+      const categories = (window.eventMeta && window.eventMeta.categories) 
+        ? window.eventMeta.categories 
+        : (window.eventData && window.eventData.categories) 
+          ? window.eventData.categories 
+          : null;
+      
+      if (!categories || !Array.isArray(categories) || categories.length === 0) return;
+      
+      menuList.innerHTML = categories.map(cat => `
         <a href="list.html?category=${cat.id}" class="category-menu-item">
-          <span class="icon">${cat.icon}</span>
-          <span>${cat.name}</span>
+          <span class="icon">${cat.icon || ''}</span>
+          <span>${cat.name || ''}</span>
         </a>
       `).join('');
 
@@ -619,6 +635,15 @@
       try {
         // イベントデータを読み込み（data.js で定義）
         await loadEventData();
+        
+        // メタデータ（カテゴリ・提供元）を読み込み
+        if (typeof loadEventMeta === 'function') {
+          try {
+            await loadEventMeta();
+          } catch (e) {
+            console.warn('Failed to load eventMeta:', e);
+          }
+        }
         
         // eventIndex が読み込まれているか確認（なければ再読み込み）
         if (!Array.isArray(window.eventIndex) || window.eventIndex.length === 0) {
