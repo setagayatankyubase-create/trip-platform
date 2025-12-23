@@ -39,7 +39,7 @@ function cloudinaryUrl(publicId, { w = 1200, type = null, eventId = null } = {})
   if (/^https?:\/\//i.test(publicId)) return publicId;
 
   // 余計な先頭スラッシュを除去
-  let id = String(publicId).replace(/^\/+/, "");
+  let id = String(publicId).trim().replace(/^\/+/, "");
 
   // フォルダ構造に合わせてプレフィックスを追加
   // すでにフォルダパスが含まれている場合はそのまま使用
@@ -56,7 +56,11 @@ function cloudinaryUrl(publicId, { w = 1200, type = null, eventId = null } = {})
     }
   }
 
-  return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/f_auto,q_auto,w_${w}/${id}`;
+  // CloudinaryのURLでは、パス部分をエンコードする必要がある
+  // ただし、スラッシュはエンコードしない（パス区切りとして機能させる）
+  const encodedPath = id.split('/').map(segment => encodeURIComponent(segment)).join('/');
+
+  return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/f_auto,q_auto,w_${w}/${encodedPath}`;
 }
 
 // ロゴ画像のCloudinary URLを取得
