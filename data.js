@@ -11,7 +11,7 @@ const GITHUB_RAW_BASE = sanitizeBase(
 );
 
 // キャッシュ無効化用バージョン（構造変えたら必ず上げる）
-const EVENT_CACHE_VERSION = "v3_2025-12-21";
+const EVENT_CACHE_VERSION = "v4_2025-12-23";
 
 // キャッシュキー（バージョンと連動）
 const STORAGE_KEY_BASE = `sotonavi_eventData_${EVENT_CACHE_VERSION}`;
@@ -240,6 +240,16 @@ window.loadEventIndex = function loadEventIndex() {
     try {
       const json = await fetchJsonStrict_(primaryUrl);
       arr = toIndexArray(json);
+      // デバッグログ：evt-001のデータ構造を確認
+      const evt001 = arr.find(e => e.id === 'evt-001');
+      if (evt001) {
+        console.log('[loadEventIndex] evt-001 from JSON:', {
+          'image': evt001.image,
+          'thumb': evt001.thumb,
+          'mainImage': evt001.mainImage,
+          'allKeys': Object.keys(evt001)
+        });
+      }
     } catch (e) {
       console.warn("[INDEX] primary failed:", e.message);
     }
