@@ -606,7 +606,7 @@
     <div class="nav">
       <div class="nav-left">
         <a href="index.html" class="logo">
-          <img src="assets/logo.png" alt="そとなび" class="logo-image">
+          <img src="" alt="そとなび" class="logo-image">
         </a>
       </div>
       <div class="nav-links">
@@ -896,10 +896,12 @@
       }
 
       // ヒーロー画像をCloudinaryから取得
-      let heroImageSrc = '/assets/winter.jpg'; // フォールバック
+      let heroImageSrc = '';
       if (typeof window.getHeroImageUrl === 'function') {
         heroImageSrc = window.getHeroImageUrl('winter_ctfkee');
       }
+      // Cloudinaryが利用できない場合は表示しない
+      if (!heroImageSrc) return;
       const img = document.createElement('img');
       img.src = heroImageSrc;
       img.className = 'column-hero-image active';

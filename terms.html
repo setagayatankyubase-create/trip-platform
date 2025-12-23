@@ -4,7 +4,23 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>利用規約 | そとなび</title>
-  <link rel="icon" type="image/png" href="assets/logo.png">
+  <link rel="icon" type="image/png" id="favicon-link">
+  <script>
+    // ファビコンをCloudinaryから取得
+    (function() {
+      function setFavicon() {
+        const faviconLink = document.getElementById('favicon-link');
+        if (faviconLink && typeof window.getFaviconUrl === 'function') {
+          faviconLink.href = window.getFaviconUrl();
+        }
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setFavicon);
+      } else {
+        setFavicon();
+      }
+    })();
+  </script>
   <link rel="stylesheet" href="styles.css">
   <script src="data.js"></script>
   <script>
@@ -29,7 +45,7 @@
     <div class="nav">
       <div class="nav-left">
         <a href="index.html" class="logo">
-          <img src="assets/logo.png" alt="そとなび" class="logo-image">
+          <img src="" alt="そとなび" class="logo-image">
         </a>
         <div class="header-search" id="header-search" style="display: none;">
           <form class="header-search-form" onsubmit="handleSearch(event)">
