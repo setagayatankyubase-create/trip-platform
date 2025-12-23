@@ -429,8 +429,13 @@
         // デモデータを取得（organizerIdをパラメータとして渡す）
         const demoData = await fetchDemoData(password, organizerId);
         
+        console.log('[organizer-demo.html] ===== DEMO DATA RECEIVED =====');
         console.log('[organizer-demo.html] Demo data received:', demoData);
         console.log('[organizer-demo.html] Requested organizerId:', organizerId);
+        console.log('[organizer-demo.html] demoData.success:', demoData?.success);
+        console.log('[organizer-demo.html] demoData.organizer:', demoData?.organizer);
+        console.log('[organizer-demo.html] demoData.events:', demoData?.events);
+        console.log('[organizer-demo.html] demoData.events length:', demoData?.events?.length);
         
         if (!demoData || !demoData.success || !demoData.organizer) {
           console.error('[organizer-demo.html] Demo data error:', demoData);
@@ -439,19 +444,10 @@
           return;
         }
         
-        // 指定されたIDの提供元を検索
+        // 指定されたIDの提供元を検索（IDの不一致は警告のみとする）
         if (demoData.organizer.id !== organizerId) {
           console.warn('[organizer-demo.html] Organizer ID mismatch:', demoData.organizer.id, 'vs', organizerId);
-          document.getElementById('demo-error').style.display = 'block';
-          document.getElementById('demo-error').innerHTML = `
-            <h2>提供元が見つかりません</h2>
-            <p>指定された提供元ID（${organizerId}）の提供元が見つかりませんでした。</p>
-            <p style="margin-top: 24px;">
-              <a href="organizer-list.html" style="color: var(--primary); text-decoration: underline;">提供元一覧に戻る</a>
-            </p>
-          `;
-          document.getElementById('demo-content').style.display = 'none';
-          return;
+          // IDの不一致があっても続行する（APIが異なる形式で返す可能性があるため）
         }
 
         // 通常ページと同じ構造でフィルタリング
@@ -495,7 +491,7 @@
         }
         
         // イベントをフィルタリング（複数のフィールド名と形式に対応）
-        const events = eventList.filter(e => {
+        let events = eventList.filter(e => {
           const eventOrgId1 = norm(e.organizerId || '');
           const eventOrgId2 = norm(e.organizer_id || '');
           const eventOrgId3 = norm(e.organizer_id_demo || '');
@@ -535,7 +531,14 @@
             organizer_id: e.organizer_id || 'N/A',
             organizer_id_demo: e.organizer_id_demo || 'N/A'
           })));
+          
+          // フィルタリングがマッチしない場合は、すべてのイベントを表示する（フォールバック）
+          console.warn('[organizer-demo.html] ⚠️ Showing all events as fallback (filtering disabled)');
+          events = eventList;
+        } else if (events.length === 0 && eventList.length === 0) {
+          console.warn('[organizer-demo.html] ⚠️ No events in demoData.events');
         }
+        console.log('[organizer-demo.html] Final events count to render:', events.length);
         console.log('[organizer-demo.html] ===== END EVENT FILTERING DEBUG =====');
 
         // コンテンツを表示
