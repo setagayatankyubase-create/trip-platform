@@ -634,46 +634,14 @@ const CardRenderer = {
     return expanded;
   },
 
-  // 画像URLを処理（GitHubを優先、なければ既存URLを使用）
-  // 戻り値: { primary: string, fallback: string | null }
-  optimizeImageUrl(url, eventId = null) {
-    const originalUrl = (url && typeof url === 'string' && url.trim() !== '') ? url : '';
-    let fallbackUrl = null;
-    
-    // 既存のURLをフォールバック用に準備
-    if (originalUrl) {
-      // Unsplash などの外部サービスは、既存の最適化処理を適用
-      if (originalUrl.startsWith('http://') || originalUrl.startsWith('https://')) {
-        try {
-          const u = new URL(originalUrl);
-          if (u.hostname.includes('images.unsplash.com')) {
-            u.searchParams.set('auto', 'format');
-            u.searchParams.set('fit', 'crop');
-            u.searchParams.set('w', '600');
-            u.searchParams.set('q', '70');
-            fallbackUrl = u.toString();
-          } else {
-            fallbackUrl = originalUrl;
-          }
-        } catch {
-          fallbackUrl = originalUrl;
-        }
-      } else if (originalUrl.startsWith('/')) {
-        fallbackUrl = originalUrl;
-      }
+  // 画像URLを処理（Cloudinaryを使用）
+  // 戻り値: string
+  optimizeImageUrl(url, options = {}) {
+    if (typeof window.cloudinaryUrl === 'function') {
+      return window.cloudinaryUrl(url, options);
     }
-    
-    // eventIdがある場合は、GitHubの画像を優先
-    if (eventId && typeof window.getEventImageUrl === 'function') {
-      const githubUrl = window.getEventImageUrl(eventId, 'jpg');
-      if (githubUrl) {
-        // GitHubのURLを優先し、既存のURLをフォールバックとして返す
-        return { primary: githubUrl, fallback: fallbackUrl };
-      }
-    }
-    
-    // GitHubのURLがない場合は、既存のURLを優先として返す
-    return { primary: fallbackUrl || originalUrl || '', fallback: null };
+    // cloudinaryUrlが利用できない場合は、元のURLを返す（フォールバック）
+    return url || '';
   },
 
   getRatingHtml(event) {
@@ -745,10 +713,8 @@ const CardRenderer = {
     const favoriteTitle = isFavorite ? 'お気に入りから削除' : 'お気に入りに追加';
     const favoriteFill = isFavorite ? 'currentColor' : 'none';
 
-    // イベント画像URLを取得（GitHubから、または既存URLを使用）
-    const imageUrls = this.optimizeImageUrl(event.image, event.id);
-    const optimizedImage = imageUrls.primary;
-    const fallbackImage = imageUrls.fallback;
+    // イベント画像URLを取得（Cloudinaryを使用）
+    const optimizedImage = this.optimizeImageUrl(event.image, { w: 1200 });
 
     // インデックスデータでは city が area 相当として使われる
     const area = event.area || event.city || "";
@@ -807,7 +773,7 @@ const CardRenderer = {
       <a href="experience.html?id=${event.id}" class="card-link" data-event-id="${event.id}">
         <div class="card" data-event-id="${event.id}">
           <div class="card-image-wrapper">
-            <img data-primary="${optimizedImage}" ${fallbackImage ? `data-fallback="${fallbackImage.replace(/"/g, '&quot;')}"` : ''} alt="${event.title}" loading="lazy">
+            <img src="${optimizedImage}" alt="${event.title}" loading="lazy" decoding="async">
             <button class="${favoriteClass}" onclick="toggleFavorite('${event.id}', event)" title="${favoriteTitle}">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="${favoriteFill}" stroke="currentColor" stroke-width="2">
                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
@@ -852,43 +818,6 @@ const CardRenderer = {
 
     container.innerHTML = events.map(event => this.render(event)).join('');
     
-    // 画像をJavaScriptで静かに読み込む（404エラーをコンソールに表示しない）
-    const images = container.querySelectorAll('img[data-primary]');
-    images.forEach(img => {
-      const primaryUrl = img.getAttribute('data-primary');
-      const fallbackUrl = img.getAttribute('data-fallback');
-      
-      if (primaryUrl) {
-        const testImg = new Image();
-        testImg.onload = function() {
-          img.src = primaryUrl;
-          img.style.display = '';
-        };
-        testImg.onerror = function() {
-          // エラーを抑制
-          this.onerror = null;
-          if (fallbackUrl) {
-            // フォールバックURLを試す
-            const fallbackTestImg = new Image();
-            fallbackTestImg.onload = function() {
-              img.src = fallbackUrl;
-              img.style.display = '';
-            };
-            fallbackTestImg.onerror = function() {
-              // エラーを抑制（画像を非表示）
-              this.onerror = null;
-              img.style.display = 'none';
-            };
-            fallbackTestImg.src = fallbackUrl;
-          } else {
-            // フォールバックがない場合は非表示
-            img.style.display = 'none';
-          }
-        };
-        testImg.src = primaryUrl;
-      }
-    });
-    
     // クリックイベントリスナーを追加（イベントデータを参照できるようにクロージャで保持）
     const eventsMap = new Map(events.map(ev => [ev.id, ev]));
     const links = container.querySelectorAll('.card-link');
@@ -923,43 +852,6 @@ const CardRenderer = {
     }
 
     container.innerHTML = events.map(event => this.render(event)).join('');
-    
-    // 画像をJavaScriptで静かに読み込む（404エラーをコンソールに表示しない）
-    const images = container.querySelectorAll('img[data-primary]');
-    images.forEach(img => {
-      const primaryUrl = img.getAttribute('data-primary');
-      const fallbackUrl = img.getAttribute('data-fallback');
-      
-      if (primaryUrl) {
-        const testImg = new Image();
-        testImg.onload = function() {
-          img.src = primaryUrl;
-          img.style.display = '';
-        };
-        testImg.onerror = function() {
-          // エラーを抑制
-          this.onerror = null;
-          if (fallbackUrl) {
-            // フォールバックURLを試す
-            const fallbackTestImg = new Image();
-            fallbackTestImg.onload = function() {
-              img.src = fallbackUrl;
-              img.style.display = '';
-            };
-            fallbackTestImg.onerror = function() {
-              // エラーを抑制（画像を非表示）
-              this.onerror = null;
-              img.style.display = 'none';
-            };
-            fallbackTestImg.src = fallbackUrl;
-          } else {
-            // フォールバックがない場合は非表示
-            img.style.display = 'none';
-          }
-        };
-        testImg.src = primaryUrl;
-      }
-    });
     
     // クリックイベントリスナーを追加（イベントデータを参照できるようにクロージャで保持）
     const eventsMap = new Map(events.map(ev => [ev.id, ev]));

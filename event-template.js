@@ -61,82 +61,35 @@ const EventPageRenderer = {
   // ギャラリー
   renderGallery(event) {
     const mainImage = document.getElementById('event-main-image');
-    if (mainImage) {
-      // イベント画像URLを取得（GitHubを優先、なければ既存URLを使用）
+    if (mainImage && typeof window.cloudinaryUrl === 'function') {
+      // イベント画像URLを取得（Cloudinaryを使用）
       const rawImageUrl = event.image || event.thumb || event.mainImage || '';
-      
-      // CardRenderer.optimizeImageUrlを使用（GitHubを優先、なければ既存URL）
-      let imageUrl = '';
-      let fallbackUrl = null;
-      if (typeof CardRenderer !== 'undefined' && CardRenderer.optimizeImageUrl) {
-        const imageUrls = CardRenderer.optimizeImageUrl(rawImageUrl, event.id);
-        imageUrl = imageUrls.primary;
-        fallbackUrl = imageUrls.fallback;
-      } else {
-        // CardRendererが利用できない場合のフォールバック（GitHubを優先）
-        if (event.id && typeof window.getEventImageUrl === 'function') {
-          imageUrl = window.getEventImageUrl(event.id, 'jpg');
-          fallbackUrl = rawImageUrl || null;
-        } else {
-          imageUrl = rawImageUrl;
-        }
-      }
+      const imageUrl = window.cloudinaryUrl(rawImageUrl, { w: 1200 });
       
       if (imageUrl) {
-        // background-imageの場合は、onerrorが使えないので、JavaScriptで画像の読み込みを確認
-        if (fallbackUrl) {
-          // 画像が読み込めない場合のフォールバック処理
-          const img = new Image();
-          img.onerror = function() {
-            // エラーを抑制
-            this.onerror = null;
-            if (fallbackUrl && mainImage) {
-              // フォールバックURLを試す
-              const fallbackImg = new Image();
-              fallbackImg.onerror = function() {
-                this.onerror = null;
-                // フォールバックも失敗した場合は何もしない（エラーを抑制）
-              };
-              fallbackImg.onload = function() {
-                if (mainImage) {
-                  mainImage.style.backgroundImage = `url('${fallbackUrl.replace(/'/g, "\\'")}')`;
-                }
-              };
-              fallbackImg.src = fallbackUrl;
-            }
-          };
-          img.onload = function() {
-            if (mainImage) {
-              mainImage.style.backgroundImage = `url('${imageUrl}')`;
-            }
-          };
-          img.src = imageUrl;
-        } else {
-          mainImage.style.backgroundImage = `url('${imageUrl}')`;
-        }
+        mainImage.style.backgroundImage = `url('${imageUrl.replace(/'/g, "\\'")}')`;
       }
     }
     
     // サブ画像（2枚）を設定
     const thumbsContainer = document.querySelector('.thumbs');
-    if (thumbsContainer && typeof window.getEventSubImageUrl === 'function' && event.id) {
+    if (thumbsContainer && typeof window.cloudinaryUrl === 'function') {
       const thumbElements = thumbsContainer.querySelectorAll('.thumb');
       
-      // 1枚目のサブ画像（evt-001b.jpg）
-      if (thumbElements[0]) {
-        const subImageUrl1 = window.getEventSubImageUrl(event.id, 1, 'jpg');
-        if (subImageUrl1) {
-          thumbElements[0].style.backgroundImage = `url('${subImageUrl1}')`;
-        }
+      // サブ画像は event.subImage1, event.subImage2 などのフィールドから取得
+      // 現時点ではスプレッドシートに列がないため、一旦コメントアウト
+      // 必要に応じて、スプレッドシートに subImage1, subImage2 列を追加し、以下を有効化
+      /*
+      if (thumbElements[0] && event.subImage1) {
+        const subImageUrl1 = window.cloudinaryUrl(event.subImage1, { w: 600 });
+        thumbElements[0].style.backgroundImage = `url('${subImageUrl1.replace(/'/g, "\\'")}')`;
       }
       
-      // 2枚目のサブ画像（evt-001c.jpg）
-      if (thumbElements[1]) {
-        const subImageUrl2 = window.getEventSubImageUrl(event.id, 2, 'jpg');
-        if (subImageUrl2) {
-          thumbElements[1].style.backgroundImage = `url('${subImageUrl2}')`;
-        }
+      if (thumbElements[1] && event.subImage2) {
+        const subImageUrl2 = window.cloudinaryUrl(event.subImage2, { w: 600 });
+        thumbElements[1].style.backgroundImage = `url('${subImageUrl2.replace(/'/g, "\\'")}')`;
       }
+      */
     }
   },
 
@@ -376,21 +329,16 @@ const EventPageRenderer = {
       let logoUrl = '';
       let fallbackUrl = null;
       
-      // GitHubの画像URL生成関数が利用可能な場合、GitHubを優先
-      if (typeof window.getOrganizerLogoUrl === 'function' && organizer.id) {
-        logoUrl = window.getOrganizerLogoUrl(organizer.id, 'jpg');
-        // 既存のURLをフォールバックとして保持
-        if (originalLogoUrl && originalLogoUrl.trim() !== '') {
-          fallbackUrl = originalLogoUrl;
-        }
+      // Cloudinaryを使用してロゴURLを生成
+      if (typeof window.cloudinaryUrl === 'function') {
+        logoUrl = window.cloudinaryUrl(originalLogoUrl, { w: 400 });
       } else {
-        // GitHubのURL生成関数がない場合は既存のURLを使用
         logoUrl = originalLogoUrl;
       }
       
       organizerInfo.innerHTML = `
         <div style="display: flex; gap: 16px; align-items: flex-start;">
-          <img src="${logoUrl}" ${fallbackUrl ? `onerror="this.onerror=null; if(this.src!==this.getAttribute('data-fallback')){this.setAttribute('data-fallback','${fallbackUrl.replace(/'/g, "\\'")}'); this.src='${fallbackUrl.replace(/'/g, "\\'")}';}else{this.style.display='none';}"` : 'onerror="this.onerror=null; this.style.display=\'none\';"'} alt="${organizer.name}" style="width: 80px; height: 80px; border-radius: 8px; object-fit: cover; background: #f0f0f0;">
+          ${logoUrl ? `<img src="${logoUrl.replace(/"/g, '&quot;')}" alt="${organizer.name.replace(/"/g, '&quot;')}" style="width: 80px; height: 80px; border-radius: 8px; object-fit: cover; background: #f0f0f0;" loading="lazy" decoding="async" onerror="this.onerror=null; this.style.display='none';" />` : ''}
           <div>
             <h4 style="margin: 0 0 8px 0;">${organizer.name}</h4>
             <p style="margin: 0; color: #6c7a72; font-size: 0.9rem;">${organizer.description}</p>

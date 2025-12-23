@@ -212,17 +212,12 @@
       // 提供元情報を表示（demo-list-containerとは別のコンテナに配置）
       const demoOrganizerContainer = document.getElementById('demo-organizer-container');
       if (demoOrganizerContainer && organizer) {
-        // 提供元ロゴURLを取得（GitHubを優先、なければ既存URLを使用）
-        const originalLogoUrl = organizer.logo || '';
+        // Cloudinaryを使用してロゴURLを生成
+        const originalLogoUrl = organizer.logo || organizer.image || '';
         let logoUrl = '';
-        let fallbackUrl = null;
         
-        // GitHubの画像URL生成関数が利用可能な場合、GitHubを優先
-        if (typeof window.getOrganizerLogoUrl === 'function' && organizer.id) {
-          logoUrl = window.getOrganizerLogoUrl(organizer.id, 'jpg');
-          if (originalLogoUrl && originalLogoUrl.trim() !== '') {
-            fallbackUrl = originalLogoUrl;
-          }
+        if (typeof window.cloudinaryUrl === 'function') {
+          logoUrl = window.cloudinaryUrl(originalLogoUrl, { w: 400 });
         } else {
           logoUrl = originalLogoUrl;
         }
@@ -233,7 +228,7 @@
           <a href="organizer-demo.html?id=${organizer.id}" style="text-decoration: none; color: inherit; display: block; margin-bottom: 32px;">
             <div class="organizer-card" style="cursor: pointer;">
               <div class="organizer-header">
-                ${logoUrl ? `<img src="${logoUrl}" ${fallbackUrl ? `onerror="this.onerror=null; if(this.src!==this.getAttribute('data-fallback')){this.setAttribute('data-fallback','${fallbackUrl.replace(/'/g, "\\'")}'); this.src='${fallbackUrl.replace(/'/g, "\\'")}';}else{this.style.display='none';}"` : 'onerror="this.onerror=null; this.style.display=\'none\';"'} alt="${organizer.name || ''}" class="organizer-logo">` : ''}
+                ${logoUrl ? `<img src="${logoUrl.replace(/"/g, '&quot;')}" alt="${(organizer.name || '').replace(/"/g, '&quot;')}" class="organizer-logo" loading="lazy" decoding="async" onerror="this.onerror=null; this.style.display='none';" />` : ''}
                 <div class="organizer-info" style="flex: 1;">
                   <h3 style="margin: 0 0 8px 0; font-size: 1.5rem;">${organizer.name || 'デモ提供元'}</h3>
                   <p style="margin: 0; color: #6c7a72; line-height: 1.6;">${organizer.description || ''}</p>

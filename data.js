@@ -30,53 +30,22 @@ const normalizeId = (v) => {
   return s.length > 0 ? s : undefined;
 };
 
-// GitHubから画像URLを生成するヘルパー関数
-// assets/images/配下の画像を取得
-function getGitHubImageUrl(imagePath) {
-  if (!imagePath) return '';
-  
-  // 既に完全なURL（http:// または https://）の場合はそのまま返す
-  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-    return imagePath;
-  }
-  
-  // 相対パスの場合、GitHub Pagesの場合はそのまま、GitHub Rawの場合は完全URLに変換
-  // GitHub Pagesを使用する場合（推奨）
-  // 例: /assets/images/events/evt-001.jpg
-  if (imagePath.startsWith('/')) {
-    return imagePath;
-  }
-  
-  // 相対パスでない場合は、/assets/images/プレフィックスを追加
-  // 例: events/evt-001.jpg -> /assets/images/events/evt-001.jpg
-  return `/assets/images/${imagePath}`;
-}
+// Cloudinary画像URL生成関数
+const CLOUDINARY_CLOUD_NAME = "ddrxsy9jw";
 
-// イベント画像URLを取得
-function getEventImageUrl(eventId, extension = 'jpg') {
-  if (!eventId) return '';
-  return getGitHubImageUrl(`events/${eventId}.${extension}`);
-}
+function cloudinaryUrl(publicId, { w = 1200 } = {}) {
+  if (!publicId) return ""; // 空なら空
+  // すでに http で始まるならそのまま返す（保険）
+  if (/^https?:\/\//i.test(publicId)) return publicId;
 
-// イベントのサブ画像URLを取得（2枚目、3枚目など）
-function getEventSubImageUrl(eventId, index = 1, extension = 'jpg') {
-  if (!eventId) return '';
-  // index=1なら 'b', index=2なら 'c' というサフィックスを付ける
-  const suffix = index === 1 ? 'b' : index === 2 ? 'c' : String.fromCharCode(98 + index); // b, c, d, e...
-  return getGitHubImageUrl(`events/${eventId}${suffix}.${extension}`);
-}
+  // 余計な先頭スラッシュを除去
+  const id = String(publicId).replace(/^\/+/, "");
 
-// 提供元ロゴURLを取得
-function getOrganizerLogoUrl(organizerId, extension = 'jpg') {
-  if (!organizerId) return '';
-  return getGitHubImageUrl(`organizer/${organizerId}.${extension}`);
+  return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/f_auto,q_auto,w_${w}/${id}`;
 }
 
 // グローバルに公開
-window.getGitHubImageUrl = getGitHubImageUrl;
-window.getEventImageUrl = getEventImageUrl;
-window.getEventSubImageUrl = getEventSubImageUrl;
-window.getOrganizerLogoUrl = getOrganizerLogoUrl;
+window.cloudinaryUrl = cloudinaryUrl;
 
 // index配列の正規化（organizerId / organizer_id どちらでも organizerId に統一）
 const normalizeIndex = (arr) =>

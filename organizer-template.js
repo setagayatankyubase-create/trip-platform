@@ -33,25 +33,18 @@ const OrganizerPageRenderer = {
     const header = document.getElementById('organizer-header');
     if (!header) return;
 
-    // 提供元ロゴURLを取得（GitHubを優先、なければ既存URLを使用）
-    const originalLogoUrl = organizer.logo || '';
+    // 提供元ロゴURLを取得（Cloudinaryを使用）
+    const originalLogoUrl = organizer.logo || organizer.image || '';
     let logoUrl = '';
-    let fallbackUrl = null;
     
-    // GitHubの画像URL生成関数が利用可能な場合、GitHubを優先
-    if (typeof window.getOrganizerLogoUrl === 'function' && organizer.id) {
-      logoUrl = window.getOrganizerLogoUrl(organizer.id, 'jpg');
-      // 既存のURLをフォールバックとして保持
-      if (originalLogoUrl && originalLogoUrl.trim() !== '') {
-        fallbackUrl = originalLogoUrl;
-      }
+    if (typeof window.cloudinaryUrl === 'function') {
+      logoUrl = window.cloudinaryUrl(originalLogoUrl, { w: 400 });
     } else {
-      // GitHubのURL生成関数がない場合は既存のURLを使用
       logoUrl = originalLogoUrl;
     }
 
     header.innerHTML = `
-      <img src="${logoUrl}" ${fallbackUrl ? `onerror="this.onerror=null; if(this.src!==this.getAttribute('data-fallback')){this.setAttribute('data-fallback','${fallbackUrl.replace(/'/g, "\\'")}'); this.src='${fallbackUrl.replace(/'/g, "\\'")}';}else{this.style.display='none';}"` : 'onerror="this.onerror=null; this.style.display=\'none\';"'} alt="${organizer.name}" class="organizer-logo">
+      ${logoUrl ? `<img src="${logoUrl.replace(/"/g, '&quot;')}" alt="${organizer.name.replace(/"/g, '&quot;')}" class="organizer-logo" loading="lazy" decoding="async" onerror="this.onerror=null; this.style.display='none';" />` : ''}
       <div class="organizer-info" style="flex: 1;">
         <h1>${organizer.name}</h1>
         <p style="margin: 0; color: #6c7a72; line-height: 1.6; font-size: 1.05rem;">${organizer.description}</p>
