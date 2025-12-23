@@ -454,35 +454,31 @@
           // IDの不一致があっても続行する（APIが異なる形式で返す可能性があるため）
         }
 
-        // 通常ページと同じ構造でフィルタリング
-        // イベントリストを取得
-        const eventList = demoData.events || [];
+        // イベントリストを取得（フォールバック対応）
+        let eventList = Array.isArray(demoData.events) ? demoData.events : [];
+        
+        // フォールバック：demoData.events が空なら、window.eventData から取得を試みる
+        if (eventList.length === 0 && window.eventData && Array.isArray(window.eventData.events)) {
+          console.warn('[organizer-demo.html] Fallback: demoData.events is empty, trying window.eventData.events');
+          eventList = window.eventData.events;
+        }
         
         console.log('[organizer-demo.html] ===== EVENT FILTERING DEBUG =====');
         console.log('[organizer-demo.html] organizerId from URL:', organizerId);
-        console.log('[organizer-demo.html] demoData.events:', eventList);
         console.log('[organizer-demo.html] eventList length:', eventList.length);
         
-        // イベントをフィルタリング（organizerId / organizer_id どちらでも対応）
+        // 正規化関数
         const norm = v => String(v ?? '').trim();
         
-        // 提供元IDの正規化（demoorg-XXX → org-XXX）
-        let normalizedOrganizerId = organizerId;
-        if (organizerId.startsWith('demoorg-')) {
-          normalizedOrganizerId = organizerId.replace(/^demoorg-/, 'org-');
+        // ID候補（正規化処理は削除 - すべてdemoorg-xxxで統一）
+        const idCandidates = new Set([organizerId]);
+        // 提供元のIDも候補に追加
+        const organizerOriginalId = norm(demoData.organizer?.id || '');
+        if (organizerOriginalId && organizerOriginalId !== organizerId) {
+          idCandidates.add(organizerOriginalId);
         }
         
-        // 提供元IDも正規化して比較用に保持
-        const organizerIdForComparison = norm(normalizedOrganizerId);
-        const organizerOriginalId = norm(demoData.organizer?.id || '');
-        
-        console.log('[organizer-demo.html] normalizedOrganizerId (demoorg-XXX -> org-XXX):', normalizedOrganizerId);
-        console.log('[organizer-demo.html] organizer.id from API:', organizerOriginalId);
-        console.log('[organizer-demo.html] Comparison IDs:', {
-          fromURL: organizerId,
-          normalized: normalizedOrganizerId,
-          fromAPI: organizerOriginalId
-        });
+        console.log('[organizer-demo.html] ID candidates for filtering:', Array.from(idCandidates));
         
         // 最初の数件のイベントのorganizerIdを確認
         if (eventList.length > 0) {
@@ -490,57 +486,33 @@
             id: e.id,
             organizerId: e.organizerId,
             organizer_id: e.organizer_id,
-            organizer_id_demo: e.organizer_id_demo
+            providerId: e.providerId,
+            provider_id: e.provider_id
           })));
         }
         
-        // イベントをフィルタリング（複数のフィールド名と形式に対応）
-        let events = eventList.filter(e => {
-          const eventOrgId1 = norm(e.organizerId || '');
-          const eventOrgId2 = norm(e.organizer_id || '');
-          const eventOrgId3 = norm(e.organizer_id_demo || '');
-          
-          // 提供元IDとイベントのorganizerIdを比較（複数の形式に対応）
-          // 元のID、正規化されたID、APIから返されたIDのすべてと比較
-          const matches = 
-            eventOrgId1 === organizerIdForComparison ||
-            eventOrgId1 === organizerOriginalId ||
-            eventOrgId1 === organizerId ||
-            eventOrgId2 === organizerIdForComparison ||
-            eventOrgId2 === organizerOriginalId ||
-            eventOrgId2 === organizerId ||
-            eventOrgId3 === organizerIdForComparison ||
-            eventOrgId3 === organizerOriginalId ||
-            eventOrgId3 === organizerId;
-          
-          if (matches) {
-            console.log('[organizer-demo.html] ✅ Event matched:', e.id, {
-              eventOrganizerId: eventOrgId1 || eventOrgId2 || eventOrgId3,
-              matchedWith: organizerIdForComparison === (eventOrgId1 || eventOrgId2 || eventOrgId3) ? 'normalized' :
-                          organizerOriginalId === (eventOrgId1 || eventOrgId2 || eventOrgId3) ? 'fromAPI' :
-                          organizerId === (eventOrgId1 || eventOrgId2 || eventOrgId3) ? 'fromURL' : 'unknown'
-            });
-          }
-          
-          return matches;
+        // イベントをフィルタリング（複数の列名候補に対応）
+        const filtered = eventList.filter(ev => {
+          // 複数の列名候補をチェック（organizerId, organizer_id, providerId, provider_id など）
+          const oid = ev.organizerId ?? ev.organizer_id ?? ev.providerId ?? ev.provider_id ?? ev.organizer ?? ev.organizerID ?? '';
+          const normalizedOid = norm(oid);
+          return idCandidates.has(normalizedOid);
         });
+        
+        const events = filtered;
         
         console.log('[organizer-demo.html] filtered events count:', events.length);
         if (events.length === 0 && eventList.length > 0) {
           console.warn('[organizer-demo.html] ❌ No events matched!');
-          console.warn('[organizer-demo.html] Expected organizerId:', organizerId, 'or', normalizedOrganizerId, 'or', organizerOriginalId);
+          console.warn('[organizer-demo.html] Expected organizerId:', Array.from(idCandidates));
           console.warn('[organizer-demo.html] Sample event organizerIds:', eventList.slice(0, 3).map(e => ({
             id: e.id,
             organizerId: e.organizerId || 'N/A',
             organizer_id: e.organizer_id || 'N/A',
-            organizer_id_demo: e.organizer_id_demo || 'N/A'
+            providerId: e.providerId || 'N/A'
           })));
-          
-          // フィルタリングがマッチしない場合は、すべてのイベントを表示する（フォールバック）
-          console.warn('[organizer-demo.html] ⚠️ Showing all events as fallback (filtering disabled)');
-          events = eventList;
         } else if (events.length === 0 && eventList.length === 0) {
-          console.warn('[organizer-demo.html] ⚠️ No events in demoData.events');
+          console.warn('[organizer-demo.html] ⚠️ No events available (neither demoData.events nor window.eventData.events)');
         }
         console.log('[organizer-demo.html] Final events count to render:', events.length);
         console.log('[organizer-demo.html] ===== END EVENT FILTERING DEBUG =====');
