@@ -27,22 +27,6 @@
     // GitHub raw URL（全ページ共通設定）
     window.GITHUB_RAW_BASE = "https://raw.githubusercontent.com/setagayatankyubase-create/trip-platform/main";
   </script>
-  <script>
-    // ロゴ画像をCloudinaryから取得（data.js読み込み後に実行）
-    (function() {
-      function setLogoUrl() {
-        const logoImage = document.querySelector('.logo-image');
-        if (logoImage && typeof window.getLogoUrl === 'function') {
-          logoImage.src = window.getLogoUrl();
-        }
-      }
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', setLogoUrl);
-      } else {
-        setLogoUrl();
-      }
-    })();
-  </script>
 </head>
 <body>
   <header class="main-header" id="main-header">
@@ -147,6 +131,31 @@
   </footer>
 
   <script src="data.js?v=3_2025-12-21"></script>
+  <script>
+    // ロゴ画像をCloudinaryから取得（data.js読み込み後に実行）
+    (function() {
+      function setLogoUrl() {
+        const logoImage = document.querySelector('.logo-image');
+        if (logoImage && typeof window.getLogoUrl === 'function') {
+          const logoUrl = window.getLogoUrl();
+          if (logoUrl) {
+            logoImage.src = logoUrl;
+            // 画像読み込み失敗時のエラーハンドリング
+            logoImage.onerror = function() {
+              console.warn('[Logo] Failed to load logo image, hiding element');
+              this.style.display = 'none';
+              this.onerror = null; // 無限ループを防ぐ
+            };
+          }
+        }
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setLogoUrl);
+      } else {
+        setLogoUrl();
+      }
+    })();
+  </script>
   <script src="app.js"></script>
   <script>
     // デモ用設定（GAS APIのURL）
