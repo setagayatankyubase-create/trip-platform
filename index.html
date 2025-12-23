@@ -55,8 +55,8 @@
 
   <!-- Hero Section -->
   <section class="hero-section">
-    <div class="hero-section-background" id="hero-bg-1" style="background-image: url('/assets/winter.jpg'); opacity: 1;"></div>
-    <div class="hero-section-background" id="hero-bg-2" style="background-image: url('/assets/fuji.jpg');"></div>
+    <div class="hero-section-background" id="hero-bg-1" style="opacity: 1;"></div>
+    <div class="hero-section-background" id="hero-bg-2"></div>
     <div class="hero-content">
       <h1 class="hero-title">東京のすぐそばに、まだ知らない<br>自然がある</h1>
       <div class="search-wrapper">
@@ -142,6 +142,9 @@
       <div class="footer-column">
         <h3>運営情報</h3>
         <a href="about.html">運営について</a>
+      </div>
+      <div class="footer-column">
+        <h3>掲載について</h3>
         <a href="publish.html">掲載について</a>
       </div>
     </div>
@@ -547,13 +550,19 @@
 
     // ヒーロー背景画像の自動切り替え（滑らかなフェード）
     function setupHeroBackground() {
+      // Cloudinaryからヒーロー画像URLを取得
+      const heroImages = [];
+      if (typeof window.getHeroImageUrl === 'function') {
+        heroImages.push(window.getHeroImageUrl('winter_ctfkee'));
+        heroImages.push(window.getHeroImageUrl('fuji_ebl1nh'));
+      } else {
+        // フォールバック（Cloudinary関数が利用できない場合）
+        heroImages.push('/assets/winter.jpg');
+        heroImages.push('/assets/fuji.jpg');
+      }
+
       // 画像を事前に読み込む
-      const images = [
-        '/assets/winter.jpg',
-        '/assets/fuji.jpg'
-      ];
-      
-      images.forEach(src => {
+      heroImages.forEach(src => {
         const img = new Image();
         img.src = src;
       });
@@ -561,6 +570,14 @@
       const bg1 = document.getElementById('hero-bg-1');
       const bg2 = document.getElementById('hero-bg-2');
       if (!bg1 || !bg2) return;
+
+      // 背景画像を設定
+      if (heroImages[0]) {
+        bg1.style.backgroundImage = `url('${heroImages[0]}')`;
+      }
+      if (heroImages[1]) {
+        bg2.style.backgroundImage = `url('${heroImages[1]}')`;
+      }
 
       let currentBg = bg1;
       let nextBg = bg2;
