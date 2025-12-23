@@ -243,7 +243,46 @@
       }
       
       const organizer = demoData.organizer;
-      const events = demoData.events || [];
+      const eventList = demoData.events || [];
+      
+      // イベントを提供元に関連付けてフィルタリング
+      const norm = v => String(v ?? '').trim();
+      let events = eventList;
+      
+      if (organizer && organizer.id) {
+        const organizerId = norm(organizer.id);
+        // 提供元IDの正規化（demoorg-XXX → org-XXX）
+        let normalizedOrganizerId = organizerId;
+        if (organizerId.startsWith('demoorg-')) {
+          normalizedOrganizerId = organizerId.replace(/^demoorg-/, 'org-');
+        }
+        
+        console.log('[publish.html] organizer.id:', organizerId);
+        console.log('[publish.html] normalizedOrganizerId:', normalizedOrganizerId);
+        console.log('[publish.html] eventList length:', eventList.length);
+        
+        // イベントをフィルタリング（複数のフィールド名と形式に対応）
+        events = eventList.filter(e => {
+          const eventOrgId1 = norm(e.organizerId || '');
+          const eventOrgId2 = norm(e.organizer_id || '');
+          const eventOrgId3 = norm(e.organizer_id_demo || '');
+          
+          // 提供元IDとイベントのorganizerIdを比較（複数の形式に対応）
+          return (
+            eventOrgId1 === normalizedOrganizerId ||
+            eventOrgId1 === organizerId ||
+            eventOrgId2 === normalizedOrganizerId ||
+            eventOrgId2 === organizerId ||
+            eventOrgId3 === normalizedOrganizerId ||
+            eventOrgId3 === organizerId
+          );
+        });
+        
+        console.log('[publish.html] filtered events count:', events.length);
+        if (events.length === 0 && eventList.length > 0) {
+          console.warn('[publish.html] No events matched! Sample event organizerId:', eventList[0].organizerId || eventList[0].organizer_id || eventList[0].organizer_id_demo);
+        }
+      }
       
       // 提供元情報を表示（demo-list-containerとは別のコンテナに配置）
       const demoOrganizerContainer = document.getElementById('demo-organizer-container');

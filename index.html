@@ -197,7 +197,7 @@
       return `https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/${iconName}.svg`;
     }
 
-    // カテゴリ一覧の表示
+    // カテゴリ一覧の表示（人気カテゴリ：イベント数の多い順に最大6件）
     function renderCategories() {
       const container = document.getElementById('category-list');
       if (!container) return;
@@ -215,8 +215,56 @@
         console.warn('[index.html] renderCategories - No categories found');
         return;
       }
-      
-      container.innerHTML = categories.map(cat => {
+
+      // イベントごとのカテゴリ出現回数を集計
+      const events = (window.eventData && Array.isArray(window.eventData.events))
+        ? window.eventData.events
+        : [];
+
+      const counts = {};
+      if (events.length > 0) {
+        events.forEach(ev => {
+          const ids = new Set();
+          if (ev.categoryId) ids.add(String(ev.categoryId));
+          if (ev.category_id) ids.add(String(ev.category_id));
+          if (ev.category) ids.add(String(ev.category));
+          if (Array.isArray(ev.categories)) {
+            ev.categories.forEach(c => {
+              if (!c) return;
+              if (typeof c === 'string') {
+                ids.add(c);
+              } else if (c.id) {
+                ids.add(String(c.id));
+              }
+            });
+          }
+          ids.forEach(id => {
+            counts[id] = (counts[id] || 0) + 1;
+          });
+        });
+      }
+
+      console.log('[index.html] renderCategories - counts:', counts);
+
+      // 人気順にソートし、最大6件に絞る
+      let sorted = categories.slice();
+      if (Object.keys(counts).length > 0) {
+        sorted.sort((a, b) => {
+          const ca = counts[a.id] || 0;
+          const cb = counts[b.id] || 0;
+          if (cb !== ca) return cb - ca; // 多い順
+          // 同数なら元の順序を維持（idで安定ソート）
+          return String(a.id).localeCompare(String(b.id));
+        });
+
+        // 1件以上イベントがあるカテゴリだけに絞る
+        sorted = sorted.filter(cat => (counts[cat.id] || 0) > 0);
+      }
+
+      // 最大6件まで
+      const topCategories = sorted.slice(0, 6);
+
+      container.innerHTML = topCategories.map(cat => {
         const iconUrl = getCategoryIconUrl(cat.id);
         return `
         <a href="list.html?category=${cat.id}" class="cat">
