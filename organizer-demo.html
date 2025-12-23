@@ -338,10 +338,10 @@
     
     // デモデータを取得（共有キャッシュから高速取得）
     async function fetchDemoData(password, organizerId = null) {
+      // 注意: キャッシュキーはorganizerIdを含めない（すべてのイベントをキャッシュ）
+      // クライアント側でorganizerIdに基づいてフィルタリングする
       const CACHE_KEY = 'demo_data_cache';
-      
-      // organizerIdがある場合は、キャッシュキーに含める（提供元ごとにキャッシュを分ける）
-      const cacheKey = organizerId ? `${CACHE_KEY}_${organizerId}` : CACHE_KEY;
+      const cacheKey = CACHE_KEY;
       
       // キャッシュをチェック（即座に返す）
       try {
@@ -358,13 +358,13 @@
       }
       
       // キャッシュがない場合はAPIから取得（通常は発生しないが、念のため）
+      // 注意: organizer_idパラメータは送らない（すべてのイベントを取得してクライアント側でフィルタリング）
       try {
         const url = new URL(DEMO_GAS_API_URL);
         url.searchParams.set('password', password);
-        if (organizerId) {
-          url.searchParams.set('organizer_id', organizerId);
-        }
+        // organizer_idパラメータは送らない（すべてのイベントを取得）
         
+        console.log('[organizer-demo] Fetching demo data from API (without organizer_id filter)');
         const response = await fetch(url.toString());
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -375,6 +375,8 @@
         if (!data.success) {
           throw new Error(data.error || 'データの取得に失敗しました');
         }
+        
+        console.log('[organizer-demo] API response - events count:', data.events?.length || 0);
         
         // キャッシュに保存
         try {
