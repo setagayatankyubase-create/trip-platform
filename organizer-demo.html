@@ -458,6 +458,11 @@
         // イベントリストを取得
         const eventList = demoData.events || [];
         
+        console.log('[organizer-demo.html] ===== EVENT FILTERING DEBUG =====');
+        console.log('[organizer-demo.html] organizerId from URL:', organizerId);
+        console.log('[organizer-demo.html] demoData.events:', eventList);
+        console.log('[organizer-demo.html] eventList length:', eventList.length);
+        
         // イベントをフィルタリング（organizerId / organizer_id どちらでも対応）
         const norm = v => String(v ?? '').trim();
         
@@ -471,10 +476,23 @@
         const organizerIdForComparison = norm(normalizedOrganizerId);
         const organizerOriginalId = norm(demoData.organizer?.id || '');
         
-        console.log('[organizer-demo.html] organizerId from URL:', organizerId);
-        console.log('[organizer-demo.html] normalizedOrganizerId:', normalizedOrganizerId);
+        console.log('[organizer-demo.html] normalizedOrganizerId (demoorg-XXX -> org-XXX):', normalizedOrganizerId);
         console.log('[organizer-demo.html] organizer.id from API:', organizerOriginalId);
-        console.log('[organizer-demo.html] eventList length:', eventList.length);
+        console.log('[organizer-demo.html] Comparison IDs:', {
+          fromURL: organizerId,
+          normalized: normalizedOrganizerId,
+          fromAPI: organizerOriginalId
+        });
+        
+        // 最初の数件のイベントのorganizerIdを確認
+        if (eventList.length > 0) {
+          console.log('[organizer-demo.html] Sample events organizerId:', eventList.slice(0, 3).map(e => ({
+            id: e.id,
+            organizerId: e.organizerId,
+            organizer_id: e.organizer_id,
+            organizer_id_demo: e.organizer_id_demo
+          })));
+        }
         
         // イベントをフィルタリング（複数のフィールド名と形式に対応）
         const events = eventList.filter(e => {
@@ -483,6 +501,7 @@
           const eventOrgId3 = norm(e.organizer_id_demo || '');
           
           // 提供元IDとイベントのorganizerIdを比較（複数の形式に対応）
+          // 元のID、正規化されたID、APIから返されたIDのすべてと比較
           const matches = 
             eventOrgId1 === organizerIdForComparison ||
             eventOrgId1 === organizerOriginalId ||
@@ -495,7 +514,12 @@
             eventOrgId3 === organizerId;
           
           if (matches) {
-            console.log('[organizer-demo.html] Event matched:', e.id, 'organizerId:', eventOrgId1 || eventOrgId2 || eventOrgId3);
+            console.log('[organizer-demo.html] ✅ Event matched:', e.id, {
+              eventOrganizerId: eventOrgId1 || eventOrgId2 || eventOrgId3,
+              matchedWith: organizerIdForComparison === (eventOrgId1 || eventOrgId2 || eventOrgId3) ? 'normalized' :
+                          organizerOriginalId === (eventOrgId1 || eventOrgId2 || eventOrgId3) ? 'fromAPI' :
+                          organizerId === (eventOrgId1 || eventOrgId2 || eventOrgId3) ? 'fromURL' : 'unknown'
+            });
           }
           
           return matches;
@@ -503,8 +527,16 @@
         
         console.log('[organizer-demo.html] filtered events count:', events.length);
         if (events.length === 0 && eventList.length > 0) {
-          console.warn('[organizer-demo.html] No events matched! Sample event organizerId:', eventList[0].organizerId || eventList[0].organizer_id || eventList[0].organizer_id_demo);
+          console.warn('[organizer-demo.html] ❌ No events matched!');
+          console.warn('[organizer-demo.html] Expected organizerId:', organizerId, 'or', normalizedOrganizerId, 'or', organizerOriginalId);
+          console.warn('[organizer-demo.html] Sample event organizerIds:', eventList.slice(0, 3).map(e => ({
+            id: e.id,
+            organizerId: e.organizerId || 'N/A',
+            organizer_id: e.organizer_id || 'N/A',
+            organizer_id_demo: e.organizer_id_demo || 'N/A'
+          })));
         }
+        console.log('[organizer-demo.html] ===== END EVENT FILTERING DEBUG =====');
 
         // コンテンツを表示
         document.getElementById('demo-error').style.display = 'none';
