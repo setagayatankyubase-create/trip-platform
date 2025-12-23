@@ -92,6 +92,15 @@ window.getFaviconUrl = getFaviconUrl;
 window.getEventImageUrl = getEventImageUrl;
 window.getOrganizerImageUrl = getOrganizerImageUrl;
 
+// CloudinaryのURL生成を確認（デバッグ用 - 既存動作には影響なし）
+if (typeof console !== 'undefined') {
+  console.log('[Cloudinary URL Check]');
+  console.log('  Logo URL:', getLogoUrl());
+  console.log('  Favicon URL:', getFaviconUrl());
+  console.log('  Expected logo path: logo/logo.png_tfqqd0');
+  console.log('  Cloudinary cloud name:', CLOUDINARY_CLOUD_NAME);
+}
+
 // index配列の正規化（organizerId / organizer_id どちらでも organizerId に統一）
 const normalizeIndex = (arr) =>
   (Array.isArray(arr) ? arr : []).map(e => ({
