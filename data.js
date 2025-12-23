@@ -1,7 +1,9 @@
 // データ取得方針
 // - メイン導線: GitHub Pages の /data 配下
 // - フォールバック: /data が壊れてる・古い・HTML返す等なら GitHub raw へ
-const DATA_BASE = "/data";
+// 重複読み込み防止：window.DATA_BASEを使用
+window.DATA_BASE = window.DATA_BASE || "/data";
+const DATA_BASE = window.DATA_BASE;
 
 // 例: "https://raw.githubusercontent.com/owner/repo/main"
 const sanitizeBase = (s) => String(s || "").trim().replace(/\/+$/, "");
@@ -33,55 +35,56 @@ const normalizeId = (v) => {
 // Cloudinary画像URL生成関数
 const CLOUDINARY_CLOUD_NAME = "ddrxsy9jw";
 
-function cloudinaryUrl(publicId, { w = 1200, type = null, eventId = null } = {}) {
+function cloudinaryUrl(publicId, { w = 1200, q = 'auto', f = 'auto' } = {}) {
   if (!publicId) return ""; // 空なら空
   // すでに http で始まるならそのまま返す（保険）
   if (/^https?:\/\//i.test(publicId)) return publicId;
 
-  // 余計な先頭スラッシュを除去
-  let id = String(publicId).replace(/^\/+/, "");
+  // public_idをそのまま使用（フォルダ名や拡張子の加工はしない）
+  // 余計な先頭スラッシュを除去して、そのまま使用
+  let id = String(publicId).trim().replace(/^\/+/, "");
 
-  // フォルダ構造に合わせてプレフィックスを追加
-  // すでにフォルダパスが含まれている場合はそのまま使用
-  if (!id.includes('/')) {
-    if (type === 'logo') {
-      id = `logo/${id}`;
-    } else if (type === 'hero') {
-      id = `hero/${id}`;
-    } else if (type === 'organizer') {
-      id = `organizers/${id}`;
-    } else if (type === 'event' && eventId) {
-      // eventIdをそのままフォルダ名として使用（例: evt-001 -> events/evt-001/画像名）
-      id = `events/${eventId}/${id}`;
-    }
-  }
-
-  return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/f_auto,q_auto,w_${w}/${id}`;
+  // CloudinaryのURL生成：public_idをそのまま使用
+  return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/f_${f},q_${q},w_${w}/${id}`;
 }
 
 // ロゴ画像のCloudinary URLを取得
+// public_idをそのまま使用（例: 'logo/logo_tfqqd0' または 'Home/logo/logo_tfqqd0'）
 function getLogoUrl() {
-  return cloudinaryUrl('logo.png_tfqqd0', { w: 200, type: 'logo' });
+  // TODO: CloudinaryのMedia Libraryで確認した実際のpublic_idに置き換えてください
+  // 例: 'logo/logo_tfqqd0' または 'Home/logo/logo_tfqqd0'
+  return cloudinaryUrl('logo/logo_tfqqd0', { w: 200 });
 }
 
 // ヒーロー画像のCloudinary URLを取得
 function getHeroImageUrl(imageId) {
-  return cloudinaryUrl(imageId, { w: 1920, type: 'hero' });
+  // imageIdはpublic_idをそのまま渡す（例: 'hero/winter_ctfkee' または 'Home/hero/winter_ctfkee'）
+  return cloudinaryUrl(imageId, { w: 1920 });
 }
 
 // ファビコンのCloudinary URLを取得
 function getFaviconUrl() {
-  return cloudinaryUrl('logo.png_tfqqd0', { w: 32, type: 'logo' });
+  // ロゴと同じpublic_idを使用
+  return cloudinaryUrl('logo/logo_tfqqd0', { w: 32 });
 }
 
 // イベント画像のCloudinary URLを取得
 function getEventImageUrl(imageId, eventId, { w = 1200 } = {}) {
-  return cloudinaryUrl(imageId, { w, type: 'event', eventId });
+  // imageIdはpublic_idをそのまま渡す（例: 'events/evt-001/evt-001_uqv2y2' または 'Home/events/evt-001/evt-001_uqv2y2'）
+  // もしimageIdがファイル名のみ（例: 'evt-001.jpg_uqv2y2'）の場合は、eventIdを使って組み立てる
+  let publicId = imageId;
+  if (publicId && !publicId.includes('/') && eventId) {
+    // 拡張子を除去（.jpg, .png等）
+    publicId = publicId.replace(/\.(jpg|jpeg|png|webp)$/i, '');
+    publicId = `events/${eventId}/${publicId}`;
+  }
+  return cloudinaryUrl(publicId, { w });
 }
 
 // 提供元画像のCloudinary URLを取得
 function getOrganizerImageUrl(imageId, { w = 400 } = {}) {
-  return cloudinaryUrl(imageId, { w, type: 'organizer' });
+  // imageIdはpublic_idをそのまま渡す（例: 'organizers/org-001_logo' または 'Home/organizers/org-001_logo'）
+  return cloudinaryUrl(imageId, { w });
 }
 
 // グローバルに公開
@@ -97,8 +100,9 @@ if (typeof console !== 'undefined') {
   console.log('[Cloudinary URL Check]');
   console.log('  Logo URL:', getLogoUrl());
   console.log('  Favicon URL:', getFaviconUrl());
-  console.log('  Expected logo path: logo/logo.png_tfqqd0');
+  console.log('  Expected logo public_id: logo/logo_tfqqd0');
   console.log('  Cloudinary cloud name:', CLOUDINARY_CLOUD_NAME);
+  console.log('  Note: CloudinaryのMedia Libraryで実際のpublic_idを確認してください');
 }
 
 // index配列の正規化（organizerId / organizer_id どちらでも organizerId に統一）
