@@ -730,7 +730,8 @@ const CardRenderer = {
       });
     }
     
-    const optimizedImage = this.optimizeImageUrl(rawImageUrl, { w: 1200 });
+    // イベント画像URLを生成（eventIdを渡してフォルダ構造に対応）
+    const optimizedImage = this.optimizeImageUrl(rawImageUrl, { w: 1200, type: 'event', eventId: event.id });
     
     if (event.id === 'evt-001') {
       console.log(`[CardRenderer] Event ${event.id} Cloudinary URL:`, {

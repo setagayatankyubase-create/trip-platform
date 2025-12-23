@@ -61,10 +61,18 @@ const EventPageRenderer = {
   // ギャラリー
   renderGallery(event) {
     const mainImage = document.getElementById('event-main-image');
-    if (mainImage && typeof window.cloudinaryUrl === 'function') {
-      // イベント画像URLを取得（Cloudinaryを使用）
+    if (mainImage && typeof window.getEventImageUrl === 'function') {
+      // イベント画像URLを取得（Cloudinaryを使用、フォルダ構造に対応）
       const rawImageUrl = event.image || event.thumb || event.mainImage || '';
-      const imageUrl = window.cloudinaryUrl(rawImageUrl, { w: 1200 });
+      const imageUrl = window.getEventImageUrl(rawImageUrl, event.id, { w: 1200 });
+      
+      if (imageUrl) {
+        mainImage.style.backgroundImage = `url('${imageUrl.replace(/'/g, "\\'")}')`;
+      }
+    } else if (mainImage && typeof window.cloudinaryUrl === 'function') {
+      // フォールバック: getEventImageUrlが利用できない場合
+      const rawImageUrl = event.image || event.thumb || event.mainImage || '';
+      const imageUrl = window.cloudinaryUrl(rawImageUrl, { w: 1200, type: 'event', eventId: event.id });
       
       if (imageUrl) {
         mainImage.style.backgroundImage = `url('${imageUrl.replace(/'/g, "\\'")}')`;
@@ -103,7 +111,10 @@ const EventPageRenderer = {
         const publicId = subImageIds[index];
         if (!thumbEl || !publicId) return;
 
-        const subImageUrl = window.cloudinaryUrl(publicId, { w: 600 });
+        // サブ画像もイベントフォルダ内の画像として扱う
+        const subImageUrl = typeof window.getEventImageUrl === 'function'
+          ? window.getEventImageUrl(publicId, event.id, { w: 600 })
+          : window.cloudinaryUrl(publicId, { w: 600, type: 'event', eventId: event.id });
         if (subImageUrl) {
           thumbEl.style.backgroundImage = `url('${subImageUrl.replace(/'/g, "\\'")}')`;
         }

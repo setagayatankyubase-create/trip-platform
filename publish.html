@@ -287,12 +287,14 @@
       // 提供元情報を表示（demo-list-containerとは別のコンテナに配置）
       const demoOrganizerContainer = document.getElementById('demo-organizer-container');
       if (demoOrganizerContainer && organizer) {
-        // Cloudinaryを使用してロゴURLを生成
+        // Cloudinaryを使用してロゴURLを生成（organizersフォルダを使用）
         const originalLogoUrl = organizer.logo || organizer.image || '';
         let logoUrl = '';
         
-        if (typeof window.cloudinaryUrl === 'function') {
-          logoUrl = window.cloudinaryUrl(originalLogoUrl, { w: 400 });
+        if (typeof window.getOrganizerImageUrl === 'function') {
+          logoUrl = window.getOrganizerImageUrl(originalLogoUrl, { w: 400 });
+        } else if (typeof window.cloudinaryUrl === 'function') {
+          logoUrl = window.cloudinaryUrl(originalLogoUrl, { w: 400, type: 'organizer' });
         } else {
           logoUrl = originalLogoUrl;
         }

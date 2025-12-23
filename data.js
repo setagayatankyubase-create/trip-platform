@@ -33,30 +33,55 @@ const normalizeId = (v) => {
 // Cloudinary画像URL生成関数
 const CLOUDINARY_CLOUD_NAME = "ddrxsy9jw";
 
-function cloudinaryUrl(publicId, { w = 1200 } = {}) {
+function cloudinaryUrl(publicId, { w = 1200, type = null, eventId = null } = {}) {
   if (!publicId) return ""; // 空なら空
   // すでに http で始まるならそのまま返す（保険）
   if (/^https?:\/\//i.test(publicId)) return publicId;
 
   // 余計な先頭スラッシュを除去
-  const id = String(publicId).replace(/^\/+/, "");
+  let id = String(publicId).replace(/^\/+/, "");
+
+  // フォルダ構造に合わせてプレフィックスを追加
+  // すでにフォルダパスが含まれている場合はそのまま使用
+  if (!id.includes('/')) {
+    if (type === 'logo') {
+      id = `logo/${id}`;
+    } else if (type === 'hero') {
+      id = `hero/${id}`;
+    } else if (type === 'organizer') {
+      id = `organizers/${id}`;
+    } else if (type === 'event' && eventId) {
+      // eventIdをそのままフォルダ名として使用（例: evt-001 -> events/evt-001/画像名）
+      id = `events/${eventId}/${id}`;
+    }
+  }
 
   return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/f_auto,q_auto,w_${w}/${id}`;
 }
 
 // ロゴ画像のCloudinary URLを取得
 function getLogoUrl() {
-  return cloudinaryUrl('logo.png_tfqqd0', { w: 200 });
+  return cloudinaryUrl('logo.png_tfqqd0', { w: 200, type: 'logo' });
 }
 
 // ヒーロー画像のCloudinary URLを取得
 function getHeroImageUrl(imageId) {
-  return cloudinaryUrl(imageId, { w: 1920 });
+  return cloudinaryUrl(imageId, { w: 1920, type: 'hero' });
 }
 
 // ファビコンのCloudinary URLを取得
 function getFaviconUrl() {
-  return cloudinaryUrl('logo.png_tfqqd0', { w: 32 });
+  return cloudinaryUrl('logo.png_tfqqd0', { w: 32, type: 'logo' });
+}
+
+// イベント画像のCloudinary URLを取得
+function getEventImageUrl(imageId, eventId, { w = 1200 } = {}) {
+  return cloudinaryUrl(imageId, { w, type: 'event', eventId });
+}
+
+// 提供元画像のCloudinary URLを取得
+function getOrganizerImageUrl(imageId, { w = 400 } = {}) {
+  return cloudinaryUrl(imageId, { w, type: 'organizer' });
 }
 
 // グローバルに公開
@@ -64,6 +89,8 @@ window.cloudinaryUrl = cloudinaryUrl;
 window.getLogoUrl = getLogoUrl;
 window.getHeroImageUrl = getHeroImageUrl;
 window.getFaviconUrl = getFaviconUrl;
+window.getEventImageUrl = getEventImageUrl;
+window.getOrganizerImageUrl = getOrganizerImageUrl;
 
 // index配列の正規化（organizerId / organizer_id どちらでも organizerId に統一）
 const normalizeIndex = (arr) =>

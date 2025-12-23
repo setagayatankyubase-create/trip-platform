@@ -33,12 +33,15 @@ const OrganizerPageRenderer = {
     const header = document.getElementById('organizer-header');
     if (!header) return;
 
-    // 提供元ロゴURLを取得（Cloudinaryを使用）
+    // 提供元ロゴURLを取得（Cloudinaryを使用、フォルダ構造に対応）
     const originalLogoUrl = organizer.logo || organizer.image || '';
     let logoUrl = '';
     
-    if (typeof window.cloudinaryUrl === 'function') {
-      logoUrl = window.cloudinaryUrl(originalLogoUrl, { w: 400 });
+    // Cloudinaryを使用してロゴURLを生成（organizersフォルダを使用）
+    if (typeof window.getOrganizerImageUrl === 'function') {
+      logoUrl = window.getOrganizerImageUrl(originalLogoUrl, { w: 400 });
+    } else if (typeof window.cloudinaryUrl === 'function') {
+      logoUrl = window.cloudinaryUrl(originalLogoUrl, { w: 400, type: 'organizer' });
     } else {
       logoUrl = originalLogoUrl;
     }

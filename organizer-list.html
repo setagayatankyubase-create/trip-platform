@@ -113,13 +113,15 @@
       container.innerHTML = eventData.organizers.map(org => {
         const events = eventData.events.filter(e => (e.organizerId || e.organizer_id) === org.id);
         
-        // 提供元ロゴURLを取得（GitHubを優先、なければ既存URLを使用）
-        // Cloudinaryを使用してロゴURLを生成
+        // 提供元ロゴURLを取得（Cloudinaryを使用、フォルダ構造に対応）
         const originalLogoUrl = org.logo || org.image || '';
         let logoUrl = '';
         
-        if (typeof window.cloudinaryUrl === 'function') {
-          logoUrl = window.cloudinaryUrl(originalLogoUrl, { w: 400 });
+        // Cloudinaryを使用してロゴURLを生成（organizersフォルダを使用）
+        if (typeof window.getOrganizerImageUrl === 'function') {
+          logoUrl = window.getOrganizerImageUrl(originalLogoUrl, { w: 400 });
+        } else if (typeof window.cloudinaryUrl === 'function') {
+          logoUrl = window.cloudinaryUrl(originalLogoUrl, { w: 400, type: 'organizer' });
         } else {
           logoUrl = originalLogoUrl;
         }
