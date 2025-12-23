@@ -1,11 +1,6 @@
 // データ取得方針
 // - メイン導線: GitHub Pages の /data 配下
 // - フォールバック: /data が壊れてる・古い・HTML返す等なら GitHub raw へ
-
-// 重複読み込み防止：既に読み込まれている場合はスキップ
-if (typeof window.SOTONAVI_DATA_LOADED === 'undefined') {
-  window.SOTONAVI_DATA_LOADED = true;
-  
 const DATA_BASE = "/data";
 
 // 例: "https://raw.githubusercontent.com/owner/repo/main"
@@ -44,7 +39,7 @@ function cloudinaryUrl(publicId, { w = 1200, type = null, eventId = null } = {})
   if (/^https?:\/\//i.test(publicId)) return publicId;
 
   // 余計な先頭スラッシュを除去
-  let id = String(publicId).trim().replace(/^\/+/, "");
+  let id = String(publicId).replace(/^\/+/, "");
 
   // フォルダ構造に合わせてプレフィックスを追加
   // すでにフォルダパスが含まれている場合はそのまま使用
@@ -61,27 +56,7 @@ function cloudinaryUrl(publicId, { w = 1200, type = null, eventId = null } = {})
     }
   }
 
-  // CloudinaryのURLでは、通常のファイル名ならそのまま使用
-  // 特殊文字（スペースなど）のみエンコードする必要があるが、
-  // Cloudinaryは通常のファイル名をそのまま受け付ける
-  // ただし、URLセーフでない文字（スペースなど）がある場合は手動でエンコード
-  let finalPath = id;
-  
-  // スペースやその他の問題のある文字のみをエンコード
-  // ただし、スラッシュはエンコードしない（パス区切りとして機能させる）
-  if (/[\s%<>\"'|\\^`{}]/.test(id)) {
-    // 問題のある文字が含まれている場合のみ、セグメントごとにエンコード
-    finalPath = id.split('/').map(segment => {
-      // 通常のファイル名文字（英数字、ハイフン、アンダースコア、ドット）はそのまま
-      if (/^[a-zA-Z0-9._-]+$/.test(segment)) {
-        return segment;
-      }
-      // それ以外はエンコード
-      return encodeURIComponent(segment);
-    }).join('/');
-  }
-
-  return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/f_auto,q_auto,w_${w}/${finalPath}`;
+  return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/f_auto,q_auto,w_${w}/${id}`;
 }
 
 // ロゴ画像のCloudinary URLを取得
@@ -500,5 +475,5 @@ window.fetchEvent = function fetchEvent(id) {
   return loadEventDetail(id);
 };
 
-} // 重複読み込み防止のための閉じ括弧
+
 

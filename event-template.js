@@ -86,9 +86,8 @@ const EventPageRenderer = {
 
       // スプレッドシートの images 列からサブ画像を取得
       // 形式例:
-      //  - 単一: "evt-001c_xxxxx"
-      //  - 複数（パイプ区切り）: "evt-001c_xsmorb|evt-001b_x4tcnx"
-      //  - 複数（カンマ区切り）: "evt-001c_xxxxx,evt-001d_yyyyy"
+      //  - 単一: "events/evt-001c_xxxxx"
+      //  - 複数: "events/evt-001c_xxxxx,events/evt-001d_yyyyy"
       let subImageIds = [];
 
       if (Array.isArray(event.images)) {
@@ -97,7 +96,7 @@ const EventPageRenderer = {
           .filter(Boolean);
       } else if (typeof event.images === 'string') {
         subImageIds = String(event.images)
-          .split(/[|,\s]+/)      // パイプ、カンマ、空白区切りに対応
+          .split(/[,\s]+/)      // カンマ区切りや空白区切りを想定
           .map(v => v.trim())
           .filter(Boolean);
       }

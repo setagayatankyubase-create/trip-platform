@@ -137,16 +137,7 @@
       function setLogoUrl() {
         const logoImage = document.querySelector('.logo-image');
         if (logoImage && typeof window.getLogoUrl === 'function') {
-          const logoUrl = window.getLogoUrl();
-          if (logoUrl) {
-            logoImage.src = logoUrl;
-            // 画像読み込み失敗時のエラーハンドリング
-            logoImage.onerror = function() {
-              console.warn('[Logo] Failed to load logo image, hiding element');
-              this.style.display = 'none';
-              this.onerror = null; // 無限ループを防ぐ
-            };
-          }
+          logoImage.src = window.getLogoUrl();
         }
       }
       if (document.readyState === 'loading') {
