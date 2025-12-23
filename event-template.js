@@ -395,7 +395,33 @@ const EventPageRenderer = {
             <h4 style="margin: 0 0 8px 0;">${organizer.name}</h4>
             <p style="margin: 0; color: #6c7a72; font-size: 0.9rem;">${organizer.description}</p>
             <div style="margin-top: 8px; font-size: 0.85rem; color: #6c7a72;">
-              設立: ${organizer.establishedYear}年 | 評価: ★${organizer.rating} (${organizer.reviewCount}件)
+              ${(() => {
+                // 設立年を取得（複数のフィールド名に対応：founded_yearがmeta.jsonで使用されている）
+                const establishedYear = organizer.founded_year || organizer.establishedYear || organizer.foundedYear;
+                let displayYear = '';
+                if (establishedYear !== undefined && establishedYear !== null && establishedYear !== '') {
+                  const yearStr = String(establishedYear).trim();
+                  if (yearStr !== 'undefined' && yearStr !== 'null' && yearStr !== '') {
+                    displayYear = `設立: ${yearStr}年`;
+                  }
+                }
+                
+                // 評価を取得（有効な場合のみ表示）
+                const rating = parseFloat(organizer.rating) || 0;
+                const reviewCount = parseInt(organizer.reviewCount) || 0;
+                const displayRating = (rating > 0 && reviewCount > 0) ? `評価: ★${rating} (${reviewCount}件)` : '';
+                
+                // メタ情報を組み立て
+                const metaItems = [];
+                if (displayYear) {
+                  metaItems.push(displayYear);
+                }
+                if (displayRating) {
+                  metaItems.push(displayRating);
+                }
+                
+                return metaItems.length > 0 ? metaItems.join(' | ') : '';
+              })()}
             </div>
           </div>
         </div>
