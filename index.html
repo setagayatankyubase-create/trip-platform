@@ -186,7 +186,12 @@
           ? window.eventData.categories 
           : null;
       
-      if (!categories || !Array.isArray(categories) || categories.length === 0) return;
+      console.log('[index.html] renderCategories - categories:', categories);
+      
+      if (!categories || !Array.isArray(categories) || categories.length === 0) {
+        console.warn('[index.html] renderCategories - No categories found');
+        return;
+      }
       
       container.innerHTML = categories.map(cat => `
         <a href="list.html?category=${cat.id}" class="cat">
@@ -232,7 +237,12 @@
           ? window.eventData.categories 
           : null;
       
-      if (!categories || !Array.isArray(categories) || categories.length === 0) return;
+      console.log('[index.html] initCategoryMenu - categories:', categories);
+      
+      if (!categories || !Array.isArray(categories) || categories.length === 0) {
+        console.warn('[index.html] initCategoryMenu - No categories found');
+        return;
+      }
       
       menuList.innerHTML = categories.map(cat => `
         <a href="list.html?category=${cat.id}" class="category-menu-item">

@@ -11,7 +11,7 @@ const GITHUB_RAW_BASE = sanitizeBase(
 );
 
 // キャッシュ無効化用バージョン（構造変えたら必ず上げる）
-const EVENT_CACHE_VERSION = "v4_2025-12-23";
+const EVENT_CACHE_VERSION = "v5_2025-01-15";
 
 // キャッシュキー（バージョンと連動）
 const STORAGE_KEY_BASE = `sotonavi_eventData_${EVENT_CACHE_VERSION}`;
@@ -358,6 +358,14 @@ window.loadEventMeta = function loadEventMeta() {
       console.log('[data.js] Organizer keys:', Object.keys(organizers[0] || {}));
     }
 
+    // デバッグログ：categoriesの内容を確認
+    if (categories.length > 0) {
+      console.log('[data.js] Categories loaded:', categories.length, 'items');
+      console.log('[data.js] Sample categories:', categories.slice(0, 3));
+    } else {
+      console.warn('[data.js] No categories found in meta.json');
+    }
+
     // organizers が空なら raw に逃げる（/data が古い・未更新対策）
     if (organizers.length === 0) {
       const fallbackUrl = `${GITHUB_RAW_BASE}/data/meta.json`;
@@ -372,6 +380,12 @@ window.loadEventMeta = function loadEventMeta() {
         if (organizers.length > 0) {
           console.log('[data.js] Sample organizer from fallback:', organizers[0]);
           console.log('[data.js] Fallback organizer keys:', Object.keys(organizers[0] || {}));
+        }
+        
+        // デバッグログ：フォールバックからのcategoriesも確認
+        if (categories.length > 0) {
+          console.log('[data.js] Categories from fallback:', categories.length, 'items');
+          console.log('[data.js] Sample categories from fallback:', categories.slice(0, 3));
         }
       } catch (e) {
         console.warn("[META FALLBACK] failed:", e.message);
