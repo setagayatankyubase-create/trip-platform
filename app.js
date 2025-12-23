@@ -717,20 +717,27 @@ const CardRenderer = {
     // events_index.jsonではthumbフィールドが使われている可能性があるため、image/thumb/mainImageの順でチェック
     const rawImageUrl = event.image || event.thumb || event.mainImage || '';
     
-    // デバッグログ（本番環境では削除可能）
-    if (rawImageUrl) {
+    // デバッグログ（evt-001のみ詳細に）
+    if (event.id === 'evt-001') {
+      console.log(`[CardRenderer] Event ${event.id} FULL OBJECT:`, event);
       console.log(`[CardRenderer] Event ${event.id} image fields:`, {
         'event.image': event.image,
         'event.thumb': event.thumb,
         'event.mainImage': event.mainImage,
-        'rawImageUrl (selected)': rawImageUrl
+        'rawImageUrl (selected)': rawImageUrl,
+        'typeof event.image': typeof event.image,
+        'typeof event.thumb': typeof event.thumb
       });
     }
     
     const optimizedImage = this.optimizeImageUrl(rawImageUrl, { w: 1200 });
     
-    if (optimizedImage && optimizedImage !== rawImageUrl) {
-      console.log(`[CardRenderer] Event ${event.id} Cloudinary URL generated:`, optimizedImage);
+    if (event.id === 'evt-001') {
+      console.log(`[CardRenderer] Event ${event.id} Cloudinary URL:`, {
+        'rawImageUrl': rawImageUrl,
+        'optimizedImage': optimizedImage,
+        'isCloudinary': optimizedImage.includes('cloudinary.com')
+      });
     }
 
     // インデックスデータでは city が area 相当として使われる
