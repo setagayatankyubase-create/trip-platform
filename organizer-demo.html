@@ -447,6 +447,12 @@
         document.getElementById('demo-error').style.display = 'none';
         document.getElementById('demo-content').style.display = 'block';
         
+        // デバッグログ：デモデータのorganizerオブジェクトを確認
+        console.log('[organizer-demo.html] Demo organizer object:', demoData.organizer);
+        console.log('[organizer-demo.html] Demo organizer keys:', Object.keys(demoData.organizer || {}));
+        console.log('[organizer-demo.html] Demo organizer founded_year:', demoData.organizer?.founded_year);
+        console.log('[organizer-demo.html] Demo organizer contact:', demoData.organizer?.contact);
+        
         // 通常ページと同じレンダラーを使用（公開版と同じUI構造）
         OrganizerPageRenderer.render(demoData.organizer, events);
         
