@@ -71,25 +71,43 @@ const EventPageRenderer = {
       }
     }
     
-    // サブ画像（2枚）を設定
+    // サブ画像（複数枚）を設定
     const thumbsContainer = document.querySelector('.thumbs');
     if (thumbsContainer && typeof window.cloudinaryUrl === 'function') {
       const thumbElements = thumbsContainer.querySelectorAll('.thumb');
-      
-      // サブ画像は event.subImage1, event.subImage2 などのフィールドから取得
-      // 現時点ではスプレッドシートに列がないため、一旦コメントアウト
-      // 必要に応じて、スプレッドシートに subImage1, subImage2 列を追加し、以下を有効化
-      /*
-      if (thumbElements[0] && event.subImage1) {
-        const subImageUrl1 = window.cloudinaryUrl(event.subImage1, { w: 600 });
-        thumbElements[0].style.backgroundImage = `url('${subImageUrl1.replace(/'/g, "\\'")}')`;
+
+      // スプレッドシートの images 列からサブ画像を取得
+      // 形式例:
+      //  - 単一: "events/evt-001c_xxxxx"
+      //  - 複数: "events/evt-001c_xxxxx,events/evt-001d_yyyyy"
+      let subImageIds = [];
+
+      if (Array.isArray(event.images)) {
+        subImageIds = event.images
+          .map(v => String(v || '').trim())
+          .filter(Boolean);
+      } else if (typeof event.images === 'string') {
+        subImageIds = String(event.images)
+          .split(/[,\s]+/)      // カンマ区切りや空白区切りを想定
+          .map(v => v.trim())
+          .filter(Boolean);
       }
-      
-      if (thumbElements[1] && event.subImage2) {
-        const subImageUrl2 = window.cloudinaryUrl(event.subImage2, { w: 600 });
-        thumbElements[1].style.backgroundImage = `url('${subImageUrl2.replace(/'/g, "\\'")}')`;
+
+      // 取得できなければ何もしない
+      if (subImageIds.length === 0) {
+        return;
       }
-      */
+
+      // サブ画像をサムネイルに反映（最大2枚想定）
+      thumbElements.forEach((thumbEl, index) => {
+        const publicId = subImageIds[index];
+        if (!thumbEl || !publicId) return;
+
+        const subImageUrl = window.cloudinaryUrl(publicId, { w: 600 });
+        if (subImageUrl) {
+          thumbEl.style.backgroundImage = `url('${subImageUrl.replace(/'/g, "\\'")}')`;
+        }
+      });
     }
   },
 
