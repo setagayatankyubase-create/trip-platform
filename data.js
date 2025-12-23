@@ -67,11 +67,13 @@ function getFaviconUrl() {
 
 // イベント画像のCloudinary URLを取得
 function getEventImageUrl(imageId, eventId, { w = 1200 } = {}) {
-  // imageIdはpublic_idをそのまま渡す（例: 'events/evt-001/evt-001_uqv2y2' または 'Home/events/evt-001/evt-001_uqv2y2'）
-  // もしimageIdがファイル名のみ（例: 'evt-001.jpg_uqv2y2'）の場合は、eventIdを使って組み立てる
+  // imageIdの形式パターン：
+  // 1. 完全なpublic_id（例: 'events/evt-001/evt-001_uqv2y2' または 'Home/events/evt-001/evt-001_uqv2y2'）
+  // 2. ファイル名のみ（例: 'evt-001.jpg_uqv2y2'）→ eventIdを使って 'events/evt-001/evt-001_uqv2y2' に組み立てる
   let publicId = imageId;
   if (publicId && !publicId.includes('/') && eventId) {
-    // 拡張子を除去（.jpg, .png等）
+    // 拡張子を除去（.jpg, .png等）してから、フォルダ構造を追加
+    // 例: 'evt-001.jpg_uqv2y2' → 'evt-001_uqv2y2' → 'events/evt-001/evt-001_uqv2y2'
     publicId = publicId.replace(/\.(jpg|jpeg|png|webp)$/i, '');
     publicId = `events/${eventId}/${publicId}`;
   }
