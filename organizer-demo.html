@@ -6,6 +6,23 @@
   <title>提供元詳細（デモ） | そとなび</title>
   <link rel="icon" type="image/png" href="assets/logo.png">
   <link rel="stylesheet" href="styles.css">
+  <script src="data.js"></script>
+  <script>
+    // ロゴ画像をCloudinaryから取得（data.js読み込み後に実行）
+    (function() {
+      function setLogoUrl() {
+        const logoImage = document.querySelector('.logo-image');
+        if (logoImage && typeof window.getLogoUrl === 'function') {
+          logoImage.src = window.getLogoUrl();
+        }
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setLogoUrl);
+      } else {
+        setLogoUrl();
+      }
+    })();
+  </script>
   <style>
     .page {
       max-width: 1180px;

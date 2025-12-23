@@ -11,6 +11,23 @@
     // GitHub raw URL（全ページ共通設定）
     window.GITHUB_RAW_BASE = "https://raw.githubusercontent.com/setagayatankyubase-create/trip-platform/main";
   </script>
+  <script src="data.js"></script>
+  <script>
+    // ロゴ画像をCloudinaryから取得（data.js読み込み後に実行）
+    (function() {
+      function setLogoUrl() {
+        const logoImage = document.querySelector('.logo-image');
+        if (logoImage && typeof window.getLogoUrl === 'function') {
+          logoImage.src = window.getLogoUrl();
+        }
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setLogoUrl);
+      } else {
+        setLogoUrl();
+      }
+    })();
+  </script>
 </head>
 <body>
   <header class="main-header" id="main-header">

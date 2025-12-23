@@ -44,8 +44,20 @@ function cloudinaryUrl(publicId, { w = 1200 } = {}) {
   return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/f_auto,q_auto,w_${w}/${id}`;
 }
 
+// ロゴ画像のCloudinary URLを取得
+function getLogoUrl() {
+  return cloudinaryUrl('logo.png_tfqqd0', { w: 200 });
+}
+
+// ヒーロー画像のCloudinary URLを取得
+function getHeroImageUrl(imageId) {
+  return cloudinaryUrl(imageId, { w: 1920 });
+}
+
 // グローバルに公開
 window.cloudinaryUrl = cloudinaryUrl;
+window.getLogoUrl = getLogoUrl;
+window.getHeroImageUrl = getHeroImageUrl;
 
 // index配列の正規化（organizerId / organizer_id どちらでも organizerId に統一）
 const normalizeIndex = (arr) =>
