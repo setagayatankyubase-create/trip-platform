@@ -6,8 +6,24 @@
   <meta name="description" content="" id="meta-description">
   <meta name="robots" content="noindex, nofollow">
   <title>イベント詳細（デモ） | そとなび</title>
-  <link rel="icon" type="image/png" href="assets/logo.png">
+  <link rel="icon" type="image/png" id="favicon-link">
   <link rel="stylesheet" href="styles.css">
+  <script>
+    // ファビコンをCloudinaryから取得
+    (function() {
+      function setFavicon() {
+        const faviconLink = document.getElementById('favicon-link');
+        if (faviconLink && typeof window.getFaviconUrl === 'function') {
+          faviconLink.href = window.getFaviconUrl();
+        }
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setFavicon);
+      } else {
+        setFavicon();
+      }
+    })();
+  </script>
   <script src="data.js"></script>
   <script>
     // ロゴ画像をCloudinaryから取得（data.js読み込み後に実行）
@@ -461,7 +477,6 @@
     </div>
   </footer>
 
-  <script src="data.js?v=3_2025-12-21"></script>
   <script src="app.js"></script>
   <script src="event-template.js"></script>
   <script>

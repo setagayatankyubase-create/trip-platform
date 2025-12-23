@@ -5,7 +5,23 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="description" content="自然体験・イベントを探して予約できるプラットフォーム。トレッキング、カヤック、星空観察など、あなたにぴったりのアクティビティを見つけよう。">
   <title>自然体験プラットフォーム | そとなび</title>
-  <link rel="icon" type="image/png" href="assets/logo.png">
+  <link rel="icon" type="image/png" id="favicon-link">
+  <script>
+    // ファビコンをCloudinaryから取得
+    (function() {
+      function setFavicon() {
+        const faviconLink = document.getElementById('favicon-link');
+        if (faviconLink && typeof window.getFaviconUrl === 'function') {
+          faviconLink.href = window.getFaviconUrl();
+        }
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setFavicon);
+      } else {
+        setFavicon();
+      }
+    })();
+  </script>
   <link rel="stylesheet" href="styles.css">
   <script type="application/ld+json">
   {
@@ -556,9 +572,8 @@
         heroImages.push(window.getHeroImageUrl('winter_ctfkee'));
         heroImages.push(window.getHeroImageUrl('fuji_ebl1nh'));
       } else {
-        // フォールバック（Cloudinary関数が利用できない場合）
-        heroImages.push('/assets/winter.jpg');
-        heroImages.push('/assets/fuji.jpg');
+        // フォールバック（Cloudinary関数が利用できない場合） - 空の配列にする
+        console.warn('[setupHeroBackground] getHeroImageUrl is not available');
       }
 
       // 画像を事前に読み込む
