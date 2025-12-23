@@ -663,11 +663,14 @@
         }
         
         console.log('[experience-demo] Rendering event:', event.id, event.title);
+        console.log('[experience-demo] Event data:', event);
         console.log('[experience-demo] Organizer:', organizer);
         
         try {
           // 公開版と同じ構成でレンダリング
+          console.log('[experience-demo] Calling EventPageRenderer.render...');
           EventPageRenderer.render(event, organizer);
+          console.log('[experience-demo] EventPageRenderer.render completed');
           
           // デモバッジを追加
           const badgesContainer = document.getElementById('event-badges');
@@ -680,12 +683,23 @@
           if (organizerLink && organizer && organizer.id) {
             organizerLink.href = `organizer-demo.html?id=${organizer.id}`;
           }
+          
+          // レンダリング後の状態を確認
+          console.log('[experience-demo] Content check:');
+          console.log('  - event-description:', document.getElementById('event-description')?.textContent?.substring(0, 50));
+          console.log('  - event-duration:', document.getElementById('event-duration')?.textContent);
+          console.log('  - event-location:', document.getElementById('event-location')?.textContent);
+          console.log('  - event-facility parent:', document.getElementById('event-facility')?.parentElement?.style.display);
         } catch (renderError) {
           console.error('[experience-demo] Rendering error:', renderError);
+          console.error('[experience-demo] Error stack:', renderError.stack);
           document.getElementById('demo-error').style.display = 'block';
           document.getElementById('demo-error').innerHTML = `
             <h2>レンダリングエラー</h2>
             <p>ページのレンダリング中にエラーが発生しました。</p>
+            <p style="margin-top: 24px; font-family: monospace; font-size: 0.9rem; color: #666;">
+              ${renderError.message || '不明なエラー'}
+            </p>
             <p style="margin-top: 24px;">
               <a href="organizer-list.html" style="color: var(--primary); text-decoration: underline;">提供元一覧に戻る</a>
             </p>

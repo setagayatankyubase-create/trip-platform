@@ -143,69 +143,100 @@ const EventPageRenderer = {
   // メインコンテンツ
   renderContent(event, organizer) {
     if (!event) {
-      console.error('Event is null or undefined');
+      console.error('[EventPageRenderer] Event is null or undefined in renderContent');
       return;
     }
 
-    // 説明
-    const descEl = document.getElementById('event-description');
-    if (descEl) {
-      descEl.textContent = event.description || '説明がありません';
-    }
-
-    // 基本情報
-    const durationEl = document.getElementById('event-duration');
-    if (durationEl) {
-      durationEl.textContent = event.duration || '未設定';
-    }
-
-    const locationEl = document.getElementById('event-location');
-    if (locationEl) {
-      if (event.location && event.location.name) {
-        locationEl.textContent = event.location.name;
-      } else if (event.area || event.prefecture) {
-        locationEl.textContent = [event.area, event.prefecture].filter(Boolean).join(', ') || '未設定';
-      } else if (event.city) {
-        locationEl.textContent = event.city;
+    try {
+      // 説明
+      const descEl = document.getElementById('event-description');
+      if (descEl) {
+        descEl.textContent = event.description || '説明がありません';
       } else {
-        locationEl.textContent = '未設定';
+        console.warn('[EventPageRenderer] event-description element not found');
       }
+
+      // 基本情報
+      const durationEl = document.getElementById('event-duration');
+      if (durationEl) {
+        durationEl.textContent = event.duration || '未設定';
+      }
+
+      const locationEl = document.getElementById('event-location');
+      if (locationEl) {
+        if (event.location && event.location.name) {
+          locationEl.textContent = event.location.name;
+        } else if (event.area || event.prefecture) {
+          locationEl.textContent = [event.area, event.prefecture].filter(Boolean).join(', ') || '未設定';
+        } else if (event.city) {
+          locationEl.textContent = event.city;
+        } else {
+          locationEl.textContent = '未設定';
+        }
+      }
+
+      const targetAgeEl = document.getElementById('event-target-age');
+      if (targetAgeEl) {
+        targetAgeEl.textContent = event.targetAge || '全年齢';
+      }
+
+      // 詳細
+      const detailEl = document.getElementById('event-detail');
+      if (detailEl) {
+        detailEl.textContent = event.detail || event.description || '';
+      }
+
+      // 開催日程
+      try {
+        this.renderDates(event);
+      } catch (e) {
+        console.error('[EventPageRenderer] Error in renderDates:', e);
+      }
+
+      // ハイライト
+      try {
+        this.renderHighlights(event);
+      } catch (e) {
+        console.error('[EventPageRenderer] Error in renderHighlights:', e);
+      }
+
+      // 設備
+      try {
+        this.renderFacility(event);
+      } catch (e) {
+        console.error('[EventPageRenderer] Error in renderFacility:', e);
+      }
+
+      // 注意事項
+      const notesEl = document.getElementById('event-notes');
+      if (notesEl) {
+        notesEl.textContent = event.notes || '特になし';
+      }
+
+      // 提供元
+      try {
+        this.renderOrganizer(organizer);
+      } catch (e) {
+        console.error('[EventPageRenderer] Error in renderOrganizer:', e);
+      }
+
+      // 地図
+      try {
+        this.renderMap(event);
+      } catch (e) {
+        console.error('[EventPageRenderer] Error in renderMap:', e);
+      }
+
+      // 関連イベント
+      try {
+        this.renderRelatedEvents(event);
+      } catch (e) {
+        console.error('[EventPageRenderer] Error in renderRelatedEvents:', e);
+      }
+    } catch (e) {
+      console.error('[EventPageRenderer] Error in renderContent:', e);
+      throw e; // エラーを再スローして、呼び出し元で処理できるようにする
     }
-
-    const targetAgeEl = document.getElementById('event-target-age');
-    if (targetAgeEl) {
-      targetAgeEl.textContent = event.targetAge || '全年齢';
-    }
-
-    // 詳細
-    const detailEl = document.getElementById('event-detail');
-    if (detailEl) {
-      detailEl.textContent = event.detail || event.description || '';
-    }
-
-    // 開催日程
-    this.renderDates(event);
-
-    // ハイライト
-    this.renderHighlights(event);
-
-    // 設備
-    this.renderFacility(event);
-
-    // 注意事項
-    const notesEl = document.getElementById('event-notes');
-    if (notesEl) {
-      notesEl.textContent = event.notes || '特になし';
-    }
-
-    // 提供元
-    this.renderOrganizer(organizer);
-
-    // 地図
-    this.renderMap(event);
-
-    // 関連イベント
-    this.renderRelatedEvents(event);
   },
 
   // 開催日程
