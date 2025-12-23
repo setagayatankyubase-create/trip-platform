@@ -150,7 +150,7 @@
   <script src="app.js"></script>
   <script>
     // デモ用設定（GAS APIのURL）
-    const DEMO_GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwlT9ThA2YpcUDoAn8YNvTy-zw-aKWbO-eUCE6eFT62dhmfnkX4HRq0BZiMmjf7HMOGuQ/exec';
+    const DEMO_GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxYxJjiSDpJ7nJWiNj95X2fasojp9g3psiwIFiRFBMPSfVjKETi4zkm7e60MBb5saM/exec';
     const DEMO_AUTH_EXPIRY_MS = 60 * 60 * 1000; // 認証有効期限：1時間
     
     // デモデータを取得
@@ -158,6 +158,7 @@
       try {
         const url = new URL(DEMO_GAS_API_URL);
         url.searchParams.set('password', password);
+        url.searchParams.set('debug', '1'); // デバッグ情報を取得
         
         const response = await fetch(url.toString());
         if (!response.ok) {

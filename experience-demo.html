@@ -481,7 +481,7 @@
   <script src="event-template.js"></script>
   <script>
     // デモ用設定（GAS APIのURL）
-    const DEMO_GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwlT9ThA2YpcUDoAn8YNvTy-zw-aKWbO-eUCE6eFT62dhmfnkX4HRq0BZiMmjf7HMOGuQ/exec';
+    const DEMO_GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxYxJjiSDpJ7nJWiNj95X2fasojp9g3psiwIFiRFBMPSfVjKETi4zkm7e60MBb5saM/exec';
     
     // パスワードフォームの送信処理（データを事前に読み込んでからリロード）
     async function handlePasswordSubmit(event) {
@@ -505,6 +505,7 @@
         // パスワード認証とデータ取得を一度に実行
         const url = new URL(DEMO_GAS_API_URL);
         url.searchParams.set('password', password);
+        url.searchParams.set('debug', '1'); // デバッグ情報を取得
         
         const response = await fetch(url.toString());
         if (!response.ok) {
@@ -587,6 +588,7 @@
       try {
         const url = new URL(DEMO_GAS_API_URL);
         url.searchParams.set('password', password);
+        url.searchParams.set('debug', '1'); // デバッグ情報を取得
         
         const response = await fetch(url.toString());
         if (!response.ok) {
