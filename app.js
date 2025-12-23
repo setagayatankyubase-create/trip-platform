@@ -716,7 +716,22 @@ const CardRenderer = {
     // イベント画像URLを取得（Cloudinaryを使用）
     // events_index.jsonではthumbフィールドが使われている可能性があるため、image/thumb/mainImageの順でチェック
     const rawImageUrl = event.image || event.thumb || event.mainImage || '';
+    
+    // デバッグログ（本番環境では削除可能）
+    if (rawImageUrl) {
+      console.log(`[CardRenderer] Event ${event.id} image fields:`, {
+        'event.image': event.image,
+        'event.thumb': event.thumb,
+        'event.mainImage': event.mainImage,
+        'rawImageUrl (selected)': rawImageUrl
+      });
+    }
+    
     const optimizedImage = this.optimizeImageUrl(rawImageUrl, { w: 1200 });
+    
+    if (optimizedImage && optimizedImage !== rawImageUrl) {
+      console.log(`[CardRenderer] Event ${event.id} Cloudinary URL generated:`, optimizedImage);
+    }
 
     // インデックスデータでは city が area 相当として使われる
     const area = event.area || event.city || "";
