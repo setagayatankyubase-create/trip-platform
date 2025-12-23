@@ -54,10 +54,16 @@ function getHeroImageUrl(imageId) {
   return cloudinaryUrl(imageId, { w: 1920 });
 }
 
+// ファビコンのCloudinary URLを取得
+function getFaviconUrl() {
+  return cloudinaryUrl('logo.png_tfqqd0', { w: 32 });
+}
+
 // グローバルに公開
 window.cloudinaryUrl = cloudinaryUrl;
 window.getLogoUrl = getLogoUrl;
 window.getHeroImageUrl = getHeroImageUrl;
+window.getFaviconUrl = getFaviconUrl;
 
 // index配列の正規化（organizerId / organizer_id どちらでも organizerId に統一）
 const normalizeIndex = (arr) =>
