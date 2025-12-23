@@ -106,11 +106,31 @@
                 </h3>
                 <p style="margin: 0; color: #6c7a72; line-height: 1.6;">${org.description}</p>
                 <div class="organizer-meta">
-                  <span>設立: ${org.establishedYear}年</span>
-                  <span> • </span>
-                  <span>評価: ★${org.rating} (${org.reviewCount}件)</span>
-                  <span> • </span>
-                  <span>開催イベント: ${events.length}件</span>
+                  ${(() => {
+                    // 設立年を取得（複数のフィールド名に対応：founded_yearがmeta.jsonで使用されている）
+                    const establishedYear = org.founded_year || org.establishedYear || org.foundedYear || '';
+                    const yearStr = establishedYear ? String(establishedYear).trim() : '';
+                    const displayYear = (yearStr && yearStr !== 'undefined' && yearStr !== 'null' && yearStr !== '') ? `${yearStr}年` : '';
+                    
+                    // 評価を取得（有効な場合のみ表示）
+                    const rating = parseFloat(org.rating) || 0;
+                    const reviewCount = parseInt(org.reviewCount) || 0;
+                    const displayRating = (rating > 0 && reviewCount > 0) ? `★${rating} (${reviewCount}件)` : '';
+                    
+                    // メタ情報を組み立て
+                    const metaItems = [];
+                    if (displayYear) {
+                      metaItems.push(`<span>設立: ${displayYear}</span>`);
+                    }
+                    if (displayRating) {
+                      if (metaItems.length > 0) metaItems.push('<span> • </span>');
+                      metaItems.push(`<span>評価: ${displayRating}</span>`);
+                    }
+                    if (metaItems.length > 0) metaItems.push('<span> • </span>');
+                    metaItems.push(`<span>開催イベント: ${events.length}件</span>`);
+                    
+                    return metaItems.join('');
+                  })()}
                 </div>
               </div>
             </div>
