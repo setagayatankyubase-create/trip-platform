@@ -640,7 +640,12 @@
 
         // コンテンツを表示
         document.getElementById('demo-error').style.display = 'none';
-        document.getElementById('event-content').style.display = 'block';
+        const eventContentEl = document.getElementById('event-content');
+        if (eventContentEl) {
+          eventContentEl.style.display = 'block';
+          eventContentEl.style.visibility = 'visible';
+          eventContentEl.style.opacity = '1';
+        }
         
         // 提供元情報を取得
         const organizer = demoData.organizer || null;
@@ -686,10 +691,16 @@
           
           // レンダリング後の状態を確認
           console.log('[experience-demo] Content check:');
+          const eventContent = document.getElementById('event-content');
+          console.log('  - event-content display:', eventContent?.style.display, 'computed:', window.getComputedStyle(eventContent || document.body).display);
+          console.log('  - event-content visibility:', window.getComputedStyle(eventContent || document.body).visibility);
           console.log('  - event-description:', document.getElementById('event-description')?.textContent?.substring(0, 50));
+          console.log('  - event-description element exists:', !!document.getElementById('event-description'));
           console.log('  - event-duration:', document.getElementById('event-duration')?.textContent);
           console.log('  - event-location:', document.getElementById('event-location')?.textContent);
           console.log('  - event-facility parent:', document.getElementById('event-facility')?.parentElement?.style.display);
+          console.log('  - card element:', document.querySelector('.card')?.style.display);
+          console.log('  - grid element:', document.querySelector('.grid')?.style.display);
         } catch (renderError) {
           console.error('[experience-demo] Rendering error:', renderError);
           console.error('[experience-demo] Error stack:', renderError.stack);
