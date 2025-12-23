@@ -68,12 +68,13 @@ const OrganizerPageRenderer = {
     }
 
     if (meta) {
-      // 設立年を取得（複数のフィールド名に対応：founded_yearがmeta.jsonで使用されている）
-      const establishedYear = organizer.founded_year || organizer.establishedYear || organizer.foundedYear;
+      // 設立年を取得（複数のフィールド名に対応：スペースを含むキーにも対応）
+      const establishedYear = organizer.founded_year || organizer['founded year'] || organizer.establishedYear || organizer.foundedYear;
       
       // デバッグログ（本番環境では削除可能）
       console.log('[organizer-template] Established year check:', {
         'organizer.founded_year': organizer.founded_year,
+        "organizer['founded year']": organizer['founded year'],
         'organizer.establishedYear': organizer.establishedYear,
         'organizer.foundedYear': organizer.foundedYear,
         'establishedYear (result)': establishedYear,
@@ -132,13 +133,15 @@ const OrganizerPageRenderer = {
           <div class="meta-label">連絡先</div>
           <div class="meta-value" style="font-size: 0.95rem;">
             ${(() => {
-              // contact情報を取得（meta.jsonではcontactが使用されている）
-              const contact = organizer.contact || organizer.contact_email || organizer.contactEmail;
+              // contact情報を取得（スペースを含むキーにも対応）
+              const contact = organizer.contact || organizer['contact'] || organizer.contact_email || organizer['contact email'] || organizer.contactEmail || organizer['contactEmail'];
               
               // デバッグログ（本番環境では削除可能）
               console.log('[organizer-template] Contact check:', {
                 'organizer.contact': organizer.contact,
+                "organizer['contact']": organizer['contact'],
                 'organizer.contact_email': organizer.contact_email,
+                "organizer['contact email']": organizer['contact email'],
                 'organizer.contactEmail': organizer.contactEmail,
                 'contact (result)': contact,
                 'type': typeof contact
