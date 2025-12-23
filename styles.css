@@ -334,6 +334,10 @@ body {
 
 .category-menu-item .icon {
   font-size: 0.95rem;
+  width: 18px;
+  height: 18px;
+  display: inline-block;
+  flex-shrink: 0;
 }
 
 .category-menu-item .name {
@@ -1019,8 +1023,13 @@ body {
 
 .cat span {
   font-size: 1.1rem;
-  min-width: 24px;
-  text-align: center;
+}
+
+.cat .category-icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  display: inline-block;
 }
 
 /* Week Calendar */

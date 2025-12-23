@@ -174,6 +174,29 @@
   <script src="data.js?v=3_2025-12-21"></script>
   <script src="app.js"></script>
   <script>
+    // カテゴリIDからlucide-staticアイコン名へのマッピング
+    const categoryIconMap = {
+      'river-water': 'waves',
+      'sea-beach': 'shell',
+      'mountain-satoyama': 'mountain',
+      'forest': 'trees',
+      'wildlife': 'paw-print',
+      'farm-harvest': 'wheat',
+      'animals': 'dog',
+      'fire-outdoor': 'flame',
+      'camp': 'tent',
+      'natural-materials': 'leaf',
+      'cycling': 'bike',
+      'seasonal': 'sun-snow'
+    };
+
+    // カテゴリアイコンのURLを取得
+    function getCategoryIconUrl(categoryId) {
+      const iconName = categoryIconMap[categoryId];
+      if (!iconName) return '';
+      return `https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/${iconName}.svg`;
+    }
+
     // カテゴリ一覧の表示
     function renderCategories() {
       const container = document.getElementById('category-list');
@@ -193,12 +216,15 @@
         return;
       }
       
-      container.innerHTML = categories.map(cat => `
+      container.innerHTML = categories.map(cat => {
+        const iconUrl = getCategoryIconUrl(cat.id);
+        return `
         <a href="list.html?category=${cat.id}" class="cat">
-          <span>${cat.icon || ''}</span>
+          ${iconUrl ? `<img src="${iconUrl}" alt="${cat.name || ''}" class="category-icon" />` : '<span></span>'}
           <span>${cat.name || ''}</span>
         </a>
-      `).join('');
+      `;
+      }).join('');
     }
 
     // カテゴリメニューの位置を計算（fixed position用）
@@ -244,12 +270,15 @@
         return;
       }
       
-      menuList.innerHTML = categories.map(cat => `
+      menuList.innerHTML = categories.map(cat => {
+        const iconUrl = getCategoryIconUrl(cat.id);
+        return `
         <a href="list.html?category=${cat.id}" class="category-menu-item">
-          <span class="icon">${cat.icon || ''}</span>
-          <span>${cat.name || ''}</span>
+          ${iconUrl ? `<img src="${iconUrl}" alt="${cat.name || ''}" class="icon" />` : '<span class="icon"></span>'}
+          <span class="name">${cat.name || ''}</span>
         </a>
-      `).join('');
+      `;
+      }).join('');
 
       const menu = document.querySelector('.category-menu');
       const searchWrapper = document.querySelector('.search-wrapper');
