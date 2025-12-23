@@ -296,7 +296,8 @@
         sessionStorage.setItem('demo_auth', JSON.stringify(authData));
         
         // 全データをキャッシュに保存（有効期限: 24時間）
-        const CACHE_KEY = 'demo_data_cache';
+        // キャッシュバージョンを更新（v2に変更して古いキャッシュを無効化）
+        const CACHE_KEY = 'demo_data_cache_v2';
         sessionStorage.setItem(CACHE_KEY, JSON.stringify({
           data: data,
           password: password,
@@ -340,7 +341,8 @@
     async function fetchDemoData(password, organizerId = null) {
       // 注意: キャッシュキーはorganizerIdを含めない（すべてのイベントをキャッシュ）
       // クライアント側でorganizerIdに基づいてフィルタリングする
-      const CACHE_KEY = 'demo_data_cache';
+      // キャッシュバージョンを更新（v2に変更して古いキャッシュを無効化）
+      const CACHE_KEY = 'demo_data_cache_v2';
       const cacheKey = CACHE_KEY;
       
       // キャッシュをチェック（即座に返す）
