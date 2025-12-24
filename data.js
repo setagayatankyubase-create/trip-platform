@@ -36,16 +36,24 @@ const normalizeId = (v) => {
 const CLOUDINARY_CLOUD_NAME = "ddrxsy9jw";
 
 function cloudinaryUrl(publicId, { w = 1200, q = 'auto', f = 'auto' } = {}) {
-  if (!publicId) return ""; // 空なら空
+  if (!publicId) {
+    console.log('[cloudinaryUrl] publicId is empty');
+    return ""; // 空なら空
+  }
   // すでに http で始まるならそのまま返す（保険）
-  if (/^https?:\/\//i.test(publicId)) return publicId;
+  if (/^https?:\/\//i.test(publicId)) {
+    console.log('[cloudinaryUrl] publicId is already a URL:', publicId);
+    return publicId;
+  }
 
   // public_idをそのまま使用（フォルダ名や拡張子の加工はしない）
   // 余計な先頭スラッシュを除去して、そのまま使用
   let id = String(publicId).trim().replace(/^\/+/, "");
 
   // CloudinaryのURL生成：public_idをそのまま使用
-  return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/f_${f},q_${q},w_${w}/${id}`;
+  const url = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/f_${f},q_${q},w_${w}/${id}`;
+  console.log('[cloudinaryUrl] Generated URL:', { publicId, id, url });
+  return url;
 }
 
 // ロゴ画像のCloudinary URLを取得
@@ -73,30 +81,56 @@ function normalizePublicId(id) {
   // 例: 'events/evt-001/evt-001.jpg' → 'events/evt-001/evt-001'
   // 例: 'evt-001.jpg' → 'evt-001'
   let normalized = String(id);
+  const original = normalized;
   // アンダースコアの前にある拡張子を削除（evt-001.jpg_uqv2y2 → evt-001_uqv2y2）
   normalized = normalized.replace(/\.(jpg|jpeg|png|webp)(?=[_])/i, '');
   // 末尾の拡張子を削除（evt-001.jpg → evt-001）
   normalized = normalized.replace(/\.(jpg|jpeg|png|webp)$/i, '');
+  if (original !== normalized) {
+    console.log('[normalizePublicId]', original, '→', normalized);
+  }
   return normalized;
 }
 
 // イベント画像のCloudinary URLを取得
 function getEventImageUrl(imageId, eventId, { w = 1200 } = {}) {
+  if (!imageId) {
+    console.log('[getEventImageUrl] imageId is empty');
+    return '';
+  }
+  
+  console.log('[getEventImageUrl] Input:', { imageId, eventId, w });
+  
   // imageIdの形式パターン：
   // 1. 完全なpublic_id（例: 'events/evt-001/evt-001_uqv2y2' または 'Home/events/evt-001/evt-001_uqv2y2'）
   // 2. ファイル名のみ（例: 'evt-001.jpg_uqv2y2'）→ eventIdを使って 'events/evt-001/evt-001_uqv2y2' に組み立てる
-  let publicId = normalizePublicId(imageId); // まず拡張子を除去（保険）
   
-  if (publicId && !publicId.includes('/') && eventId) {
-    // フォルダ構造を追加
-    // 例: 'evt-001_uqv2y2' → 'events/evt-001/evt-001_uqv2y2'
-    publicId = `events/${eventId}/${publicId}`;
+  // まず拡張子を除去（保険）
+  let publicId = normalizePublicId(imageId);
+  console.log('[getEventImageUrl] After normalizePublicId:', publicId);
+  
+  // フォルダ構造がない場合は追加
+  if (publicId && !publicId.includes('/')) {
+    if (eventId) {
+      // eventIdを使って 'events/evt-001/evt-001_uqv2y2' に組み立てる
+      publicId = `events/${eventId}/${publicId}`;
+      console.log('[getEventImageUrl] Added folder structure:', publicId);
+    } else {
+      // eventIdがない場合はそのまま使用（既に完全なpublic_idの可能性がある）
+      console.warn('[getEventImageUrl] eventId is missing, using imageId as-is:', publicId);
+    }
+  } else {
+    console.log('[getEventImageUrl] Already has folder structure, using as-is:', publicId);
   }
   
   // 最終的に拡張子が残っている可能性があるので、もう一度除去（保険）
-  publicId = normalizePublicId(publicId);
+  const finalPublicId = normalizePublicId(publicId);
+  console.log('[getEventImageUrl] Final publicId:', finalPublicId);
   
-  return cloudinaryUrl(publicId, { w });
+  const url = cloudinaryUrl(finalPublicId, { w });
+  console.log('[getEventImageUrl] Generated URL:', url);
+  
+  return url;
 }
 
 // 提供元画像のCloudinary URLを取得
