@@ -73,19 +73,30 @@ function getFaviconUrl() {
   return cloudinaryUrl('logo_tfqqd0', { w: 32 });
 }
 
-// public_idから拡張子を除去（Cloudinaryは拡張子不要）
+// public_idから拡張子を除去（Cloudinaryは通常拡張子不要だが、一部のpublic_idには含まれる場合もある）
+// 注意: CloudinaryのMedia Libraryの表示名と実際のpublic_idは異なる場合がある
+// 実際のpublic_idを確認するには、CloudinaryのMedia Libraryで画像をクリックし、右側の詳細パネルから「Public ID」をコピーすること
 function normalizePublicId(id) {
   if (!id) return '';
-  // .jpg / .jpeg / .png / .webp を削除（アンダースコアや末尾の前に来る拡張子も対応）
-  // 例: 'evt-001.jpg_uqv2y2' → 'evt-001_uqv2y2'
-  // 例: 'events/evt-001/evt-001.jpg' → 'events/evt-001/evt-001'
-  // 例: 'evt-001.jpg' → 'evt-001'
+  
+  // 既にフォルダ構造がある場合（events/evt-001/evt-001.jpg_uqv2y2など）は、そのまま使用
+  // 拡張子が含まれていても、それがCloudinaryの実際のpublic_idである可能性がある
+  if (id.includes('/')) {
+    console.log('[normalizePublicId] Has folder structure, using as-is:', id);
+    return String(id);
+  }
+  
+  // フォルダ構造がない場合のみ、拡張子を削除してフォルダ構造を追加する準備
+  // ただし、.jpg_uqv2y2のような形式は、Cloudinaryの実際のpublic_idの可能性があるため削除しない
   let normalized = String(id);
   const original = normalized;
-  // アンダースコアの前にある拡張子を削除（evt-001.jpg_uqv2y2 → evt-001_uqv2y2）
-  normalized = normalized.replace(/\.(jpg|jpeg|png|webp)(?=[_])/i, '');
-  // 末尾の拡張子を削除（evt-001.jpg → evt-001）
-  normalized = normalized.replace(/\.(jpg|jpeg|png|webp)$/i, '');
+  
+  // 末尾の拡張子のみ削除（evt-001.jpg → evt-001）
+  // ただし、.jpg_uqv2y2のような形式は削除しない（アンダースコアが続く場合は削除しない）
+  if (!normalized.match(/\.(jpg|jpeg|png|webp)_/i)) {
+    normalized = normalized.replace(/\.(jpg|jpeg|png|webp)$/i, '');
+  }
+  
   if (original !== normalized) {
     console.log('[normalizePublicId]', original, '→', normalized);
   }
