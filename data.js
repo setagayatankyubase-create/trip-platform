@@ -113,32 +113,28 @@ function getEventImageUrl(imageId, eventId, { w = 1200 } = {}) {
   console.log('[getEventImageUrl] Input:', { imageId, eventId, w });
   
   // imageIdの形式パターン：
-  // 1. 完全なpublic_id（例: 'events/evt-001/evt-001_uqv2y2' または 'Home/events/evt-001/evt-001_uqv2y2'）
-  // 2. ファイル名のみ（例: 'evt-001.jpg_uqv2y2'）→ eventIdを使って 'events/evt-001/evt-001_uqv2y2' に組み立てる
+  // 1. 完全なpublic_id（例: 'events/evt-001/evt-001.jpg_uqv2y2' または 'events/evt-001/evt-001_uqv2y2'）
+  // 2. ファイル名のみ（例: 'evt-001.jpg_uqv2y2'）→ eventIdを使って 'events/evt-001/evt-001.jpg_uqv2y2' に組み立てる
+  // 注意: Cloudinaryのpublic_idには拡張子が含まれる場合もある（evt-001.jpg_uqv2y2など）
   
-  // まず拡張子を除去（保険）
-  let publicId = normalizePublicId(imageId);
-  console.log('[getEventImageUrl] After normalizePublicId:', publicId);
+  let publicId = String(imageId).trim();
   
-  // フォルダ構造がない場合は追加
-  if (publicId && !publicId.includes('/')) {
-    if (eventId) {
-      // eventIdを使って 'events/evt-001/evt-001_uqv2y2' に組み立てる
-      publicId = `events/${eventId}/${publicId}`;
-      console.log('[getEventImageUrl] Added folder structure:', publicId);
-    } else {
-      // eventIdがない場合はそのまま使用（既に完全なpublic_idの可能性がある）
-      console.warn('[getEventImageUrl] eventId is missing, using imageId as-is:', publicId);
-    }
-  } else {
+  // 既にフォルダ構造がある場合は、そのまま使用（拡張子の処理はしない）
+  if (publicId.includes('/')) {
     console.log('[getEventImageUrl] Already has folder structure, using as-is:', publicId);
+    return cloudinaryUrl(publicId, { w });
   }
   
-  // 最終的に拡張子が残っている可能性があるので、もう一度除去（保険）
-  const finalPublicId = normalizePublicId(publicId);
-  console.log('[getEventImageUrl] Final publicId:', finalPublicId);
+  // フォルダ構造がない場合は追加
+  // 拡張子はそのまま保持（Cloudinaryの実際のpublic_idに合わせる）
+  if (eventId) {
+    publicId = `events/${eventId}/${publicId}`;
+    console.log('[getEventImageUrl] Added folder structure:', publicId);
+  } else {
+    console.warn('[getEventImageUrl] eventId is missing, using imageId as-is:', publicId);
+  }
   
-  const url = cloudinaryUrl(finalPublicId, { w });
+  const url = cloudinaryUrl(publicId, { w });
   console.log('[getEventImageUrl] Generated URL:', url);
   
   return url;
