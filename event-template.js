@@ -141,8 +141,15 @@ const EventPageRenderer = {
     if (thumbsContainer && typeof window.getEventImageUrl === 'function') {
       const thumbElements = thumbsContainer.querySelectorAll('.thumb');
 
-      // サブ画像配列を取得（GASで既に配列に変換されている）
-      const subImageIds = Array.isArray(event.images) ? event.images : [];
+      // サブ画像配列を取得
+      // 配列の場合はそのまま、文字列の場合は | で分割して配列化
+      let subImageIds = [];
+      if (Array.isArray(event.images)) {
+        subImageIds = event.images;
+      } else if (typeof event.images === 'string' && event.images.trim()) {
+        // | または ｜ で区切られた文字列を配列に変換（空白をtrimして空要素を除外）
+        subImageIds = event.images.split(/[|｜]/).map(s => s.trim()).filter(Boolean);
+      }
 
       // 取得できなければ何もしない
       if (subImageIds.length === 0) {
