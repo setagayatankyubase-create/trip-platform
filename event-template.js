@@ -58,7 +58,7 @@ const EventPageRenderer = {
     }
   },
 
-  // 画像をフォールバックパスで試行するヘルパー関数
+  // 画像を1回だけ試行して、失敗したらプレースホルダーにフォールバック（拡張子総当たりをやめる）
   tryLoadImageWithFallback(element, rawImageUrl, eventId, options = {}) {
     const { w = 1200, isMain = true } = options;
     
@@ -68,106 +68,56 @@ const EventPageRenderer = {
     }
     element.dataset.fallbackDone = "1";
     
+    // プレースホルダーURLを生成
+    const fallbackUrl = `https://picsum.photos/seed/${eventId || 'default'}/${w}/${Math.round(w * 0.67)}`;
+    
+    // 既にURL形式の場合はそのまま使用
+    if (rawImageUrl && rawImageUrl.startsWith('http')) {
+      const testImg = new Image();
+      testImg.onload = () => {
+        element.style.backgroundImage = `url('${rawImageUrl.replace(/'/g, "\\'")}')`;
+      };
+      testImg.onerror = () => {
+        element.style.backgroundImage = `url('${fallbackUrl}')`;
+      };
+      testImg.src = rawImageUrl;
+      return;
+    }
+    
     // 画像IDからイベントIDを抽出（例: evt-001.jpg_uqv2y2 → evt-001）
-    // 画像IDに別のイベントIDが含まれている場合は、それを優先的に使用
-    let imageEventId = eventId; // デフォルトは現在のイベントID
-    // 画像IDからイベントIDパターンを抽出（evt-001, evt-002, demoevt-001など）
+    let imageEventId = eventId;
     const imageIdMatch = rawImageUrl.match(/^(evt-\d+|demoevt-\d+)/);
     if (imageIdMatch && imageIdMatch[1]) {
       imageEventId = imageIdMatch[1];
     }
     
-    // フォールバックパスを生成
-    let fallbackPaths = [];
+    // public_idを構築（拡張子は正規化される）
+    let publicId = '';
     if (imageEventId && imageEventId.startsWith('demoevt-')) {
       // デモイベントの場合
-      const imageIdWithoutExt = rawImageUrl.replace(/\.(jpg|jpeg|png|webp)$/i, '');
-      const extensions = ['', '.jpg', '.jpeg', '.png', '.webp'];
-      
-      extensions.forEach(ext => {
-        fallbackPaths.push(`demo/demoevt/${imageIdWithoutExt}${ext}`);
-        fallbackPaths.push(`demoevt/${imageIdWithoutExt}${ext}`);
-        fallbackPaths.push(`${imageIdWithoutExt}${ext}`);
-      });
-      if (rawImageUrl !== imageIdWithoutExt) {
-        fallbackPaths.push(rawImageUrl);
-      }
-      fallbackPaths = [...new Set(fallbackPaths)];
+      publicId = `demo/demoevt/${rawImageUrl}`;
     } else if (imageEventId) {
-      // 通常のイベントの場合：画像IDに含まれるイベントIDを優先的に使用
-      const imageIdWithoutExt = rawImageUrl.replace(/\.(jpg|jpeg|png|webp)$/i, '');
-      const extensions = ['', '.jpg', '.jpeg', '.png', '.webp'];
-      
-      extensions.forEach(ext => {
-        // 画像IDに含まれるイベントIDを使ってパスを生成（最優先）
-        fallbackPaths.push(`events/${imageEventId}/${imageIdWithoutExt}${ext}`);
-        // 現在のイベントIDも試す（後方互換性、ただし画像IDに含まれるイベントIDと異なる場合のみ）
-        if (eventId && eventId !== imageEventId) {
-          fallbackPaths.push(`events/${eventId}/${imageIdWithoutExt}${ext}`);
-        }
-        // フォルダ構造なしも試す
-        fallbackPaths.push(`${imageIdWithoutExt}${ext}`);
-      });
-      if (rawImageUrl !== imageIdWithoutExt) {
-        fallbackPaths.push(rawImageUrl);
-      }
-      // 重複を削除し、画像IDに含まれるイベントIDのパスを最優先に
-      fallbackPaths = [...new Set(fallbackPaths)];
-      // 画像IDに含まれるイベントIDのパスを先頭に移動
-      const imageEventPaths = fallbackPaths.filter(p => p.startsWith(`events/${imageEventId}/`));
-      const otherPaths = fallbackPaths.filter(p => !p.startsWith(`events/${imageEventId}/`));
-      fallbackPaths = [...imageEventPaths, ...otherPaths];
+      // 通常のイベントの場合：画像IDに含まれるイベントIDを使用
+      publicId = `events/${imageEventId}/${rawImageUrl}`;
     } else {
-      fallbackPaths = [rawImageUrl];
+      publicId = rawImageUrl;
     }
     
-    // 最初のパスを試す
-    let currentIndex = 0;
-    const tryNextPath = () => {
-      if (currentIndex >= fallbackPaths.length) {
-        return;
-      }
-      
-      const path = fallbackPaths[currentIndex];
-      let imageUrl = '';
-      
-      // パスに既にフォルダ構造が含まれている場合は、そのままcloudinaryUrlを使用
-      // getEventImageUrlは呼ばない（既にフォルダ構造が含まれているため）
-      if (path.includes('/') && !path.startsWith('http')) {
-        imageUrl = typeof window.cloudinaryUrl === 'function' 
-          ? window.cloudinaryUrl(path, { w })
-          : path;
-      } else if (typeof window.getEventImageUrl === 'function' && path && !path.startsWith('http')) {
-        // フォルダ構造がない場合は、画像IDから抽出したイベントIDを使用
-        // 画像IDに含まれるイベントIDを優先的に使用
-        imageUrl = window.getEventImageUrl(path, imageEventId || eventId, { w });
-      } else if (path && typeof window.cloudinaryUrl === 'function') {
-        imageUrl = window.cloudinaryUrl(path, { w });
-      } else {
-        imageUrl = path;
-      }
-      
-      if (!imageUrl) {
-        currentIndex++;
-        tryNextPath();
-        return;
-      }
-      
-      // 一時的な<img>要素で読み込みをテスト
-      const testImg = new Image();
-      testImg.onload = () => {
-        // 読み込み成功：background-imageに設定
-        element.style.backgroundImage = `url('${imageUrl.replace(/'/g, "\\'")}')`;
-      };
-      testImg.onerror = () => {
-        // 読み込み失敗：次のパスを試す
-        currentIndex++;
-        tryNextPath();
-      };
-      testImg.src = imageUrl;
-    };
+    // 1回だけ試行して、失敗したらプレースホルダーにフォールバック
+    const imageUrl = typeof window.cloudinaryUrl === 'function' 
+      ? window.cloudinaryUrl(publicId, { w })
+      : publicId;
     
-    tryNextPath();
+    const testImg = new Image();
+    testImg.onload = () => {
+      // 読み込み成功：background-imageに設定
+      element.style.backgroundImage = `url('${imageUrl.replace(/'/g, "\\'")}')`;
+    };
+    testImg.onerror = () => {
+      // 読み込み失敗：プレースホルダーにフォールバック（1回だけ）
+      element.style.backgroundImage = `url('${fallbackUrl}')`;
+    };
+    testImg.src = imageUrl || fallbackUrl;
   },
 
   // ギャラリー
