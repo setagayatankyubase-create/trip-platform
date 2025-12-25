@@ -78,7 +78,6 @@ const EventPageRenderer = {
         fallbackPaths.push(rawImageUrl);
       }
       fallbackPaths = [...new Set(fallbackPaths)];
-      console.log('[event-template] Generated fallback paths for demo event', eventId, ':', fallbackPaths);
     } else if (eventId) {
       // 通常のイベントの場合も、拡張子のバリエーションを試す
       const imageIdWithoutExt = rawImageUrl.replace(/\.(jpg|jpeg|png|webp)$/i, '');
@@ -100,7 +99,6 @@ const EventPageRenderer = {
     let currentIndex = 0;
     const tryNextPath = () => {
       if (currentIndex >= fallbackPaths.length) {
-        console.warn('[event-template] All fallback paths failed for event', eventId || 'unknown', '. Tried paths:', fallbackPaths);
         return;
       }
       
@@ -126,11 +124,9 @@ const EventPageRenderer = {
       testImg.onload = () => {
         // 読み込み成功：background-imageに設定
         element.style.backgroundImage = `url('${imageUrl.replace(/'/g, "\\'")}')`;
-        console.log('[event-template] Image loaded successfully:', imageUrl);
       };
       testImg.onerror = () => {
         // 読み込み失敗：次のパスを試す
-        console.log('[event-template] Image load failed, trying next path:', imageUrl);
         currentIndex++;
         tryNextPath();
       };
@@ -487,7 +483,6 @@ const EventPageRenderer = {
           const currentSrc = img.src;
           const fallbackPaths = ${JSON.stringify(fallbackPaths)};
           const currentPathIndex = fallbackPaths.findIndex(p => currentSrc.includes(encodeURIComponent(p).replace(/%2F/g, '/')) || currentSrc.includes(p));
-          console.log('[event-template] Image load error. Current src:', currentSrc, 'Current index:', currentPathIndex, 'Total paths:', fallbackPaths.length);
           if (currentPathIndex >= 0 && currentPathIndex < fallbackPaths.length - 1) {
             const nextPath = fallbackPaths[currentPathIndex + 1];
             const nextUrl = typeof window.getOrganizerImageUrl === 'function' 
@@ -496,9 +491,7 @@ const EventPageRenderer = {
                 ? window.cloudinaryUrl(nextPath, { w: 400 })
                 : nextPath);
             img.src = nextUrl;
-            console.log('[event-template] Trying fallback image path:', nextPath, 'URL:', nextUrl);
           } else {
-            console.warn('[event-template] All fallback paths failed. Tried:', fallbackPaths);
             img.style.display = 'none';
           }
         }).call(this);

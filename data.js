@@ -75,7 +75,6 @@ function normalizePublicId(id) {
   // 既にフォルダ構造がある場合（events/evt-001/evt-001.jpg_uqv2y2など）は、そのまま使用
   // 拡張子が含まれていても、それがCloudinaryの実際のpublic_idである可能性がある
   if (id.includes('/')) {
-    console.log('[normalizePublicId] Has folder structure, using as-is:', id);
     return String(id);
   }
   
@@ -90,20 +89,14 @@ function normalizePublicId(id) {
     normalized = normalized.replace(/\.(jpg|jpeg|png|webp)$/i, '');
   }
   
-  if (original !== normalized) {
-    console.log('[normalizePublicId]', original, '→', normalized);
-  }
   return normalized;
 }
 
 // イベント画像のCloudinary URLを取得
 function getEventImageUrl(imageId, eventId, { w = 1200 } = {}) {
   if (!imageId) {
-    console.log('[getEventImageUrl] imageId is empty');
     return '';
   }
-  
-  console.log('[getEventImageUrl] Input:', { imageId, eventId, w });
   
   // imageIdの形式パターン：
   // 1. 完全なpublic_id（例: 'events/evt-001/evt-001.jpg_uqv2y2' または 'events/evt-001/evt-001_uqv2y2'）
@@ -115,7 +108,6 @@ function getEventImageUrl(imageId, eventId, { w = 1200 } = {}) {
   
   // 既にフォルダ構造がある場合は、そのまま使用（拡張子の処理はしない）
   if (publicId.includes('/')) {
-    console.log('[getEventImageUrl] Already has folder structure, using as-is:', publicId);
     return cloudinaryUrl(publicId, { w });
   }
   
@@ -126,18 +118,13 @@ function getEventImageUrl(imageId, eventId, { w = 1200 } = {}) {
     if (eventId.startsWith('demoevt-')) {
       // demo/demoevt/demoevt-002_ykbt65 のような構造（Cloudinaryのフォルダ構造に合わせる）
       publicId = `demo/demoevt/${publicId}`;
-      console.log('[getEventImageUrl] Added demo/demoevt folder structure:', publicId);
     } else {
       // 通常のイベント（evt-*など）の場合は events/ フォルダを使用
       publicId = `events/${eventId}/${publicId}`;
-      console.log('[getEventImageUrl] Added events folder structure:', publicId);
     }
-  } else {
-    console.warn('[getEventImageUrl] eventId is missing, using imageId as-is:', publicId);
   }
   
   const url = cloudinaryUrl(publicId, { w });
-  console.log('[getEventImageUrl] Generated URL:', url);
   
   return url;
 }

@@ -78,7 +78,6 @@ const OrganizerPageRenderer = {
       
       if (fallbackPaths.length > 0) {
         originalLogoUrl = fallbackPaths[0]; // 最初のパスを試す
-        console.log('[organizer-template] Generated fallback paths for organizer', organizerId, ':', fallbackPaths);
       }
     }
     
@@ -101,7 +100,6 @@ const OrganizerPageRenderer = {
           const encoded = encodeURIComponent(p).replace(/%2F/g, '/');
           return currentSrc.includes(p) || currentSrc.includes(encoded);
         });
-        console.log('[organizer-template] Image load error. Current src:', currentSrc, 'Current index:', currentPathIndex, 'Total paths:', fallbackPaths.length);
         if (currentPathIndex >= 0 && currentPathIndex < fallbackPaths.length - 1) {
           const nextPath = fallbackPaths[currentPathIndex + 1];
           const nextUrl = typeof window.getOrganizerImageUrl === 'function' 
@@ -110,10 +108,7 @@ const OrganizerPageRenderer = {
               ? window.cloudinaryUrl(nextPath, { w: 400 })
               : nextPath);
           img.src = nextUrl;
-          console.log('[organizer-template] Trying fallback image path:', nextPath, 'URL:', nextUrl);
         } else {
-          console.warn('[organizer-template] All fallback paths failed for organizer ${organizerId || 'unknown'}. Tried paths:', fallbackPaths);
-          console.warn('[organizer-template] Please check Cloudinary Media Library for the actual public_id of the image');
           img.style.display = 'none';
         }
       }).call(this);

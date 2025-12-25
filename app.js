@@ -717,18 +717,6 @@ const CardRenderer = {
     // events_index.jsonではthumbフィールドが使われている可能性があるため、image/thumb/mainImageの順でチェック
     const rawImageUrl = event.image || event.thumb || event.mainImage || '';
     
-    // デバッグログ（evt-001のみ詳細に）
-    if (event.id === 'evt-001') {
-      console.log(`[CardRenderer] Event ${event.id} FULL OBJECT:`, event);
-      console.log(`[CardRenderer] Event ${event.id} image fields:`, {
-        'event.image': event.image,
-        'event.thumb': event.thumb,
-        'event.mainImage': event.mainImage,
-        'rawImageUrl (selected)': rawImageUrl,
-        'typeof event.image': typeof event.image,
-        'typeof event.thumb': typeof event.thumb
-      });
-    }
     
     // イベント画像URLを生成（getEventImageUrlを使用してデモイベントにも対応）
     let optimizedImage = '';
@@ -757,7 +745,6 @@ const CardRenderer = {
         }
         // 重複を削除
         fallbackPaths = [...new Set(fallbackPaths)];
-        console.log('[CardRenderer] Generated fallback paths for demo event', event.id, ':', fallbackPaths);
       } else if (event.id) {
         // 通常のイベントの場合も、フォールバックパスを準備（拡張子のバリエーションを試す）
         const imageIdWithoutExt = rawImageUrl.replace(/\.(jpg|jpeg|png|webp)$/i, '');
@@ -776,15 +763,6 @@ const CardRenderer = {
       // 既にURL形式の場合、またはgetEventImageUrlが利用できない場合はそのまま使用
       optimizedImage = this.optimizeImageUrl(rawImageUrl, { w: 1200 });
     }
-    
-    if (event.id === 'evt-001') {
-      console.log(`[CardRenderer] Event ${event.id} Cloudinary URL:`, {
-        'rawImageUrl': rawImageUrl,
-        'optimizedImage': optimizedImage,
-        'isCloudinary': optimizedImage.includes('cloudinary.com')
-      });
-    }
-    
     // 画像読み込みエラー時のフォールバック処理（デモイベント用）
     const imageErrorHandler = fallbackPaths.length > 1 ? `
       (function() {
@@ -795,7 +773,6 @@ const CardRenderer = {
           const encoded = encodeURIComponent(p).replace(/%2F/g, '/');
           return currentSrc.includes(p) || currentSrc.includes(encoded);
         });
-        console.log('[CardRenderer] Image load error. Current src:', currentSrc, 'Current index:', currentPathIndex, 'Total paths:', fallbackPaths.length);
         if (currentPathIndex >= 0 && currentPathIndex < fallbackPaths.length - 1) {
           const nextPath = fallbackPaths[currentPathIndex + 1];
           const nextUrl = typeof window.getEventImageUrl === 'function' 
@@ -804,9 +781,7 @@ const CardRenderer = {
               ? window.cloudinaryUrl(nextPath, { w: 1200 })
               : nextPath);
           img.src = nextUrl;
-          console.log('[CardRenderer] Trying fallback image path:', nextPath, 'URL:', nextUrl);
         } else {
-          console.warn('[CardRenderer] All fallback paths failed for event ${event.id}. Tried paths:', fallbackPaths);
           img.style.display = 'none';
         }
       }).call(this);
