@@ -34,7 +34,19 @@ const OrganizerPageRenderer = {
     if (!header) return;
 
     // 提供元ロゴURLを取得（Cloudinaryを使用、フォルダ構造に対応）
-    const originalLogoUrl = organizer.logo || organizer.image || '';
+    let originalLogoUrl = organizer.logo || organizer.image || '';
+    
+    // フォールバック：logoが空の場合やプレースホルダーの場合、organizer.idに基づいてCloudinary画像を生成
+    // org-001の場合、organizers/org-001/org-001_camppk を試す
+    if (!originalLogoUrl || originalLogoUrl.includes('picsum.photos') || originalLogoUrl.includes('placeholder')) {
+      const organizerId = organizer.id || '';
+      // org-001_camppk という画像名を使用（Cloudinaryのpublic_id）
+      if (organizerId) {
+        // まず org-001_camppk を試す
+        originalLogoUrl = `organizers/${organizerId}/${organizerId}_camppk`;
+      }
+    }
+    
     let logoUrl = '';
     
     // Cloudinaryを使用してロゴURLを生成（organizersフォルダを使用）

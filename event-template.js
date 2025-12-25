@@ -338,12 +338,26 @@ const EventPageRenderer = {
 
     if (organizerInfo) {
       // 提供元ロゴURLを取得（GitHubを優先、なければ既存URLを使用）
-      const originalLogoUrl = organizer.logo || '';
+      let originalLogoUrl = organizer.logo || organizer.image || '';
+      
+      // フォールバック：logoが空の場合やプレースホルダーの場合、organizer.idに基づいてCloudinary画像を生成
+      // org-001の場合、organizers/org-001/org-001_camppk を試す
+      if (!originalLogoUrl || originalLogoUrl.includes('picsum.photos') || originalLogoUrl.includes('placeholder')) {
+        const organizerId = organizer.id || '';
+        // org-001_camppk という画像名を使用（Cloudinaryのpublic_id）
+        if (organizerId) {
+          // まず org-001_camppk を試す
+          originalLogoUrl = `organizers/${organizerId}/${organizerId}_camppk`;
+        }
+      }
+      
       let logoUrl = '';
       let fallbackUrl = null;
       
       // Cloudinaryを使用してロゴURLを生成
-      if (typeof window.cloudinaryUrl === 'function') {
+      if (typeof window.getOrganizerImageUrl === 'function') {
+        logoUrl = window.getOrganizerImageUrl(originalLogoUrl, { w: 400 });
+      } else if (typeof window.cloudinaryUrl === 'function') {
         logoUrl = window.cloudinaryUrl(originalLogoUrl, { w: 400 });
       } else {
         logoUrl = originalLogoUrl;

@@ -27,7 +27,6 @@
     // GitHub raw URL（全ページ共通設定）
     window.GITHUB_RAW_BASE = "https://raw.githubusercontent.com/setagayatankyubase-create/trip-platform/main";
   </script>
-  <script src="data.js"></script>
   <script>
     // ロゴ画像をCloudinaryから取得（data.js読み込み後に実行）
     (function() {
@@ -114,7 +113,19 @@
         const events = eventData.events.filter(e => (e.organizerId || e.organizer_id) === org.id);
         
         // 提供元ロゴURLを取得（Cloudinaryを使用、フォルダ構造に対応）
-        const originalLogoUrl = org.logo || org.image || '';
+        let originalLogoUrl = org.logo || org.image || '';
+        
+        // フォールバック：logoが空の場合やプレースホルダーの場合、organizer.idに基づいてCloudinary画像を生成
+        // org-001の場合、organizers/org-001/org-001_camppk を試す
+        if (!originalLogoUrl || originalLogoUrl.includes('picsum.photos') || originalLogoUrl.includes('placeholder')) {
+          const organizerId = org.id || '';
+          // org-001_camppk という画像名を使用（Cloudinaryのpublic_id）
+          if (organizerId) {
+            // まず org-001_camppk を試す
+            originalLogoUrl = `organizers/${organizerId}/${organizerId}_camppk`;
+          }
+        }
+        
         let logoUrl = '';
         
         // Cloudinaryを使用してロゴURLを生成（organizersフォルダを使用）
