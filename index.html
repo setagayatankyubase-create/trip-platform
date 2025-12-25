@@ -328,7 +328,7 @@
       }).join('');
 
       const menu = document.querySelector('.category-menu');
-      const searchWrapper = document.querySelector('.search-wrapper');
+      const categoryButton = document.getElementById('category-menu-button');
       let hideTimer = null;
 
       // メニューを表示する関数
@@ -358,13 +358,13 @@
         }, 600); // 0.6秒後
       }
 
-      // 検索バーにカーソルが入った時
-      if (searchWrapper) {
-        searchWrapper.addEventListener('mouseenter', showMenu);
-        searchWrapper.addEventListener('mouseleave', hideMenu);
+      // ハンバーガーボタンにカーソルが入った時のみ表示
+      if (categoryButton) {
+        categoryButton.addEventListener('mouseenter', showMenu);
+        categoryButton.addEventListener('mouseleave', hideMenu);
       }
 
-      // メニュー自体にカーソルが入った時
+      // メニュー自体にカーソルが入った時（メニュー内を移動する際に非表示にならないように）
       if (menu) {
         menu.addEventListener('mouseenter', showMenu);
         menu.addEventListener('mouseleave', hideMenu);
