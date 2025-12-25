@@ -718,81 +718,31 @@ const CardRenderer = {
     const rawImageUrl = event.image || event.thumb || event.mainImage || '';
     
     
-    // イベント画像URLを生成（getEventImageUrlを使用してデモイベントにも対応）
+    // イベント画像URLを生成（拡張子総当たりをやめる：1回だけ試行）
     let optimizedImage = '';
-    let fallbackPaths = [];
+    const fallbackUrl = `https://picsum.photos/seed/${event.id || 'default'}/1200/800`;
     
     if (typeof window.getEventImageUrl === 'function' && rawImageUrl && !rawImageUrl.startsWith('http')) {
-      // Cloudinaryの画像の場合、getEventImageUrlを使用（デモイベント対応）
+      // Cloudinaryの画像の場合、getEventImageUrlを使用（拡張子は正規化される）
       optimizedImage = window.getEventImageUrl(rawImageUrl, event.id, { w: 1200 });
-      
-      // デモイベントの場合は複数のパスパターンを準備（フォールバック用）
-      // オーガナイザーのロゴと同様に、拡張子のバリエーションも試す
-      if (event.id && event.id.startsWith('demoevt-')) {
-        // rawImageUrlから拡張子を除去（既に拡張子が含まれている場合と含まれていない場合の両方に対応）
-        const imageIdWithoutExt = rawImageUrl.replace(/\.(jpg|jpeg|png|webp)$/i, '');
-        const extensions = ['', '.jpg', '.jpeg', '.png', '.webp'];
-        
-        fallbackPaths = [];
-        extensions.forEach(ext => {
-          fallbackPaths.push(`demo/demoevt/${imageIdWithoutExt}${ext}`);
-          fallbackPaths.push(`demoevt/${imageIdWithoutExt}${ext}`);
-          fallbackPaths.push(`${imageIdWithoutExt}${ext}`);
-        });
-        // 元のrawImageUrlも追加（拡張子が含まれている場合のため）
-        if (rawImageUrl !== imageIdWithoutExt) {
-          fallbackPaths.push(rawImageUrl);
-        }
-        // 重複を削除
-        fallbackPaths = [...new Set(fallbackPaths)];
-      } else if (event.id) {
-        // 通常のイベントの場合も、フォールバックパスを準備（拡張子のバリエーションを試す）
-        const imageIdWithoutExt = rawImageUrl.replace(/\.(jpg|jpeg|png|webp)$/i, '');
-        const extensions = ['', '.jpg', '.jpeg', '.png', '.webp'];
-        
-        extensions.forEach(ext => {
-          fallbackPaths.push(`events/${event.id}/${imageIdWithoutExt}${ext}`);
-          fallbackPaths.push(`${imageIdWithoutExt}${ext}`);
-        });
-        if (rawImageUrl !== imageIdWithoutExt) {
-          fallbackPaths.push(rawImageUrl);
-        }
-        fallbackPaths = [...new Set(fallbackPaths)];
-      }
     } else if (rawImageUrl) {
       // 既にURL形式の場合、またはgetEventImageUrlが利用できない場合はそのまま使用
       optimizedImage = this.optimizeImageUrl(rawImageUrl, { w: 1200 });
     }
-    // 画像読み込みエラー時のフォールバック処理（無限リトライ防止：一度だけ試す）
-    const imageErrorHandler = fallbackPaths.length > 1 ? `
+    
+    // 画像読み込みエラー時のフォールバック処理（1回だけ試行してダメならプレースホルダー）
+    const imageErrorHandler = `
       (function() {
         const img = this;
-        // これがないと404のたびに永遠に試行して地獄になる
+        // 無限リトライ防止：既に試行済みの場合は何もしない
         if (img.dataset.fallbackDone === "1") {
-          img.style.display = 'none';
           return;
         }
         img.dataset.fallbackDone = "1";
-        
-        const currentSrc = img.src;
-        const fallbackPaths = ${JSON.stringify(fallbackPaths)};
-        const currentPathIndex = fallbackPaths.findIndex(p => {
-          const encoded = encodeURIComponent(p).replace(/%2F/g, '/');
-          return currentSrc.includes(p) || currentSrc.includes(encoded);
-        });
-        if (currentPathIndex >= 0 && currentPathIndex < fallbackPaths.length - 1) {
-          const nextPath = fallbackPaths[currentPathIndex + 1];
-          const nextUrl = typeof window.getEventImageUrl === 'function' 
-            ? window.getEventImageUrl(nextPath, '${event.id}', { w: 1200 })
-            : (typeof window.cloudinaryUrl === 'function' 
-              ? window.cloudinaryUrl(nextPath, { w: 1200 })
-              : nextPath);
-          img.src = nextUrl;
-        } else {
-          img.style.display = 'none';
-        }
+        // プレースホルダーにフォールバック（1回だけ）
+        img.src = '${fallbackUrl}';
       }).call(this);
-    ` : 'this.style.display=\'none\';';
+    `;
 
     // インデックスデータでは city が area 相当として使われる
     const area = event.area || event.city || "";

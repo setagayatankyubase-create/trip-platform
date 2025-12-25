@@ -62,18 +62,13 @@ const OrganizerPageRenderer = {
       
       // websiteフィールドから取得できない場合、organizer.idに基づいて生成
       if (fallbackPaths.length === 0 && organizerId) {
-        // 複数のパスパターンを準備（Cloudinaryのpublic_idの可能性）
-        // 拡張子を含むパターンも試す
-        const extensions = ['', '.jpg', '.jpeg', '.png', '.webp'];
-        fallbackPaths = [];
-        extensions.forEach(ext => {
-          fallbackPaths.push(`organizers/${organizerId}/${organizerId}_camppk${ext}`);
-          fallbackPaths.push(`organizers/${organizerId}_camppk${ext}`);
-          fallbackPaths.push(`${organizerId}/${organizerId}_camppk${ext}`);
-          fallbackPaths.push(`${organizerId}_camppk${ext}`);
-        });
-        // 重複を削除
-        fallbackPaths = [...new Set(fallbackPaths)];
+        // 拡張子総当たりをやめる：1つのパスだけを試す
+        // デモ提供元の場合はdemo/demoorg/を優先
+        if (organizerId.startsWith('demoorg-')) {
+          fallbackPaths = [`demo/demoorg/${organizerId}_camppk`];
+        } else {
+          fallbackPaths = [`organizers/${organizerId}/${organizerId}_camppk`];
+        }
       }
       
       if (fallbackPaths.length > 0) {
@@ -90,36 +85,20 @@ const OrganizerPageRenderer = {
       logoUrl = originalLogoUrl;
     }
     
-    // 画像読み込みエラー時のフォールバック処理（複数パスを試す）
-    const imageErrorHandler = fallbackPaths.length > 1 ? `
+    // 画像読み込みエラー時のフォールバック処理（1回だけ試行してダメなら非表示）
+    const imageErrorHandler = `
       (function() {
         const img = this;
-        // これがないと404のたびに永遠に試行して地獄になる
+        // 無限リトライ防止：既に試行済みの場合は何もしない
         if (img.dataset.fallbackDone === "1") {
           img.style.display = 'none';
           return;
         }
         img.dataset.fallbackDone = "1";
-        
-        const currentSrc = img.src;
-        const fallbackPaths = ${JSON.stringify(fallbackPaths)};
-        const currentPathIndex = fallbackPaths.findIndex(p => {
-          const encoded = encodeURIComponent(p).replace(/%2F/g, '/');
-          return currentSrc.includes(p) || currentSrc.includes(encoded);
-        });
-        if (currentPathIndex >= 0 && currentPathIndex < fallbackPaths.length - 1) {
-          const nextPath = fallbackPaths[currentPathIndex + 1];
-          const nextUrl = typeof window.getOrganizerImageUrl === 'function' 
-            ? window.getOrganizerImageUrl(nextPath, { w: 400 })
-            : (typeof window.cloudinaryUrl === 'function' 
-              ? window.cloudinaryUrl(nextPath, { w: 400 })
-              : nextPath);
-          img.src = nextUrl;
-        } else {
-          img.style.display = 'none';
-        }
+        // 1回だけ試行してダメなら非表示
+        img.style.display = 'none';
       }).call(this);
-    ` : 'this.style.display=\'none\';';
+    `;
 
     header.innerHTML = `
       ${logoUrl ? `<img src="${logoUrl.replace(/"/g, '&quot;')}" alt="${organizer.name.replace(/"/g, '&quot;')}" class="organizer-logo" loading="lazy" decoding="async" onerror="${imageErrorHandler.replace(/"/g, '&quot;')}" />` : ''}
