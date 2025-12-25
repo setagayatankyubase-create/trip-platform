@@ -62,9 +62,9 @@ const EventPageRenderer = {
   renderGallery(event) {
     const mainImage = document.getElementById('event-main-image');
     if (mainImage && typeof window.cloudinaryUrl === 'function') {
-      // イベント画像URLを取得（一覧ページと同じ方法）
+      // イベント画像URLを取得（public_idをそのまま使用）
       const rawImageUrl = event.image || event.thumb || event.mainImage || '';
-      const imageUrl = window.cloudinaryUrl(rawImageUrl, { w: 1200, type: 'event', eventId: event.id });
+      const imageUrl = window.cloudinaryUrl(rawImageUrl, { w: 1200 });
       
       if (imageUrl) {
         mainImage.style.backgroundImage = `url('${imageUrl.replace(/'/g, "\\'")}')`;
@@ -99,13 +99,24 @@ const EventPageRenderer = {
         return;
       }
 
+      // イベントIDからフォルダパスを生成（例: evt-001 -> events/evt-001/）
+      const eventId = event.id || '';
+      const folderPath = eventId ? `events/${eventId}/` : 'events/';
+
       // サブ画像をサムネイルに反映（最大2枚想定）
       thumbElements.forEach((thumbEl, index) => {
-        const publicId = subImageIds[index];
-        if (!thumbEl || !publicId) return;
+        const subImageId = subImageIds[index];
+        if (!thumbEl || !subImageId) return;
 
-        // サブ画像もイベントフォルダ内の画像として扱う（一覧ページと同じ方法）
-        const subImageUrl = window.cloudinaryUrl(publicId, { w: 600, type: 'event', eventId: event.id });
+        // サブ画像IDにフォルダパスを追加（既にパスが含まれている場合はそのまま使用）
+        let publicId = subImageId;
+        if (!subImageId.includes('/')) {
+          // フォルダパスが含まれていない場合のみ追加
+          publicId = `${folderPath}${subImageId}`;
+        }
+
+        // Cloudinary URLを生成
+        const subImageUrl = window.cloudinaryUrl(publicId, { w: 600 });
         if (subImageUrl) {
           thumbEl.style.backgroundImage = `url('${subImageUrl.replace(/'/g, "\\'")}')`;
         }
