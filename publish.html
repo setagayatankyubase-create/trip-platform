@@ -178,7 +178,6 @@
       }
     }
     
-    // デモ認証処理
     async function handleDemoAuth() {
       const passwordInput = document.getElementById('demo-password');
       const errorDiv = document.getElementById('demo-auth-error');
@@ -193,7 +192,6 @@
         return;
       }
       
-      // ローディング表示
       errorDiv.style.display = 'none';
       demoList.innerHTML = '<div style="text-align: center; padding: 40px; color: #6c7a72;">読み込み中...</div>';
       demoContent.style.display = 'block';
@@ -201,7 +199,6 @@
       try {
         const demoData = await fetchDemoData(password);
         
-        // パスワードが正しい場合、sessionStorageに保存（有効期限付き）
         try {
           const authData = {
             password: password,
@@ -213,7 +210,6 @@
           console.warn('sessionStorage not available:', e);
         }
         
-        // デモデータを表示
         renderDemoContent(demoData);
         errorDiv.style.display = 'none';
         passwordInput.value = '';
@@ -227,7 +223,6 @@
       }
     }
     
-    // デモコンテンツをレンダリング（提供元情報 + イベントカード形式）
     function renderDemoContent(demoData) {
       const demoList = document.getElementById('demo-list');
       
@@ -242,15 +237,12 @@
       }
       
       const organizer = demoData.organizer;
-      
-      // イベントリストを取得（フォールバック対応）
       let eventList = Array.isArray(demoData.events) ? demoData.events : [];
       
       if (eventList.length === 0 && window.eventData && Array.isArray(window.eventData.events)) {
         eventList = window.eventData.events;
       }
       
-      // イベントを提供元に関連付けてフィルタリング
       const norm = v => String(v ?? '').trim().replace(/[\s　]+/g, '');
       let events = eventList;
       
@@ -263,13 +255,11 @@
           return idCandidates.has(norm(oid));
         });
         
-        // フィルタ結果が0件で元データがある場合は、フィルタを無視
         if (events.length === 0 && eventList.length > 0) {
           events = eventList;
         }
       }
       
-      // 提供元情報を表示
       const demoOrganizerContainer = document.getElementById('demo-organizer-container');
       if (demoOrganizerContainer && organizer) {
         const organizerId = organizer.id || '';
@@ -377,7 +367,6 @@
       });
     }
     
-    // デモ認証をクリア
     function clearDemoAuth() {
       try {
         sessionStorage.removeItem('demo_auth');
@@ -389,14 +378,12 @@
       document.getElementById('demo-auth-error').style.display = 'none';
     }
     
-    // ページ読み込み時に認証状態をチェック
     document.addEventListener('DOMContentLoaded', () => {
       const yearElement = document.getElementById('current-year');
       if (yearElement) {
         yearElement.textContent = new Date().getFullYear();
       }
       
-      // 認証状態をチェック
       try {
         const authDataStr = sessionStorage.getItem('demo_auth');
         if (authDataStr) {
@@ -404,11 +391,9 @@
           const now = Date.now();
           
           if (authData.expiresAt && now < authData.expiresAt) {
-            // 認証が有効期限内なら、自動的にデモデータを再取得
             document.getElementById('demo-password').value = authData.password;
             handleDemoAuth();
           } else {
-            // 認証が期限切れなら削除
             sessionStorage.removeItem('demo_auth');
           }
         }
