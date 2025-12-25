@@ -58,24 +58,101 @@ const EventPageRenderer = {
     }
   },
 
+  // 画像をフォールバックパスで試行するヘルパー関数
+  tryLoadImageWithFallback(element, rawImageUrl, eventId, options = {}) {
+    const { w = 1200, isMain = true } = options;
+    
+    // フォールバックパスを生成
+    let fallbackPaths = [];
+    if (eventId && eventId.startsWith('demoevt-')) {
+      // デモイベントの場合、拡張子のバリエーションも試す
+      const imageIdWithoutExt = rawImageUrl.replace(/\.(jpg|jpeg|png|webp)$/i, '');
+      const extensions = ['', '.jpg', '.jpeg', '.png', '.webp'];
+      
+      extensions.forEach(ext => {
+        fallbackPaths.push(`demo/demoevt/${imageIdWithoutExt}${ext}`);
+        fallbackPaths.push(`demoevt/${imageIdWithoutExt}${ext}`);
+        fallbackPaths.push(`${imageIdWithoutExt}${ext}`);
+      });
+      if (rawImageUrl !== imageIdWithoutExt) {
+        fallbackPaths.push(rawImageUrl);
+      }
+      fallbackPaths = [...new Set(fallbackPaths)];
+      console.log('[event-template] Generated fallback paths for demo event', eventId, ':', fallbackPaths);
+    } else if (eventId) {
+      // 通常のイベントの場合も、拡張子のバリエーションを試す
+      const imageIdWithoutExt = rawImageUrl.replace(/\.(jpg|jpeg|png|webp)$/i, '');
+      const extensions = ['', '.jpg', '.jpeg', '.png', '.webp'];
+      
+      extensions.forEach(ext => {
+        fallbackPaths.push(`events/${eventId}/${imageIdWithoutExt}${ext}`);
+        fallbackPaths.push(`${imageIdWithoutExt}${ext}`);
+      });
+      if (rawImageUrl !== imageIdWithoutExt) {
+        fallbackPaths.push(rawImageUrl);
+      }
+      fallbackPaths = [...new Set(fallbackPaths)];
+    } else {
+      fallbackPaths = [rawImageUrl];
+    }
+    
+    // 最初のパスを試す
+    let currentIndex = 0;
+    const tryNextPath = () => {
+      if (currentIndex >= fallbackPaths.length) {
+        console.warn('[event-template] All fallback paths failed for event', eventId || 'unknown', '. Tried paths:', fallbackPaths);
+        return;
+      }
+      
+      const path = fallbackPaths[currentIndex];
+      let imageUrl = '';
+      
+      if (typeof window.getEventImageUrl === 'function' && path && !path.startsWith('http')) {
+        imageUrl = window.getEventImageUrl(path, eventId, { w });
+      } else if (path && typeof window.cloudinaryUrl === 'function') {
+        imageUrl = window.cloudinaryUrl(path, { w });
+      } else {
+        imageUrl = path;
+      }
+      
+      if (!imageUrl) {
+        currentIndex++;
+        tryNextPath();
+        return;
+      }
+      
+      // 一時的な<img>要素で読み込みをテスト
+      const testImg = new Image();
+      testImg.onload = () => {
+        // 読み込み成功：background-imageに設定
+        element.style.backgroundImage = `url('${imageUrl.replace(/'/g, "\\'")}')`;
+        console.log('[event-template] Image loaded successfully:', imageUrl);
+      };
+      testImg.onerror = () => {
+        // 読み込み失敗：次のパスを試す
+        console.log('[event-template] Image load failed, trying next path:', imageUrl);
+        currentIndex++;
+        tryNextPath();
+      };
+      testImg.src = imageUrl;
+    };
+    
+    tryNextPath();
+  },
+
   // ギャラリー
   renderGallery(event) {
     const mainImage = document.getElementById('event-main-image');
     if (mainImage) {
       // イベント画像URLを取得（getEventImageUrlを使用してデモイベントにも対応）
       const rawImageUrl = event.image || event.thumb || event.mainImage || '';
-      let imageUrl = '';
       
-      if (typeof window.getEventImageUrl === 'function' && rawImageUrl && !rawImageUrl.startsWith('http')) {
-        // Cloudinaryの画像の場合、getEventImageUrlを使用（デモイベント対応）
-        imageUrl = window.getEventImageUrl(rawImageUrl, event.id, { w: 1200 });
-      } else if (rawImageUrl && typeof window.cloudinaryUrl === 'function') {
-        // 既にURL形式の場合、またはgetEventImageUrlが利用できない場合
-        imageUrl = window.cloudinaryUrl(rawImageUrl, { w: 1200 });
-      }
-      
-      if (imageUrl) {
-        mainImage.style.backgroundImage = `url('${imageUrl.replace(/'/g, "\\'")}')`;
+      if (rawImageUrl && !rawImageUrl.startsWith('http')) {
+        // フォールバック処理を含む画像読み込み
+        this.tryLoadImageWithFallback(mainImage, rawImageUrl, event.id, { w: 1200, isMain: true });
+      } else if (rawImageUrl) {
+        // 既にURL形式の場合
+        mainImage.style.backgroundImage = `url('${rawImageUrl.replace(/'/g, "\\'")}')`;
       }
     }
     
@@ -97,10 +174,11 @@ const EventPageRenderer = {
         const publicId = subImageIds[index];
         if (!thumbEl || !publicId) return;
 
-        // サブ画像もgetEventImageUrlを使用（デモイベント対応）
-        const subImageUrl = window.getEventImageUrl(publicId, event.id, { w: 600 });
-        if (subImageUrl) {
-          thumbEl.style.backgroundImage = `url('${subImageUrl.replace(/'/g, "\\'")}')`;
+        // サブ画像もフォールバック処理を含む画像読み込み
+        if (!publicId.startsWith('http')) {
+          this.tryLoadImageWithFallback(thumbEl, publicId, event.id, { w: 600, isMain: false });
+        } else {
+          thumbEl.style.backgroundImage = `url('${publicId.replace(/'/g, "\\'")}')`;
         }
       });
     }

@@ -739,12 +739,38 @@ const CardRenderer = {
       optimizedImage = window.getEventImageUrl(rawImageUrl, event.id, { w: 1200 });
       
       // デモイベントの場合は複数のパスパターンを準備（フォールバック用）
+      // オーガナイザーのロゴと同様に、拡張子のバリエーションも試す
       if (event.id && event.id.startsWith('demoevt-')) {
-        fallbackPaths = [
-          `demo/demoevt/${rawImageUrl}`,
-          `demoevt/${rawImageUrl}`,
-          rawImageUrl
-        ];
+        // rawImageUrlから拡張子を除去（既に拡張子が含まれている場合と含まれていない場合の両方に対応）
+        const imageIdWithoutExt = rawImageUrl.replace(/\.(jpg|jpeg|png|webp)$/i, '');
+        const extensions = ['', '.jpg', '.jpeg', '.png', '.webp'];
+        
+        fallbackPaths = [];
+        extensions.forEach(ext => {
+          fallbackPaths.push(`demo/demoevt/${imageIdWithoutExt}${ext}`);
+          fallbackPaths.push(`demoevt/${imageIdWithoutExt}${ext}`);
+          fallbackPaths.push(`${imageIdWithoutExt}${ext}`);
+        });
+        // 元のrawImageUrlも追加（拡張子が含まれている場合のため）
+        if (rawImageUrl !== imageIdWithoutExt) {
+          fallbackPaths.push(rawImageUrl);
+        }
+        // 重複を削除
+        fallbackPaths = [...new Set(fallbackPaths)];
+        console.log('[CardRenderer] Generated fallback paths for demo event', event.id, ':', fallbackPaths);
+      } else if (event.id) {
+        // 通常のイベントの場合も、フォールバックパスを準備（拡張子のバリエーションを試す）
+        const imageIdWithoutExt = rawImageUrl.replace(/\.(jpg|jpeg|png|webp)$/i, '');
+        const extensions = ['', '.jpg', '.jpeg', '.png', '.webp'];
+        
+        extensions.forEach(ext => {
+          fallbackPaths.push(`events/${event.id}/${imageIdWithoutExt}${ext}`);
+          fallbackPaths.push(`${imageIdWithoutExt}${ext}`);
+        });
+        if (rawImageUrl !== imageIdWithoutExt) {
+          fallbackPaths.push(rawImageUrl);
+        }
+        fallbackPaths = [...new Set(fallbackPaths)];
       }
     } else if (rawImageUrl) {
       // 既にURL形式の場合、またはgetEventImageUrlが利用できない場合はそのまま使用
