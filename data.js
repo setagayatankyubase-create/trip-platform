@@ -122,11 +122,11 @@ function getEventImageUrl(imageId, eventId, { w = 1200 } = {}) {
   // フォルダ構造がない場合は追加
   // 拡張子はそのまま保持（Cloudinaryの実際のpublic_idに合わせる）
   if (eventId) {
-    // デモイベント（demoevt-*で始まる）の場合は demoevt/ フォルダを使用
+    // デモイベント（demoevt-*で始まる）の場合は demo/demoevt/ フォルダを使用
     if (eventId.startsWith('demoevt-')) {
-      // demoevt-002 の場合、demoevt/demoevt-002_ykbt65 のような構造
-      publicId = `demoevt/${publicId}`;
-      console.log('[getEventImageUrl] Added demoevt folder structure:', publicId);
+      // demo/demoevt/demoevt-002_ykbt65 のような構造（Cloudinaryのフォルダ構造に合わせる）
+      publicId = `demo/demoevt/${publicId}`;
+      console.log('[getEventImageUrl] Added demo/demoevt folder structure:', publicId);
     } else {
       // 通常のイベント（evt-*など）の場合は events/ フォルダを使用
       publicId = `events/${eventId}/${publicId}`;

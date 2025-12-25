@@ -732,9 +732,20 @@ const CardRenderer = {
     
     // イベント画像URLを生成（getEventImageUrlを使用してデモイベントにも対応）
     let optimizedImage = '';
+    let fallbackPaths = [];
+    
     if (typeof window.getEventImageUrl === 'function' && rawImageUrl && !rawImageUrl.startsWith('http')) {
       // Cloudinaryの画像の場合、getEventImageUrlを使用（デモイベント対応）
       optimizedImage = window.getEventImageUrl(rawImageUrl, event.id, { w: 1200 });
+      
+      // デモイベントの場合は複数のパスパターンを準備（フォールバック用）
+      if (event.id && event.id.startsWith('demoevt-')) {
+        fallbackPaths = [
+          `demo/demoevt/${rawImageUrl}`,
+          `demoevt/${rawImageUrl}`,
+          rawImageUrl
+        ];
+      }
     } else if (rawImageUrl) {
       // 既にURL形式の場合、またはgetEventImageUrlが利用できない場合はそのまま使用
       optimizedImage = this.optimizeImageUrl(rawImageUrl, { w: 1200 });
@@ -747,6 +758,33 @@ const CardRenderer = {
         'isCloudinary': optimizedImage.includes('cloudinary.com')
       });
     }
+    
+    // 画像読み込みエラー時のフォールバック処理（デモイベント用）
+    const imageErrorHandler = fallbackPaths.length > 1 ? `
+      (function() {
+        const img = this;
+        const currentSrc = img.src;
+        const fallbackPaths = ${JSON.stringify(fallbackPaths)};
+        const currentPathIndex = fallbackPaths.findIndex(p => {
+          const encoded = encodeURIComponent(p).replace(/%2F/g, '/');
+          return currentSrc.includes(p) || currentSrc.includes(encoded);
+        });
+        console.log('[CardRenderer] Image load error. Current src:', currentSrc, 'Current index:', currentPathIndex, 'Total paths:', fallbackPaths.length);
+        if (currentPathIndex >= 0 && currentPathIndex < fallbackPaths.length - 1) {
+          const nextPath = fallbackPaths[currentPathIndex + 1];
+          const nextUrl = typeof window.getEventImageUrl === 'function' 
+            ? window.getEventImageUrl(nextPath, '${event.id}', { w: 1200 })
+            : (typeof window.cloudinaryUrl === 'function' 
+              ? window.cloudinaryUrl(nextPath, { w: 1200 })
+              : nextPath);
+          img.src = nextUrl;
+          console.log('[CardRenderer] Trying fallback image path:', nextPath, 'URL:', nextUrl);
+        } else {
+          console.warn('[CardRenderer] All fallback paths failed for event ${event.id}. Tried paths:', fallbackPaths);
+          img.style.display = 'none';
+        }
+      }).call(this);
+    ` : 'this.style.display=\'none\';';
 
     // インデックスデータでは city が area 相当として使われる
     const area = event.area || event.city || "";
@@ -805,7 +843,7 @@ const CardRenderer = {
       <a href="experience.html?id=${event.id}" class="card-link" data-event-id="${event.id}">
         <div class="card" data-event-id="${event.id}">
           <div class="card-image-wrapper">
-            <img src="${optimizedImage}" alt="${event.title}" loading="lazy" decoding="async">
+            <img src="${optimizedImage}" alt="${event.title}" loading="lazy" decoding="async" onerror="${fallbackPaths.length > 1 ? imageErrorHandler.replace(/"/g, '&quot;') : 'this.style.display=\'none\';'}">
             <button class="${favoriteClass}" onclick="toggleFavorite('${event.id}', event)" title="${favoriteTitle}">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="${favoriteFill}" stroke="currentColor" stroke-width="2">
                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
