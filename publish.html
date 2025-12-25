@@ -1,4 +1,4 @@
-                                                                  <!doctype html>
+<!doctype html>
 <html lang="ja">
 <head>
   <meta charset="utf-8">
@@ -158,7 +158,6 @@
       try {
         const url = new URL(DEMO_GAS_API_URL);
         url.searchParams.set('password', password);
-        url.searchParams.set('debug', '1'); // デバッグ情報を取得
         
         const response = await fetch(url.toString());
         if (!response.ok) {
@@ -201,9 +200,6 @@
       
       try {
         const demoData = await fetchDemoData(password);
-        
-        // デバッグログ：GASからの生データを確認
-        console.log('[DEMO RAW]', demoData?.success, demoData?.events?.length, demoData);
         
         // パスワードが正しい場合、sessionStorageに保存（有効期限付き）
         try {
@@ -250,67 +246,41 @@
       // イベントリストを取得（フォールバック対応）
       let eventList = Array.isArray(demoData.events) ? demoData.events : [];
       
-      // フォールバック：demoData.events が空なら、window.eventData から取得を試みる
       if (eventList.length === 0 && window.eventData && Array.isArray(window.eventData.events)) {
-        console.warn('[publish.html] Fallback: demoData.events is empty, trying window.eventData.events');
         eventList = window.eventData.events;
       }
       
       // イベントを提供元に関連付けてフィルタリング
-      // norm関数を改善：空白除去も追加（全角/半角スペースに対応）
       const norm = v => String(v ?? '').trim().replace(/[\s　]+/g, '');
       let events = eventList;
       
       if (organizer && organizer.id) {
         const organizerId = norm(organizer.id);
-        
-        // ID候補（正規化処理は削除 - すべてdemoorg-xxxで統一）
         const idCandidates = new Set([organizerId]);
         
-        console.log('[publish.html] organizer.id:', organizerId);
-        console.log('[publish.html] eventList length:', eventList.length);
-        console.log('[publish.html] ID candidates for filtering:', Array.from(idCandidates));
-        
-        // イベントをフィルタリング（複数の列名候補に対応）
         events = eventList.filter(e => {
-          // 複数の列名候補をチェック（organizerId, organizer_id, providerId, provider_id など）
           const oid = e.organizerId ?? e.organizer_id ?? e.providerId ?? e.provider_id ?? e.organizer ?? e.organizerID ?? '';
           return idCandidates.has(norm(oid));
         });
         
-        console.log('[publish.html] filtered events count:', events.length);
-        
-        // ★重要：元はあるのに0件なら「二重フィルタで落としてる」ので戻す
+        // フィルタ結果が0件で元データがある場合は、フィルタを無視
         if (events.length === 0 && eventList.length > 0) {
-          console.warn('[publish.html] Filter resulted in 0 but eventList has data. Skipping filter as fallback.');
-          console.warn('[publish.html] Expected organizerId:', Array.from(idCandidates));
-          console.warn('[publish.html] Sample event organizerIds:', eventList.slice(0, 3).map(e => ({
-            id: e.id,
-            organizerId: e.organizerId || 'N/A',
-            organizer_id: e.organizer_id || 'N/A',
-            providerId: e.providerId || 'N/A'
-          })));
           events = eventList;
         }
       }
       
-        // 提供元情報を表示（demo-list-containerとは別のコンテナに配置）
+      // 提供元情報を表示
       const demoOrganizerContainer = document.getElementById('demo-organizer-container');
       if (demoOrganizerContainer && organizer) {
-        // Cloudinaryを使用してロゴURLを生成（public_idをそのまま使用）
         const organizerId = organizer.id || '';
         let originalLogoUrl = organizer.logo || organizer.image || '';
         
-        // websiteフィールドに画像名が入っている場合を優先チェック（例：demoorg-002_elrulz）
         const websiteValue = organizer.website || '';
         if (websiteValue && !websiteValue.includes('http') && !websiteValue.includes('.com') && (!websiteValue.includes('.') || websiteValue.includes('_'))) {
-          // public_idをそのまま使用（フォルダ補完しない：Cloudinaryの実体に合わせる）
           originalLogoUrl = websiteValue;
         }
         
-        // logo/image/websiteが空の場合やプレースホルダーの場合、organizer.idに基づいて生成
         if ((!originalLogoUrl || originalLogoUrl.includes('picsum.photos') || originalLogoUrl.includes('placeholder')) && organizerId) {
-          // public_idをそのまま使用（フォルダ補完しない）
           originalLogoUrl = `${organizerId}_camppk`;
         }
         
@@ -324,17 +294,14 @@
           logoUrl = originalLogoUrl;
         }
         
-        // 画像読み込みエラー時のフォールバック処理（1回だけ試行してダメなら非表示）
         const imageErrorHandler = `
           (function() {
             const img = this;
-            // 無限リトライ防止：既に試行済みの場合は何もしない
             if (img.dataset.fallbackDone === "1") {
               img.style.display = 'none';
               return;
             }
             img.dataset.fallbackDone = "1";
-            // 1回だけ試行してダメなら非表示
             img.style.display = 'none';
           }).call(this);
         `;
@@ -367,11 +334,10 @@
         `;
       }
       
-      // イベント一覧を表示（公開版と同じUI構造を使用）
       const demoTitle = document.getElementById('demo-events-title');
       if (events.length === 0) {
         if (demoTitle) demoTitle.style.display = 'none';
-        html = `
+        const html = `
           <div class="empty-state">
             <div class="empty-state-icon">📝</div>
             <h3>デモイベントがありません</h3>
@@ -380,15 +346,11 @@
         `;
         demoList.innerHTML = html;
       } else {
-        // タイトルを表示
         if (demoTitle) demoTitle.style.display = 'block';
         
-        // CardRenderer.renderListを使用（公開版と同じUI構造）
-        // renderListはコンテナの中身を完全に置き換える
         if (typeof CardRenderer !== 'undefined' && CardRenderer.renderList) {
           CardRenderer.renderList(events, 'demo-list');
           
-          // デモページ用にリンク先を experience.html から experience-demo.html に変更
           const links = demoList.querySelectorAll('.card-link[href^="experience.html"]');
           links.forEach(link => {
             const href = link.getAttribute('href');
@@ -397,12 +359,10 @@
             }
           });
         } else {
-          // フォールバック（CardRendererが利用できない場合）
           demoList.innerHTML = '<p style="color: #6c7a72; padding: 40px; text-align: center;">イベントの読み込みに失敗しました</p>';
         }
       }
       
-      // カードクリック時の計測を追加（必要に応じて）
       const eventCardsContainer = demoList.querySelector('.grid') || demoList;
       const links = eventCardsContainer.querySelectorAll('.card-link');
       links.forEach(link => {
