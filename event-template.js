@@ -60,42 +60,51 @@ const EventPageRenderer = {
 
   // ギャラリー
   renderGallery(event) {
+    if (typeof window.cloudinaryUrl !== 'function') {
+      console.warn('[EventPageRenderer] cloudinaryUrl function not found');
+      return;
+    }
+
+    // メイン画像
     const mainImage = document.getElementById('event-main-image');
-    if (mainImage && typeof window.cloudinaryUrl === 'function') {
-      // イベント画像URLを取得（public_idをそのまま使用）
-      const rawImageUrl = event.image || event.thumb || event.mainImage || '';
-      const imageUrl = window.cloudinaryUrl(rawImageUrl, { w: 1200 });
-      
+    if (mainImage && event.image) {
+      const imageUrl = window.cloudinaryUrl(event.image, { w: 1200 });
       if (imageUrl) {
-        mainImage.style.backgroundImage = `url('${imageUrl.replace(/'/g, "\\'")}')`;
+        mainImage.src = imageUrl;
+        mainImage.alt = event.title || 'イベント画像';
       }
     }
-    
-    // サブ画像（複数枚）を設定
-    const thumbsContainer = document.querySelector('.thumbs');
-    if (thumbsContainer && typeof window.cloudinaryUrl === 'function') {
-      const thumbElements = thumbsContainer.querySelectorAll('.thumb');
 
-      // サブ画像配列を取得（GASで既に配列に変換されている）
-      const subImageIds = Array.isArray(event.images) ? event.images : [];
+    // サブ画像（GASで images: [] を出す想定）
+    const subs = Array.isArray(event.images) ? event.images : [];
 
-      // 取得できなければ何もしない
-      if (subImageIds.length === 0) {
+    // サムネ要素（最大2枚想定）
+    const thumbs = Array.from(document.querySelectorAll('.js-thumb-image'));
+
+    thumbs.forEach((imgEl, i) => {
+      const pid = subs[i];
+      if (!pid) {
+        imgEl.style.display = 'none';
         return;
       }
+      imgEl.style.display = '';
+      const thumbUrl = window.cloudinaryUrl(pid, { w: 600 });
+      if (thumbUrl) {
+        imgEl.src = thumbUrl;
+        imgEl.alt = `${event.title || 'イベント'} - 画像${i + 1}`;
+        imgEl.loading = 'lazy';
 
-      // サブ画像をサムネイルに反映（最大2枚想定）
-      thumbElements.forEach((thumbEl, index) => {
-        const publicId = subImageIds[index];
-        if (!thumbEl || !publicId) return;
-
-        // サブ画像のpublic_idをそのまま使用（フォルダパスは追加しない）
-        const subImageUrl = window.cloudinaryUrl(publicId, { w: 600 });
-        if (subImageUrl) {
-          thumbEl.style.backgroundImage = `url('${subImageUrl.replace(/'/g, "\\'")}')`;
-        }
-      });
-    }
+        // クリックでメイン差し替え
+        imgEl.onclick = () => {
+          if (mainImage) {
+            const mainUrl = window.cloudinaryUrl(pid, { w: 1200 });
+            if (mainUrl) {
+              mainImage.src = mainUrl;
+            }
+          }
+        };
+      }
+    });
   },
 
   // メインコンテンツ
