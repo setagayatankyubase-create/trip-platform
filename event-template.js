@@ -71,8 +71,9 @@ const EventPageRenderer = {
     // 画像IDからイベントIDを抽出（例: evt-001.jpg_uqv2y2 → evt-001）
     // 画像IDに別のイベントIDが含まれている場合は、それを優先的に使用
     let imageEventId = eventId; // デフォルトは現在のイベントID
+    // 画像IDからイベントIDパターンを抽出（evt-001, evt-002, demoevt-001など）
     const imageIdMatch = rawImageUrl.match(/^(evt-\d+|demoevt-\d+)/);
-    if (imageIdMatch) {
+    if (imageIdMatch && imageIdMatch[1]) {
       imageEventId = imageIdMatch[1];
     }
     
@@ -93,23 +94,29 @@ const EventPageRenderer = {
       }
       fallbackPaths = [...new Set(fallbackPaths)];
     } else if (imageEventId) {
-      // 通常のイベントの場合：画像IDに含まれるイベントIDを使用
+      // 通常のイベントの場合：画像IDに含まれるイベントIDを優先的に使用
       const imageIdWithoutExt = rawImageUrl.replace(/\.(jpg|jpeg|png|webp)$/i, '');
       const extensions = ['', '.jpg', '.jpeg', '.png', '.webp'];
       
       extensions.forEach(ext => {
-        // 画像IDに含まれるイベントIDを使ってパスを生成
+        // 画像IDに含まれるイベントIDを使ってパスを生成（最優先）
         fallbackPaths.push(`events/${imageEventId}/${imageIdWithoutExt}${ext}`);
-        // 現在のイベントIDも試す（後方互換性）
+        // 現在のイベントIDも試す（後方互換性、ただし画像IDに含まれるイベントIDと異なる場合のみ）
         if (eventId && eventId !== imageEventId) {
           fallbackPaths.push(`events/${eventId}/${imageIdWithoutExt}${ext}`);
         }
+        // フォルダ構造なしも試す
         fallbackPaths.push(`${imageIdWithoutExt}${ext}`);
       });
       if (rawImageUrl !== imageIdWithoutExt) {
         fallbackPaths.push(rawImageUrl);
       }
+      // 重複を削除し、画像IDに含まれるイベントIDのパスを最優先に
       fallbackPaths = [...new Set(fallbackPaths)];
+      // 画像IDに含まれるイベントIDのパスを先頭に移動
+      const imageEventPaths = fallbackPaths.filter(p => p.startsWith(`events/${imageEventId}/`));
+      const otherPaths = fallbackPaths.filter(p => !p.startsWith(`events/${imageEventId}/`));
+      fallbackPaths = [...imageEventPaths, ...otherPaths];
     } else {
       fallbackPaths = [rawImageUrl];
     }
@@ -124,13 +131,15 @@ const EventPageRenderer = {
       const path = fallbackPaths[currentIndex];
       let imageUrl = '';
       
-      // パスに既にフォルダ構造が含まれている場合は、そのまま使用
+      // パスに既にフォルダ構造が含まれている場合は、そのままcloudinaryUrlを使用
+      // getEventImageUrlは呼ばない（既にフォルダ構造が含まれているため）
       if (path.includes('/') && !path.startsWith('http')) {
         imageUrl = typeof window.cloudinaryUrl === 'function' 
           ? window.cloudinaryUrl(path, { w })
           : path;
       } else if (typeof window.getEventImageUrl === 'function' && path && !path.startsWith('http')) {
         // フォルダ構造がない場合は、画像IDから抽出したイベントIDを使用
+        // 画像IDに含まれるイベントIDを優先的に使用
         imageUrl = window.getEventImageUrl(path, imageEventId || eventId, { w });
       } else if (path && typeof window.cloudinaryUrl === 'function') {
         imageUrl = window.cloudinaryUrl(path, { w });
