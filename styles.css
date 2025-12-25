@@ -104,7 +104,7 @@ body {
   color: var(--primary);
 }
 
-/* Header Search - GetYourGuide風のシンプルなデザイン */
+/* Header Search - ヒーローセクションと同じデザイン、サイズ感はGetYourGuideを参考 */
 .header-search {
   display: flex;
   align-items: center;
@@ -113,31 +113,72 @@ body {
   margin-left: 24px;
   margin-right: 24px;
   max-width: none;
-  justify-content: center;
 }
 
 .header-search-form {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 0;
   width: 100%;
-  max-width: 600px;
+  max-width: 700px;
   background: #fff;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  transition: box-shadow 0.2s;
+  border-radius: 50px;
+  overflow: visible;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  position: relative;
 }
 
-.header-search-form:focus-within {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-  border-color: var(--primary);
+.header-category-menu-button {
+  background: var(--primary);
+  border: none;
+  padding: 0 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  border-radius: 50px 0 0 50px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.header-category-menu-button:hover {
+  background: var(--hover);
+}
+
+.header-category-menu-button .hamburger-icon {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 18px;
+  height: 14px;
+}
+
+.header-category-menu-button .hamburger-icon span {
+  display: block;
+  width: 100%;
+  height: 2.5px;
+  background: #fff;
+  border-radius: 2px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.header-category-menu-button:hover .hamburger-icon span:nth-child(1) {
+  transform: rotate(45deg) translate(4.5px, 4.5px);
+}
+
+.header-category-menu-button:hover .hamburger-icon span:nth-child(2) {
+  opacity: 0;
+}
+
+.header-category-menu-button:hover .hamburger-icon span:nth-child(3) {
+  transform: rotate(-45deg) translate(6px, -5.5px);
 }
 
 .header-search-input {
   flex: 1;
-  padding: 12px 16px;
+  padding: 12px 20px;
   border: none;
   font-size: 0.95rem;
   outline: none;
@@ -152,10 +193,11 @@ body {
 }
 
 .header-search-button {
-  padding: 12px 24px;
+  padding: 12px 28px;
   background: var(--primary);
   color: #fff;
   border: none;
+  border-radius: 0 50px 50px 0;
   font-weight: 600;
   font-size: 0.95rem;
   cursor: pointer;
