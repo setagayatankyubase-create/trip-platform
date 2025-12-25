@@ -343,8 +343,28 @@ const EventPageRenderer = {
       // フォールバック：logoが空の場合やプレースホルダーの場合、organizer.idに基づいてCloudinary画像を生成
       const organizerId = organizer.id || '';
       let fallbackPaths = [];
+      
+      // websiteフィールドに画像名が入っている場合（例：org-001_camppk）をチェック
       if (!originalLogoUrl || originalLogoUrl.includes('picsum.photos') || originalLogoUrl.includes('placeholder')) {
-        if (organizerId) {
+        // websiteフィールドに画像名らしい値がある場合、それを優先
+        const websiteValue = organizer.website || '';
+        if (websiteValue && (websiteValue.includes('camppk') || websiteValue.includes('_') && !websiteValue.includes('http'))) {
+          // websiteフィールドの値が画像名の可能性がある
+          if (!websiteValue.includes('/')) {
+            // 単純な画像名（例：org-001_camppk）の場合、フォルダパスを追加
+            fallbackPaths = [
+              `organizers/${organizerId}/${websiteValue}`,
+              `organizers/${websiteValue}`,
+              websiteValue
+            ];
+          } else {
+            // 既にパス形式の場合（例：organizers/org-001/org-001_camppk）
+            fallbackPaths = [websiteValue];
+          }
+        }
+        
+        // websiteフィールドから取得できない場合、organizer.idに基づいて生成
+        if (fallbackPaths.length === 0 && organizerId) {
           // 複数のパスパターンを準備
           fallbackPaths = [
             `organizers/${organizerId}/${organizerId}_camppk`,
@@ -352,6 +372,9 @@ const EventPageRenderer = {
             `${organizerId}/${organizerId}_camppk`,
             `${organizerId}_camppk`
           ];
+        }
+        
+        if (fallbackPaths.length > 0) {
           originalLogoUrl = fallbackPaths[0];
         }
       }
@@ -373,7 +396,8 @@ const EventPageRenderer = {
           const img = this;
           const currentSrc = img.src;
           const fallbackPaths = ${JSON.stringify(fallbackPaths)};
-          const currentPathIndex = fallbackPaths.findIndex(p => currentSrc.includes(p));
+          const currentPathIndex = fallbackPaths.findIndex(p => currentSrc.includes(encodeURIComponent(p).replace(/%2F/g, '/')) || currentSrc.includes(p));
+          console.log('[event-template] Image load error. Current src:', currentSrc, 'Current index:', currentPathIndex, 'Total paths:', fallbackPaths.length);
           if (currentPathIndex >= 0 && currentPathIndex < fallbackPaths.length - 1) {
             const nextPath = fallbackPaths[currentPathIndex + 1];
             const nextUrl = typeof window.getOrganizerImageUrl === 'function' 
@@ -382,8 +406,9 @@ const EventPageRenderer = {
                 ? window.cloudinaryUrl(nextPath, { w: 400 })
                 : nextPath);
             img.src = nextUrl;
-            console.log('[event-template] Trying fallback image path:', nextPath);
+            console.log('[event-template] Trying fallback image path:', nextPath, 'URL:', nextUrl);
           } else {
+            console.warn('[event-template] All fallback paths failed. Tried:', fallbackPaths);
             img.style.display = 'none';
           }
         }).call(this);

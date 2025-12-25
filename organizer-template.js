@@ -40,10 +40,28 @@ const OrganizerPageRenderer = {
     // org-001の場合、複数のパスパターンを試す
     let logoUrl = '';
     let fallbackPaths = [];
+    const organizerId = organizer.id || '';
     
     if (!originalLogoUrl || originalLogoUrl.includes('picsum.photos') || originalLogoUrl.includes('placeholder')) {
-      const organizerId = organizer.id || '';
-      if (organizerId) {
+      // websiteフィールドに画像名が入っている場合（例：org-001_camppk）をチェック
+      const websiteValue = organizer.website || '';
+      if (websiteValue && (websiteValue.includes('camppk') || websiteValue.includes('_') && !websiteValue.includes('http'))) {
+        // websiteフィールドの値が画像名の可能性がある
+        if (!websiteValue.includes('/')) {
+          // 単純な画像名（例：org-001_camppk）の場合、フォルダパスを追加
+          fallbackPaths = [
+            `organizers/${organizerId}/${websiteValue}`,
+            `organizers/${websiteValue}`,
+            websiteValue
+          ];
+        } else {
+          // 既にパス形式の場合（例：organizers/org-001/org-001_camppk）
+          fallbackPaths = [websiteValue];
+        }
+      }
+      
+      // websiteフィールドから取得できない場合、organizer.idに基づいて生成
+      if (fallbackPaths.length === 0 && organizerId) {
         // 複数のパスパターンを準備（Cloudinaryのpublic_idの可能性）
         fallbackPaths = [
           `organizers/${organizerId}/${organizerId}_camppk`,  // 最も一般的なパス
@@ -51,6 +69,9 @@ const OrganizerPageRenderer = {
           `${organizerId}/${organizerId}_camppk`,              // フォルダ名が異なる
           `${organizerId}_camppk`                              // フォルダなし
         ];
+      }
+      
+      if (fallbackPaths.length > 0) {
         originalLogoUrl = fallbackPaths[0]; // 最初のパスを試す
       }
     }
