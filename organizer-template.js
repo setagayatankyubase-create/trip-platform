@@ -45,14 +45,14 @@ const OrganizerPageRenderer = {
     if (!originalLogoUrl || originalLogoUrl.includes('picsum.photos') || originalLogoUrl.includes('placeholder')) {
       // websiteフィールドに画像名が入っている場合（例：org-001_camppk）をチェック
       const websiteValue = organizer.website || '';
-      if (websiteValue && (websiteValue.includes('camppk') || websiteValue.includes('_') && !websiteValue.includes('http'))) {
-        // websiteフィールドの値が画像名の可能性がある
+      if (websiteValue && (websiteValue.includes('camppk') || (websiteValue.includes('_') && !websiteValue.includes('http') && !websiteValue.includes('.')))) {
+        // websiteフィールドの値が画像名の可能性がある（URLやドメインではない）
         if (!websiteValue.includes('/')) {
           // 単純な画像名（例：org-001_camppk）の場合、フォルダパスを追加
           fallbackPaths = [
-            `organizers/${organizerId}/${websiteValue}`,
-            `organizers/${websiteValue}`,
-            websiteValue
+            `organizers/${organizerId}/${websiteValue}`,  // organizers/org-001/org-001_camppk
+            `organizers/${websiteValue}`,                  // organizers/org-001_camppk
+            websiteValue                                   // org-001_camppk
           ];
         } else {
           // 既にパス形式の場合（例：organizers/org-001/org-001_camppk）
@@ -73,6 +73,7 @@ const OrganizerPageRenderer = {
       
       if (fallbackPaths.length > 0) {
         originalLogoUrl = fallbackPaths[0]; // 最初のパスを試す
+        console.log('[organizer-template] Generated fallback paths for organizer', organizerId, ':', fallbackPaths);
       }
     }
     
@@ -91,7 +92,11 @@ const OrganizerPageRenderer = {
         const img = this;
         const currentSrc = img.src;
         const fallbackPaths = ${JSON.stringify(fallbackPaths)};
-        const currentPathIndex = fallbackPaths.findIndex(p => currentSrc.includes(p));
+        const currentPathIndex = fallbackPaths.findIndex(p => {
+          const encoded = encodeURIComponent(p).replace(/%2F/g, '/');
+          return currentSrc.includes(p) || currentSrc.includes(encoded);
+        });
+        console.log('[organizer-template] Image load error. Current src:', currentSrc, 'Current index:', currentPathIndex, 'Total paths:', fallbackPaths.length);
         if (currentPathIndex >= 0 && currentPathIndex < fallbackPaths.length - 1) {
           const nextPath = fallbackPaths[currentPathIndex + 1];
           const nextUrl = typeof window.getOrganizerImageUrl === 'function' 
@@ -100,8 +105,10 @@ const OrganizerPageRenderer = {
               ? window.cloudinaryUrl(nextPath, { w: 400 })
               : nextPath);
           img.src = nextUrl;
-          console.log('[organizer-template] Trying fallback image path:', nextPath);
+          console.log('[organizer-template] Trying fallback image path:', nextPath, 'URL:', nextUrl);
         } else {
+          console.warn('[organizer-template] All fallback paths failed for organizer ${organizerId || 'unknown'}. Tried paths:', fallbackPaths);
+          console.warn('[organizer-template] Please check Cloudinary Media Library for the actual public_id of the image');
           img.style.display = 'none';
         }
       }).call(this);

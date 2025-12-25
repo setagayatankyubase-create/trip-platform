@@ -348,8 +348,8 @@ const EventPageRenderer = {
       if (!originalLogoUrl || originalLogoUrl.includes('picsum.photos') || originalLogoUrl.includes('placeholder')) {
         // websiteフィールドに画像名らしい値がある場合、それを優先
         const websiteValue = organizer.website || '';
-        if (websiteValue && (websiteValue.includes('camppk') || websiteValue.includes('_') && !websiteValue.includes('http'))) {
-          // websiteフィールドの値が画像名の可能性がある
+        // URLではない場合のみ画像名として扱う（http/httpsを含まない、ドットを含まない、アンダースコアを含む）
+        if (websiteValue && !websiteValue.includes('http') && !websiteValue.includes('.com') && !websiteValue.includes('.')) {
           if (!websiteValue.includes('/')) {
             // 単純な画像名（例：org-001_camppk）の場合、フォルダパスを追加
             fallbackPaths = [
