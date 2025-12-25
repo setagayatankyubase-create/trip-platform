@@ -93,40 +93,17 @@ function normalizePublicId(id) {
 }
 
 // イベント画像のCloudinary URLを取得
+// ★重要：推測でフォルダを追加しない。public_id（フォルダ込み）をそのまま使用する
+// データ側で正しいpublic_id（フォルダ込み）を保存することが前提
+// 例: 'demo/demoevt/demoevt-002_ykbt65' または 'events/evt-001/main'
 function getEventImageUrl(imageId, eventId, { w = 1200 } = {}) {
   if (!imageId) {
     return '';
   }
   
-  // imageIdの形式パターン：
-  // 1. 完全なpublic_id（例: 'events/evt-001/evt-001.jpg_uqv2y2' または 'events/evt-001/evt-001_uqv2y2'）
-  // 2. ファイル名のみ（例: 'evt-001.jpg_uqv2y2'）→ eventIdを使って 'events/evt-001/evt-001.jpg_uqv2y2' に組み立てる
-  // デモイベント（demoevt-*）の場合は 'demoevt/demoevt-002_ykbt65' のようなフォルダ構造を使用
-  // 注意: Cloudinaryのpublic_idには拡張子が含まれる場合もある（evt-001.jpg_uqv2y2など）
-  
-  let publicId = String(imageId).trim();
-  
-  // 既にフォルダ構造がある場合は、そのまま使用（拡張子の処理はしない）
-  if (publicId.includes('/')) {
-    return cloudinaryUrl(publicId, { w });
-  }
-  
-  // フォルダ構造がない場合は追加
-  // 拡張子はそのまま保持（Cloudinaryの実際のpublic_idに合わせる）
-  if (eventId) {
-    // デモイベント（demoevt-*で始まる）の場合は demo/demoevt/ フォルダを使用
-    if (eventId.startsWith('demoevt-')) {
-      // demo/demoevt/demoevt-002_ykbt65 のような構造（Cloudinaryのフォルダ構造に合わせる）
-      publicId = `demo/demoevt/${publicId}`;
-    } else {
-      // 通常のイベント（evt-*など）の場合は events/ フォルダを使用
-      publicId = `events/${eventId}/${publicId}`;
-    }
-  }
-  
-  const url = cloudinaryUrl(publicId, { w });
-  
-  return url;
+  // imageIdは既にフォルダ込みのpublic_idとして保存されている前提
+  // URLならそのまま返し、public_idならcloudinaryUrlで変換
+  return cloudinaryUrl(imageId, { w });
 }
 
 // 提供元画像のCloudinary URLを取得

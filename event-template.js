@@ -476,10 +476,17 @@ const EventPageRenderer = {
         logoUrl = originalLogoUrl;
       }
       
-      // 画像読み込みエラー時のフォールバック処理
+      // 画像読み込みエラー時のフォールバック処理（無限リトライ防止：一度だけ試す）
       const imageErrorHandler = fallbackPaths.length > 1 ? `
         (function() {
           const img = this;
+          // これがないと404のたびに永遠に試行して地獄になる
+          if (img.dataset.fallbackDone === "1") {
+            img.style.display = 'none';
+            return;
+          }
+          img.dataset.fallbackDone = "1";
+          
           const currentSrc = img.src;
           const fallbackPaths = ${JSON.stringify(fallbackPaths)};
           const currentPathIndex = fallbackPaths.findIndex(p => currentSrc.includes(encodeURIComponent(p).replace(/%2F/g, '/')) || currentSrc.includes(p));

@@ -94,6 +94,13 @@ const OrganizerPageRenderer = {
     const imageErrorHandler = fallbackPaths.length > 1 ? `
       (function() {
         const img = this;
+        // これがないと404のたびに永遠に試行して地獄になる
+        if (img.dataset.fallbackDone === "1") {
+          img.style.display = 'none';
+          return;
+        }
+        img.dataset.fallbackDone = "1";
+        
         const currentSrc = img.src;
         const fallbackPaths = ${JSON.stringify(fallbackPaths)};
         const currentPathIndex = fallbackPaths.findIndex(p => {
