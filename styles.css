@@ -59,6 +59,8 @@ body {
   display: flex;
   align-items: center;
   gap: 24px;
+  flex: 1;
+  min-width: 0;
 }
 
 .logo {
@@ -87,6 +89,7 @@ body {
   display: flex;
   gap: 32px;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .nav a {
@@ -109,6 +112,7 @@ body {
   min-width: 0;
   margin-left: 24px;
   margin-right: 24px;
+  max-width: none;
 }
 
 .header-search-form {
