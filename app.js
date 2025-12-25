@@ -730,8 +730,15 @@ const CardRenderer = {
       });
     }
     
-    // イベント画像URLを生成（eventIdを渡してフォルダ構造に対応）
-    const optimizedImage = this.optimizeImageUrl(rawImageUrl, { w: 1200, type: 'event', eventId: event.id });
+    // イベント画像URLを生成（getEventImageUrlを使用してデモイベントにも対応）
+    let optimizedImage = '';
+    if (typeof window.getEventImageUrl === 'function' && rawImageUrl && !rawImageUrl.startsWith('http')) {
+      // Cloudinaryの画像の場合、getEventImageUrlを使用（デモイベント対応）
+      optimizedImage = window.getEventImageUrl(rawImageUrl, event.id, { w: 1200 });
+    } else if (rawImageUrl) {
+      // 既にURL形式の場合、またはgetEventImageUrlが利用できない場合はそのまま使用
+      optimizedImage = this.optimizeImageUrl(rawImageUrl, { w: 1200 });
+    }
     
     if (event.id === 'evt-001') {
       console.log(`[CardRenderer] Event ${event.id} Cloudinary URL:`, {

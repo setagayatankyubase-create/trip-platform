@@ -108,6 +108,7 @@ function getEventImageUrl(imageId, eventId, { w = 1200 } = {}) {
   // imageIdの形式パターン：
   // 1. 完全なpublic_id（例: 'events/evt-001/evt-001.jpg_uqv2y2' または 'events/evt-001/evt-001_uqv2y2'）
   // 2. ファイル名のみ（例: 'evt-001.jpg_uqv2y2'）→ eventIdを使って 'events/evt-001/evt-001.jpg_uqv2y2' に組み立てる
+  // デモイベント（demoevt-*）の場合は 'demoevt/demoevt-002_ykbt65' のようなフォルダ構造を使用
   // 注意: Cloudinaryのpublic_idには拡張子が含まれる場合もある（evt-001.jpg_uqv2y2など）
   
   let publicId = String(imageId).trim();
@@ -121,8 +122,16 @@ function getEventImageUrl(imageId, eventId, { w = 1200 } = {}) {
   // フォルダ構造がない場合は追加
   // 拡張子はそのまま保持（Cloudinaryの実際のpublic_idに合わせる）
   if (eventId) {
-    publicId = `events/${eventId}/${publicId}`;
-    console.log('[getEventImageUrl] Added folder structure:', publicId);
+    // デモイベント（demoevt-*で始まる）の場合は demoevt/ フォルダを使用
+    if (eventId.startsWith('demoevt-')) {
+      // demoevt-002 の場合、demoevt/demoevt-002_ykbt65 のような構造
+      publicId = `demoevt/${publicId}`;
+      console.log('[getEventImageUrl] Added demoevt folder structure:', publicId);
+    } else {
+      // 通常のイベント（evt-*など）の場合は events/ フォルダを使用
+      publicId = `events/${eventId}/${publicId}`;
+      console.log('[getEventImageUrl] Added events folder structure:', publicId);
+    }
   } else {
     console.warn('[getEventImageUrl] eventId is missing, using imageId as-is:', publicId);
   }

@@ -61,10 +61,18 @@ const EventPageRenderer = {
   // ギャラリー
   renderGallery(event) {
     const mainImage = document.getElementById('event-main-image');
-    if (mainImage && typeof window.cloudinaryUrl === 'function') {
-      // イベント画像URLを取得（public_idをそのまま使用）
+    if (mainImage) {
+      // イベント画像URLを取得（getEventImageUrlを使用してデモイベントにも対応）
       const rawImageUrl = event.image || event.thumb || event.mainImage || '';
-      const imageUrl = window.cloudinaryUrl(rawImageUrl, { w: 1200 });
+      let imageUrl = '';
+      
+      if (typeof window.getEventImageUrl === 'function' && rawImageUrl && !rawImageUrl.startsWith('http')) {
+        // Cloudinaryの画像の場合、getEventImageUrlを使用（デモイベント対応）
+        imageUrl = window.getEventImageUrl(rawImageUrl, event.id, { w: 1200 });
+      } else if (rawImageUrl && typeof window.cloudinaryUrl === 'function') {
+        // 既にURL形式の場合、またはgetEventImageUrlが利用できない場合
+        imageUrl = window.cloudinaryUrl(rawImageUrl, { w: 1200 });
+      }
       
       if (imageUrl) {
         mainImage.style.backgroundImage = `url('${imageUrl.replace(/'/g, "\\'")}')`;
@@ -73,7 +81,7 @@ const EventPageRenderer = {
     
     // サブ画像（複数枚）を設定
     const thumbsContainer = document.querySelector('.thumbs');
-    if (thumbsContainer && typeof window.cloudinaryUrl === 'function') {
+    if (thumbsContainer && typeof window.getEventImageUrl === 'function') {
       const thumbElements = thumbsContainer.querySelectorAll('.thumb');
 
       // サブ画像配列を取得（GASで既に配列に変換されている）
@@ -89,8 +97,8 @@ const EventPageRenderer = {
         const publicId = subImageIds[index];
         if (!thumbEl || !publicId) return;
 
-        // サブ画像のpublic_idをそのまま使用（フォルダパスは追加しない）
-        const subImageUrl = window.cloudinaryUrl(publicId, { w: 600 });
+        // サブ画像もgetEventImageUrlを使用（デモイベント対応）
+        const subImageUrl = window.getEventImageUrl(publicId, event.id, { w: 600 });
         if (subImageUrl) {
           thumbEl.style.backgroundImage = `url('${subImageUrl.replace(/'/g, "\\'")}')`;
         }
@@ -365,13 +373,17 @@ const EventPageRenderer = {
         
         // websiteフィールドから取得できない場合、organizer.idに基づいて生成
         if (fallbackPaths.length === 0 && organizerId) {
-          // 複数のパスパターンを準備
-          fallbackPaths = [
-            `organizers/${organizerId}/${organizerId}_camppk`,
-            `organizers/${organizerId}_camppk`,
-            `${organizerId}/${organizerId}_camppk`,
-            `${organizerId}_camppk`
-          ];
+          // 複数のパスパターンを準備（拡張子を含むパターンも試す）
+          const extensions = ['', '.jpg', '.jpeg', '.png', '.webp'];
+          fallbackPaths = [];
+          extensions.forEach(ext => {
+            fallbackPaths.push(`organizers/${organizerId}/${organizerId}_camppk${ext}`);
+            fallbackPaths.push(`organizers/${organizerId}_camppk${ext}`);
+            fallbackPaths.push(`${organizerId}/${organizerId}_camppk${ext}`);
+            fallbackPaths.push(`${organizerId}_camppk${ext}`);
+          });
+          // 重複を削除
+          fallbackPaths = [...new Set(fallbackPaths)];
         }
         
         if (fallbackPaths.length > 0) {

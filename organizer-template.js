@@ -63,12 +63,17 @@ const OrganizerPageRenderer = {
       // websiteフィールドから取得できない場合、organizer.idに基づいて生成
       if (fallbackPaths.length === 0 && organizerId) {
         // 複数のパスパターンを準備（Cloudinaryのpublic_idの可能性）
-        fallbackPaths = [
-          `organizers/${organizerId}/${organizerId}_camppk`,  // 最も一般的なパス
-          `organizers/${organizerId}_camppk`,                  // フォルダが1つ少ない
-          `${organizerId}/${organizerId}_camppk`,              // フォルダ名が異なる
-          `${organizerId}_camppk`                              // フォルダなし
-        ];
+        // 拡張子を含むパターンも試す
+        const extensions = ['', '.jpg', '.jpeg', '.png', '.webp'];
+        fallbackPaths = [];
+        extensions.forEach(ext => {
+          fallbackPaths.push(`organizers/${organizerId}/${organizerId}_camppk${ext}`);
+          fallbackPaths.push(`organizers/${organizerId}_camppk${ext}`);
+          fallbackPaths.push(`${organizerId}/${organizerId}_camppk${ext}`);
+          fallbackPaths.push(`${organizerId}_camppk${ext}`);
+        });
+        // 重複を削除
+        fallbackPaths = [...new Set(fallbackPaths)];
       }
       
       if (fallbackPaths.length > 0) {

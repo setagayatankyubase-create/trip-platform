@@ -139,13 +139,17 @@
           
           // websiteフィールドから取得できない場合、organizer.idに基づいて生成
           if (fallbackPaths.length === 0 && organizerId) {
-            // 複数のパスパターンを準備
-            fallbackPaths = [
-              `organizers/${organizerId}/${organizerId}_camppk`,
-              `organizers/${organizerId}_camppk`,
-              `${organizerId}/${organizerId}_camppk`,
-              `${organizerId}_camppk`
-            ];
+            // 複数のパスパターンを準備（拡張子を含むパターンも試す）
+            const extensions = ['', '.jpg', '.jpeg', '.png', '.webp'];
+            fallbackPaths = [];
+            extensions.forEach(function(ext) {
+              fallbackPaths.push('organizers/' + organizerId + '/' + organizerId + '_camppk' + ext);
+              fallbackPaths.push('organizers/' + organizerId + '_camppk' + ext);
+              fallbackPaths.push(organizerId + '/' + organizerId + '_camppk' + ext);
+              fallbackPaths.push(organizerId + '_camppk' + ext);
+            });
+            // 重複を削除
+            fallbackPaths = Array.from(new Set(fallbackPaths));
           }
           
           if (fallbackPaths.length > 0) {
