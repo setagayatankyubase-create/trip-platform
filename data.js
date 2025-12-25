@@ -38,33 +38,15 @@ const normalizeId = (v) => {
 // Cloudinary画像URL生成関数
 const CLOUDINARY_CLOUD_NAME = "ddrxsy9jw";
 
-// public_idから拡張子を正規化（evt-001.jpg_uqv2y2 → evt-001_uqv2y2）
-// Cloudinaryのpublic_idには拡張子が含まれないため、中間・末尾の拡張子を削除
-function normalizeCloudinaryId(id) {
-  if (!id) return '';
-  if (/^https?:\/\//i.test(id)) return id; // 既にURLならそのまま
-  
-  // evt-001.jpg_uqv2y2 → evt-001_uqv2y2（.jpg だけ消す、アンダースコア前の拡張子）
-  id = id.replace(/\.(jpg|jpeg|png|webp|gif)(?=_)/ig, '');
-  // 末尾拡張子も消す（念のため）
-  id = id.replace(/\.(jpg|jpeg|png|webp|gif)$/ig, '');
-  
-  return id;
-}
-
 function cloudinaryUrl(publicId, { w = 1200, q = 'auto', f = 'auto' } = {}) {
   if (!publicId) return "";
   // すでに http で始まるならそのまま返す（保険）
   if (/^https?:\/\//i.test(publicId)) return publicId;
 
-  // public_idを正規化（拡張子を削除）
-  const normalizedId = normalizeCloudinaryId(publicId);
-  if (!normalizedId) return "";
-  
-  // 余計な先頭スラッシュを除去して、そのまま使用
-  const pid = String(normalizedId).trim().replace(/^\/+/, "");
+  // public_idをそのまま使用（余計な先頭スラッシュを除去）
+  const pid = String(publicId).trim().replace(/^\/+/, "");
 
-  // CloudinaryのURL生成：正規化されたpublic_idを使用
+  // CloudinaryのURL生成：public_idをそのまま使用
   return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/f_${f},q_${q},w_${w}/${pid}`;
 }
 
