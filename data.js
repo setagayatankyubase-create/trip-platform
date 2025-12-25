@@ -35,31 +35,18 @@ const normalizeId = (v) => {
 // Cloudinary画像URL生成関数
 const CLOUDINARY_CLOUD_NAME = "ddrxsy9jw";
 
-function cloudinaryUrl(publicId, { w = 1200, q = 'auto', f = 'auto', type, eventId } = {}) {
-  if (!publicId) {
-    console.log('[cloudinaryUrl] publicId is empty');
-    return ""; // 空なら空
-  }
+function cloudinaryUrl(publicId, { w = 1200, q = 'auto', f = 'auto' } = {}) {
+  if (!publicId) return "";
   // すでに http で始まるならそのまま返す（保険）
-  if (/^https?:\/\//i.test(publicId)) {
-    console.log('[cloudinaryUrl] publicId is already a URL:', publicId);
-    return publicId;
-  }
+  if (/^https?:\/\//i.test(publicId)) return publicId;
 
+  // ★重要：データに書いてある public_id は信じる = 勝手にフォルダ追加しない
   // public_idをそのまま使用（フォルダ名や拡張子の加工はしない）
   // 余計な先頭スラッシュを除去して、そのまま使用
-  let id = String(publicId).trim().replace(/^\/+/, "");
-  
-  // イベント画像の場合、フォルダ構造がない場合は追加（一覧ページと同じロジック）
-  if (type === 'event' && eventId && !id.includes('/')) {
-    id = `events/${eventId}/${id}`;
-    console.log('[cloudinaryUrl] Added event folder structure:', id);
-  }
+  const pid = String(publicId).trim().replace(/^\/+/, "");
 
   // CloudinaryのURL生成：public_idをそのまま使用
-  const url = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/f_${f},q_${q},w_${w}/${id}`;
-  console.log('[cloudinaryUrl] Generated URL:', { publicId, id, url });
-  return url;
+  return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/f_${f},q_${q},w_${w}/${pid}`;
 }
 
 // ロゴ画像のCloudinary URLを取得
