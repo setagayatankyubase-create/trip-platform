@@ -801,7 +801,7 @@ const CardRenderer = {
       <a href="experience.html?id=${event.id}" class="card-link" data-event-id="${event.id}">
         <div class="card" data-event-id="${event.id}">
           <div class="card-image-wrapper">
-            <img src="${optimizedImage}" alt="${event.title}" loading="lazy" decoding="async" onerror="${fallbackPaths.length > 1 ? imageErrorHandler.replace(/"/g, '&quot;') : 'this.style.display=\'none\';'}">
+            <img src="${optimizedImage}" alt="${event.title}" loading="lazy" decoding="async" onerror="${imageErrorHandler.replace(/"/g, '&quot;')}">
             <button class="${favoriteClass}" onclick="toggleFavorite('${event.id}', event)" title="${favoriteTitle}">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="${favoriteFill}" stroke="currentColor" stroke-width="2">
                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>

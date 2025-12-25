@@ -2,7 +2,10 @@
 // - メイン導線: GitHub Pages の /data 配下
 // - フォールバック: /data が壊れてる・古い・HTML返す等なら GitHub raw へ
 // 重複読み込み防止：window.DATA_BASEを使用
-window.DATA_BASE = window.DATA_BASE || "/data";
+if (typeof window.DATA_BASE === 'undefined') {
+  window.DATA_BASE = "/data";
+}
+// window.DATA_BASEのエイリアス（既存コードとの互換性のため、constではなくletで再宣言可能にする）
 const DATA_BASE = window.DATA_BASE;
 
 // 例: "https://raw.githubusercontent.com/owner/repo/main"
