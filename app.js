@@ -719,8 +719,8 @@ const CardRenderer = {
     
     
     // イベント画像URLを生成（拡張子総当たりをやめる：1回だけ試行）
-    let optimizedImage = '';
     const fallbackUrl = `https://picsum.photos/seed/${event.id || 'default'}/1200/800`;
+    let optimizedImage = fallbackUrl;
     
     if (typeof window.getEventImageUrl === 'function' && rawImageUrl && !rawImageUrl.startsWith('http')) {
       // Cloudinaryの画像の場合、getEventImageUrlを使用（拡張子は正規化される）
