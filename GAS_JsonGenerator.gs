@@ -308,6 +308,7 @@ function buildOneEventFast_(eventsSheet, datesSheet, targetId) {
     categoryId: String(getCell_(row, col, 'categoryId')).trim(),
     description: String(getCell_(row, col, 'description')).trim(),
     image: String(getCell_(row, col, 'image')).trim(),
+    images: splitList_(getCell_(row, col, 'images')),
 
     area: String(getCell_(row, col, 'area')).trim(),
     prefecture: String(getCell_(row, col, 'prefecture')).trim(),
