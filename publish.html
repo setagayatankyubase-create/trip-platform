@@ -305,34 +305,68 @@
         let fallbackPaths = [];
         
         if (!originalLogoUrl || originalLogoUrl.includes('picsum.photos') || originalLogoUrl.includes('placeholder')) {
-          // websiteフィールドに画像名が入っている場合（例：org-001_camppk）をチェック
+          // websiteフィールドに画像名が入っている場合（例：org-001_camppk や demoorg-002_elrulz）をチェック
           const websiteValue = organizer.website || '';
-          // URLではない場合のみ画像名として扱う（http/httpsを含まない、ドットを含まない）
-          if (websiteValue && !websiteValue.includes('http') && !websiteValue.includes('.com') && !websiteValue.includes('.')) {
+          // URLではない場合のみ画像名として扱う（http/httpsを含まない、ドットを含まない、または_を含む）
+          if (websiteValue && !websiteValue.includes('http') && !websiteValue.includes('.com') && (!websiteValue.includes('.') || websiteValue.includes('_'))) {
             if (!websiteValue.includes('/')) {
-              // 単純な画像名（例：org-001_camppk）の場合、フォルダパスを追加
-              fallbackPaths = [
-                `organizers/${organizerId}/${websiteValue}`,
-                `organizers/${websiteValue}`,
-                websiteValue
-              ];
+              // 単純な画像名（例：org-001_camppk や demoorg-002_elrulz）の場合
+              if (organizerId.startsWith('demoorg-')) {
+                // デモ提供元の場合：実際のCloudinaryフォルダ構造（demo/demoorg/）を最優先
+                fallbackPaths = [
+                  `demo/demoorg/${websiteValue}`,
+                  `demo/organizers/${websiteValue}`,
+                  `organizers/demo/${websiteValue}`,
+                  `demoorg/${websiteValue}`,
+                  `organizers/${organizerId}/${websiteValue}`,
+                  `organizers/${websiteValue}`,
+                  websiteValue
+                ];
+              } else {
+                // 通常の提供元の場合
+                fallbackPaths = [
+                  `organizers/${organizerId}/${websiteValue}`,
+                  `organizers/${websiteValue}`,
+                  websiteValue
+                ];
+              }
             } else {
-              // 既にパス形式の場合（例：organizers/org-001/org-001_camppk）
+              // 既にパス形式の場合（例：organizers/org-001/org-001_camppk や demo/organizers/demoorg-002_elrulz）
               fallbackPaths = [websiteValue];
             }
           }
           
           // websiteフィールドから取得できない場合、organizer.idに基づいて生成
           if (fallbackPaths.length === 0 && organizerId) {
-            // 複数のパスパターンを準備（拡張子を含むパターンも試す）
+            // デモ提供元（demoorg-*で始まる）の場合と通常の提供元で処理を分ける
             const extensions = ['', '.jpg', '.jpeg', '.png', '.webp'];
             fallbackPaths = [];
-            extensions.forEach(function(ext) {
-              fallbackPaths.push('organizers/' + organizerId + '/' + organizerId + '_camppk' + ext);
-              fallbackPaths.push('organizers/' + organizerId + '_camppk' + ext);
-              fallbackPaths.push(organizerId + '/' + organizerId + '_camppk' + ext);
-              fallbackPaths.push(organizerId + '_camppk' + ext);
-            });
+            
+            if (organizerId.startsWith('demoorg-')) {
+              // デモ提供元の場合：Cloudinaryの実際のフォルダ構造に合わせる
+              // 実際のパスは demo/demoorg/demoorg-002_elrulz の形式
+              extensions.forEach(function(ext) {
+                // 実際のCloudinaryフォルダ構造を最優先（demo/demoorg/）
+                fallbackPaths.push('demo/demoorg/' + organizerId + ext);
+                // その他の可能性のあるパス
+                fallbackPaths.push('demo/organizers/' + organizerId + ext);
+                fallbackPaths.push('organizers/demo/' + organizerId + ext);
+                fallbackPaths.push('demoorg/' + organizerId + ext);
+                // 通常のフォルダ構造も試す（後方互換性）
+                fallbackPaths.push('organizers/' + organizerId + '/' + organizerId + '_camppk' + ext);
+                fallbackPaths.push('organizers/' + organizerId + '_camppk' + ext);
+                fallbackPaths.push(organizerId + '/' + organizerId + '_camppk' + ext);
+                fallbackPaths.push(organizerId + '_camppk' + ext);
+              });
+            } else {
+              // 通常の提供元の場合：従来通りのパスパターン
+              extensions.forEach(function(ext) {
+                fallbackPaths.push('organizers/' + organizerId + '/' + organizerId + '_camppk' + ext);
+                fallbackPaths.push('organizers/' + organizerId + '_camppk' + ext);
+                fallbackPaths.push(organizerId + '/' + organizerId + '_camppk' + ext);
+                fallbackPaths.push(organizerId + '_camppk' + ext);
+              });
+            }
             // 重複を削除
             fallbackPaths = Array.from(new Set(fallbackPaths));
           }
