@@ -62,10 +62,24 @@ const EventPageRenderer = {
   tryLoadImageWithFallback(element, rawImageUrl, eventId, options = {}) {
     const { w = 1200, isMain = true } = options;
     
+    // 無限リトライ防止：既に試行済みの場合は何もしない
+    if (element.dataset.fallbackDone === "1") {
+      return;
+    }
+    element.dataset.fallbackDone = "1";
+    
+    // 画像IDからイベントIDを抽出（例: evt-001.jpg_uqv2y2 → evt-001）
+    // 画像IDに別のイベントIDが含まれている場合は、それを優先的に使用
+    let imageEventId = eventId; // デフォルトは現在のイベントID
+    const imageIdMatch = rawImageUrl.match(/^(evt-\d+|demoevt-\d+)/);
+    if (imageIdMatch) {
+      imageEventId = imageIdMatch[1];
+    }
+    
     // フォールバックパスを生成
     let fallbackPaths = [];
-    if (eventId && eventId.startsWith('demoevt-')) {
-      // デモイベントの場合、拡張子のバリエーションも試す
+    if (imageEventId && imageEventId.startsWith('demoevt-')) {
+      // デモイベントの場合
       const imageIdWithoutExt = rawImageUrl.replace(/\.(jpg|jpeg|png|webp)$/i, '');
       const extensions = ['', '.jpg', '.jpeg', '.png', '.webp'];
       
@@ -78,13 +92,18 @@ const EventPageRenderer = {
         fallbackPaths.push(rawImageUrl);
       }
       fallbackPaths = [...new Set(fallbackPaths)];
-    } else if (eventId) {
-      // 通常のイベントの場合も、拡張子のバリエーションを試す
+    } else if (imageEventId) {
+      // 通常のイベントの場合：画像IDに含まれるイベントIDを使用
       const imageIdWithoutExt = rawImageUrl.replace(/\.(jpg|jpeg|png|webp)$/i, '');
       const extensions = ['', '.jpg', '.jpeg', '.png', '.webp'];
       
       extensions.forEach(ext => {
-        fallbackPaths.push(`events/${eventId}/${imageIdWithoutExt}${ext}`);
+        // 画像IDに含まれるイベントIDを使ってパスを生成
+        fallbackPaths.push(`events/${imageEventId}/${imageIdWithoutExt}${ext}`);
+        // 現在のイベントIDも試す（後方互換性）
+        if (eventId && eventId !== imageEventId) {
+          fallbackPaths.push(`events/${eventId}/${imageIdWithoutExt}${ext}`);
+        }
         fallbackPaths.push(`${imageIdWithoutExt}${ext}`);
       });
       if (rawImageUrl !== imageIdWithoutExt) {
@@ -105,8 +124,14 @@ const EventPageRenderer = {
       const path = fallbackPaths[currentIndex];
       let imageUrl = '';
       
-      if (typeof window.getEventImageUrl === 'function' && path && !path.startsWith('http')) {
-        imageUrl = window.getEventImageUrl(path, eventId, { w });
+      // パスに既にフォルダ構造が含まれている場合は、そのまま使用
+      if (path.includes('/') && !path.startsWith('http')) {
+        imageUrl = typeof window.cloudinaryUrl === 'function' 
+          ? window.cloudinaryUrl(path, { w })
+          : path;
+      } else if (typeof window.getEventImageUrl === 'function' && path && !path.startsWith('http')) {
+        // フォルダ構造がない場合は、画像IDから抽出したイベントIDを使用
+        imageUrl = window.getEventImageUrl(path, imageEventId || eventId, { w });
       } else if (path && typeof window.cloudinaryUrl === 'function') {
         imageUrl = window.cloudinaryUrl(path, { w });
       } else {
