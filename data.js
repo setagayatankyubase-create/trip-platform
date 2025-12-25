@@ -46,6 +46,9 @@ function cloudinaryUrl(publicId, { w = 1200, q = 'auto', f = 'auto' } = {}) {
   // public_idをそのまま使用（余計な先頭スラッシュを除去）
   const pid = String(publicId).trim().replace(/^\/+/, "");
 
+  // デバッグログ（最終的に生成されるpublic_idを確認）
+  console.log('[cloudinaryUrl]', pid);
+
   // CloudinaryのURL生成：public_idをそのまま使用
   return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/f_${f},q_${q},w_${w}/${pid}`;
 }

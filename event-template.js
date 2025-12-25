@@ -84,23 +84,29 @@ const EventPageRenderer = {
       return;
     }
     
-    // 画像IDからイベントIDを抽出（例: evt-001.jpg_uqv2y2 → evt-001）
-    let imageEventId = eventId;
-    const imageIdMatch = rawImageUrl.match(/^(evt-\d+|demoevt-\d+)/);
-    if (imageIdMatch && imageIdMatch[1]) {
-      imageEventId = imageIdMatch[1];
-    }
-    
-    // public_idを構築（拡張子は正規化される）
+    // 既にフォルダ構造がある場合はそのまま使う（重要：二重付けを防ぐ）
     let publicId = '';
-    if (imageEventId && imageEventId.startsWith('demoevt-')) {
-      // デモイベントの場合
-      publicId = `demo/demoevt/${rawImageUrl}`;
-    } else if (imageEventId) {
-      // 通常のイベントの場合：画像IDに含まれるイベントIDを使用
-      publicId = `events/${imageEventId}/${rawImageUrl}`;
+    if (rawImageUrl && rawImageUrl.includes('/')) {
+      // 既にフォルダ構造が含まれている場合はそのまま使用（data.jsと同じルール）
+      publicId = rawImageUrl.replace(/^\/+/, '');
     } else {
-      publicId = rawImageUrl;
+      // フォルダ構造がない場合のみ、画像IDからイベントIDを抽出して補完
+      let imageEventId = eventId;
+      const imageIdMatch = rawImageUrl.match(/^(evt-\d+|demoevt-\d+)/);
+      if (imageIdMatch && imageIdMatch[1]) {
+        imageEventId = imageIdMatch[1];
+      }
+      
+      // public_idを構築
+      if (imageEventId && imageEventId.startsWith('demoevt-')) {
+        // デモイベントの場合
+        publicId = `demo/demoevt/${rawImageUrl}`;
+      } else if (imageEventId) {
+        // 通常のイベントの場合：画像IDに含まれるイベントIDを使用
+        publicId = `events/${imageEventId}/${rawImageUrl}`;
+      } else {
+        publicId = rawImageUrl;
+      }
     }
     
     // 1回だけ試行して、失敗したらプレースホルダーにフォールバック
