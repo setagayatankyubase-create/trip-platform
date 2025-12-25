@@ -46,32 +46,15 @@ const OrganizerPageRenderer = {
       // websiteフィールドに画像名が入っている場合（例：org-001_camppk）をチェック
       const websiteValue = organizer.website || '';
       if (websiteValue && (websiteValue.includes('camppk') || (websiteValue.includes('_') && !websiteValue.includes('http') && !websiteValue.includes('.')))) {
-        // websiteフィールドの値が画像名の可能性がある（URLやドメインではない）
-        if (!websiteValue.includes('/')) {
-          // 単純な画像名（例：org-001_camppk）の場合、フォルダパスを追加
-          fallbackPaths = [
-            `organizers/${organizerId}/${websiteValue}`,  // organizers/org-001/org-001_camppk
-            `organizers/${websiteValue}`,                  // organizers/org-001_camppk
-            websiteValue                                   // org-001_camppk
-          ];
-        } else {
-          // 既にパス形式の場合（例：organizers/org-001/org-001_camppk）
-          fallbackPaths = [websiteValue];
-        }
+        // public_idをそのまま使用（フォルダ補完しない：Cloudinaryの実体に合わせる）
+        originalLogoUrl = websiteValue;
       }
       
       // websiteフィールドから取得できない場合、organizer.idに基づいて生成
       if (fallbackPaths.length === 0 && organizerId) {
-        // 拡張子総当たりをやめる：1つのパスだけを試す
-        // デモ提供元の場合はdemo/demoorg/を優先
-        if (organizerId.startsWith('demoorg-')) {
-          fallbackPaths = [`demo/demoorg/${organizerId}_camppk`];
-        } else {
-          fallbackPaths = [`organizers/${organizerId}/${organizerId}_camppk`];
-        }
-      }
-      
-      if (fallbackPaths.length > 0) {
+        // public_idをそのまま使用（フォルダ補完しない：Cloudinaryの実体に合わせる）
+        originalLogoUrl = `${organizerId}_camppk`;
+      } else if (fallbackPaths.length > 0) {
         originalLogoUrl = fallbackPaths[0]; // 最初のパスを試す
       }
     }
