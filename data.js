@@ -97,78 +97,56 @@ function normalizePublicId(id) {
 }
 
 // イベント画像のCloudinary URLを取得
+// public_idをそのまま使用（フォルダ補完しない）
 // データ側でフォルダ込みのpublic_idが保存されている場合はそのまま使用
-// フォルダ構造がない場合、デモイベントのみフォルダを補完（demo/demoevt/）
 // 例: 
 //   - フォルダ込み: 'events/evt-001/evt-001.jpg_uqv2y2' → そのまま使用
 //   - フォルダ無し: 'evt-001.jpg_uqv2y2' → そのまま使用（Cloudinaryの実体に合わせる）
-//   - デモイベント（フォルダ無し）: 'demoevt-002_ykbt65' + eventId='demoevt-002' → 'demo/demoevt/demoevt-002_ykbt65' に補完
+//   - デモイベント: 'demoevt-002_ykbt65' → そのまま使用（Cloudinaryの実体に合わせる）
 function getEventImageUrl(imageId, eventId, { w = 1200 } = {}) {
   if (!imageId) {
     return '';
   }
   
-  let publicId = String(imageId).trim();
+  const publicId = String(imageId).trim();
   
   // 既にURL形式の場合はそのまま返す
   if (/^https?:\/\//i.test(publicId)) {
     return publicId;
   }
   
-  // 既にフォルダ構造がある場合はそのまま使用
-  if (publicId.includes('/')) {
-    return cloudinaryUrl(publicId, { w });
-  }
-  
-  // フォルダ構造がない場合、デモイベントのみフォルダを補完
-  if (eventId && eventId.startsWith('demoevt-')) {
-    // デモイベントの場合: demo/demoevt/ フォルダを使用
-    publicId = `demo/demoevt/${publicId}`;
-  }
-  
+  // public_idをそのまま使用（フォルダ補完しない）
   return cloudinaryUrl(publicId, { w });
 }
 
 // 提供元画像のCloudinary URLを取得
+// public_idをそのまま使用（フォルダ補完しない）
 // データ側でフォルダ込みのpublic_idが保存されている場合はそのまま使用
-// フォルダ構造がない場合、デモ提供元のみフォルダを補完（demo/demoorg/）
 // 例:
 //   - フォルダ込み: 'organizers/org-001/org-001_camppk' → そのまま使用
-//   - フォルダ無し: 'org-001_camppk' → そのまま使用
-//   - デモ提供元（フォルダ無し）: 'demoorg-002_elrulz' + organizerId='demoorg-002' → 'demo/demoorg/demoorg-002_elrulz' に補完
+//   - フォルダ無し: 'org-001_camppk' → そのまま使用（Cloudinaryの実体に合わせる）
+//   - デモ提供元: 'demoorg-002_elrulz' → そのまま使用（Cloudinaryの実体に合わせる）
 function getOrganizerImageUrl(imageId, organizerIdOrOptions, options = {}) {
   if (!imageId) {
     return '';
   }
   
   // 後方互換性: 第2引数がオプションオブジェクトの場合
-  let organizerId = '';
   let opts = { w: 400 };
   if (typeof organizerIdOrOptions === 'string') {
-    organizerId = organizerIdOrOptions;
     opts = options || { w: 400 };
   } else if (organizerIdOrOptions && typeof organizerIdOrOptions === 'object') {
     opts = { ...opts, ...organizerIdOrOptions };
   }
   
-  let publicId = String(imageId).trim();
+  const publicId = String(imageId).trim();
   
   // 既にURL形式の場合はそのまま返す
   if (/^https?:\/\//i.test(publicId)) {
     return publicId;
   }
   
-  // 既にフォルダ構造がある場合はそのまま使用
-  if (publicId.includes('/')) {
-    return cloudinaryUrl(publicId, opts);
-  }
-  
-  // フォルダ構造がない場合、デモ提供元のみフォルダを補完
-  if (organizerId && organizerId.startsWith('demoorg-')) {
-    // デモ提供元の場合: demo/demoorg/ フォルダを使用
-    publicId = `demo/demoorg/${publicId}`;
-  }
-  
+  // public_idをそのまま使用（フォルダ補完しない）
   return cloudinaryUrl(publicId, opts);
 }
 
