@@ -106,8 +106,9 @@ body {
   display: flex;
   align-items: center;
   flex: 1;
-  max-width: 800px;
+  min-width: 0;
   margin-left: 24px;
+  margin-right: 24px;
 }
 
 .header-search-form {
