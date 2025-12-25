@@ -108,11 +108,20 @@ function doGet(e) {
         organizerId = safeStr_(r[orgMap.id]).trim();
         organizerName = safeStr_(r[orgMap.name]).trim();
 
+        // logoの取得：logo列が空またはプレースホルダーの場合、organizer.idに基づいてCloudinary画像を生成
+        let logoValue = safeStr_(r[orgMap.logo]).trim();
+        if (!logoValue || logoValue.includes('picsum.photos') || logoValue.includes('placeholder')) {
+          // org-001の場合、organizers/org-001/org-001_camppk を生成
+          if (organizerId) {
+            logoValue = `organizers/${organizerId}/${organizerId}_camppk`;
+          }
+        }
+        
         organizer = {
           id: organizerId,
           name: organizerName,
           description: safeStr_(r[orgMap.description]),
-          logo: safeStr_(r[orgMap.logo]),
+          logo: logoValue,
           website: safeStr_(r[orgMap.website]),
           establishedYear:
             safeStr_(r[orgMap.establishedYear]) ||
