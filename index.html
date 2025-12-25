@@ -61,13 +61,6 @@
         </a>
         <div class="header-search" id="header-search" style="display: none;">
           <form class="header-search-form" onsubmit="handleSearch(event)">
-            <button type="button" class="header-category-menu-button" id="header-category-menu-button" aria-label="カテゴリメニュー">
-              <span class="hamburger-icon">
-                <span></span>
-                <span></span>
-                <span></span>
-              </span>
-            </button>
             <input type="text" placeholder="行きたい自然体験・場所を探す" name="q" class="header-search-input">
             <button type="submit" class="header-search-button">検索</button>
           </form>
@@ -432,49 +425,6 @@
         });
       }
 
-      // ヘッダーのカテゴリメニューボタンにもイベントを設定
-      const headerCategoryButton = document.getElementById('header-category-menu-button');
-      if (headerCategoryButton) {
-        // カテゴリメニューの初期化を待つ
-        setTimeout(() => {
-          const menu = document.querySelector('.category-menu');
-          if (menu) {
-            let hideTimer = null;
-
-            function showMenu() {
-              if (hideTimer) {
-                clearTimeout(hideTimer);
-                hideTimer = null;
-              }
-              const btnRect = headerCategoryButton.getBoundingClientRect();
-              menu.style.top = `${btnRect.bottom + 8}px`;
-              menu.style.left = `${btnRect.left}px`;
-              menu.style.opacity = '1';
-              menu.style.visibility = 'visible';
-              menu.style.pointerEvents = 'auto';
-              menu.style.transform = 'translateY(0)';
-            }
-
-            function hideMenu() {
-              if (hideTimer) {
-                clearTimeout(hideTimer);
-              }
-              hideTimer = setTimeout(() => {
-                menu.style.opacity = '0';
-                menu.style.visibility = 'hidden';
-                menu.style.pointerEvents = 'none';
-                menu.style.transform = 'translateY(-10px)';
-                hideTimer = null;
-              }, 600);
-            }
-
-            headerCategoryButton.addEventListener('mouseenter', showMenu);
-            headerCategoryButton.addEventListener('mouseleave', hideMenu);
-            menu.addEventListener('mouseenter', showMenu);
-            menu.addEventListener('mouseleave', hideMenu);
-          }
-        }, 100);
-      }
     }
 
     // ページ読み込み後に初期化

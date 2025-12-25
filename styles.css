@@ -104,7 +104,7 @@ body {
   color: var(--primary);
 }
 
-/* Header Search - ヒーローセクションと同じデザイン */
+/* Header Search - GetYourGuide風のシンプルなデザイン */
 .header-search {
   display: flex;
   align-items: center;
@@ -113,76 +113,36 @@ body {
   margin-left: 24px;
   margin-right: 24px;
   max-width: none;
+  justify-content: center;
 }
 
 .header-search-form {
   display: flex;
-  align-items: stretch;
+  align-items: center;
   gap: 0;
   width: 100%;
+  max-width: 600px;
   background: #fff;
-  border-radius: 50px;
-  overflow: visible;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-  position: relative;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: box-shadow 0.2s;
 }
 
-.header-category-menu-button {
-  background: var(--primary);
-  border: none;
-  padding: 0 20px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s;
-  border-radius: 50px 0 0 50px;
-  flex-shrink: 0;
-  box-sizing: border-box;
-}
-
-.header-category-menu-button:hover {
-  background: var(--hover);
-}
-
-.header-category-menu-button .hamburger-icon {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  width: 18px;
-  height: 14px;
-}
-
-.header-category-menu-button .hamburger-icon span {
-  display: block;
-  width: 100%;
-  height: 2.5px;
-  background: #fff;
-  border-radius: 2px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-  transition: all 0.3s ease;
-}
-
-.header-category-menu-button:hover .hamburger-icon span:nth-child(1) {
-  transform: rotate(45deg) translate(4.5px, 4.5px);
-}
-
-.header-category-menu-button:hover .hamburger-icon span:nth-child(2) {
-  opacity: 0;
-}
-
-.header-category-menu-button:hover .hamburger-icon span:nth-child(3) {
-  transform: rotate(-45deg) translate(6px, -5.5px);
+.header-search-form:focus-within {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  border-color: var(--primary);
 }
 
 .header-search-input {
   flex: 1;
-  padding: 14px 24px;
+  padding: 12px 16px;
   border: none;
   font-size: 0.95rem;
   outline: none;
   box-sizing: border-box;
-  line-height: 1.2;
+  line-height: 1.4;
   background: transparent;
   color: var(--text);
 }
@@ -192,13 +152,12 @@ body {
 }
 
 .header-search-button {
-  padding: 14px 32px;
+  padding: 12px 24px;
   background: var(--primary);
   color: #fff;
   border: none;
-  border-radius: 0 50px 50px 0;
-  font-weight: 700;
-  font-size: 1rem;
+  font-weight: 600;
+  font-size: 0.95rem;
   cursor: pointer;
   transition: background 0.2s;
   white-space: nowrap;
@@ -206,12 +165,32 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  line-height: 1.2;
   flex-shrink: 0;
 }
 
 .header-search-button:hover {
   background: var(--hover);
+}
+
+@media (max-width: 768px) {
+  .header-search {
+    margin-left: 12px;
+    margin-right: 12px;
+  }
+  
+  .header-search-form {
+    max-width: none;
+  }
+  
+  .header-search-input {
+    padding: 10px 12px;
+    font-size: 0.9rem;
+  }
+  
+  .header-search-button {
+    padding: 10px 20px;
+    font-size: 0.9rem;
+  }
 }
 
 @media (max-width: 768px) {
