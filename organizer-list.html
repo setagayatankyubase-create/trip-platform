@@ -116,13 +116,18 @@
         let originalLogoUrl = org.logo || org.image || '';
         
         // フォールバック：logoが空の場合やプレースホルダーの場合、organizer.idに基づいてCloudinary画像を生成
-        // org-001の場合、organizers/org-001/org-001_camppk を試す
+        let fallbackPaths = [];
         if (!originalLogoUrl || originalLogoUrl.includes('picsum.photos') || originalLogoUrl.includes('placeholder')) {
           const organizerId = org.id || '';
-          // org-001_camppk という画像名を使用（Cloudinaryのpublic_id）
           if (organizerId) {
-            // まず org-001_camppk を試す
-            originalLogoUrl = `organizers/${organizerId}/${organizerId}_camppk`;
+            // 複数のパスパターンを準備
+            fallbackPaths = [
+              `organizers/${organizerId}/${organizerId}_camppk`,
+              `organizers/${organizerId}_camppk`,
+              `${organizerId}/${organizerId}_camppk`,
+              `${organizerId}_camppk`
+            ];
+            originalLogoUrl = fallbackPaths[0];
           }
         }
         
@@ -137,10 +142,31 @@
           logoUrl = originalLogoUrl;
         }
         
+        // 画像読み込みエラー時のフォールバック処理
+        const imageErrorHandler = fallbackPaths.length > 1 ? `
+          (function() {
+            const img = this;
+            const currentSrc = img.src;
+            const fallbackPaths = ${JSON.stringify(fallbackPaths)};
+            const currentPathIndex = fallbackPaths.findIndex(p => currentSrc.includes(p));
+            if (currentPathIndex >= 0 && currentPathIndex < fallbackPaths.length - 1) {
+              const nextPath = fallbackPaths[currentPathIndex + 1];
+              const nextUrl = typeof window.getOrganizerImageUrl === 'function' 
+                ? window.getOrganizerImageUrl(nextPath, { w: 400 })
+                : (typeof window.cloudinaryUrl === 'function' 
+                  ? window.cloudinaryUrl(nextPath, { w: 400 })
+                  : nextPath);
+              img.src = nextUrl;
+            } else {
+              img.style.display = 'none';
+            }
+          }).call(this);
+        ` : 'this.style.display=\'none\';';
+        
         return `
           <div class="organizer-card">
             <div class="organizer-header">
-              ${logoUrl ? `<img src="${logoUrl.replace(/"/g, '&quot;')}" alt="${org.name.replace(/"/g, '&quot;')}" class="organizer-logo" loading="lazy" decoding="async" onerror="this.onerror=null; this.style.display='none';" />` : ''}
+              ${logoUrl ? `<img src="${logoUrl.replace(/"/g, '&quot;')}" alt="${org.name.replace(/"/g, '&quot;')}" class="organizer-logo" loading="lazy" decoding="async" onerror="${imageErrorHandler.replace(/"/g, '&quot;')}" />` : ''}
               <div class="organizer-info" style="flex: 1;">
                 <h3 style="margin: 0 0 8px 0;">
                   <a href="organizer-detail.html?id=${org.id}" style="color: inherit; text-decoration: none;">

@@ -37,17 +37,23 @@ const OrganizerPageRenderer = {
     let originalLogoUrl = organizer.logo || organizer.image || '';
     
     // フォールバック：logoが空の場合やプレースホルダーの場合、organizer.idに基づいてCloudinary画像を生成
-    // org-001の場合、organizers/org-001/org-001_camppk を試す
+    // org-001の場合、複数のパスパターンを試す
+    let logoUrl = '';
+    let fallbackPaths = [];
+    
     if (!originalLogoUrl || originalLogoUrl.includes('picsum.photos') || originalLogoUrl.includes('placeholder')) {
       const organizerId = organizer.id || '';
-      // org-001_camppk という画像名を使用（Cloudinaryのpublic_id）
       if (organizerId) {
-        // まず org-001_camppk を試す
-        originalLogoUrl = `organizers/${organizerId}/${organizerId}_camppk`;
+        // 複数のパスパターンを準備（Cloudinaryのpublic_idの可能性）
+        fallbackPaths = [
+          `organizers/${organizerId}/${organizerId}_camppk`,  // 最も一般的なパス
+          `organizers/${organizerId}_camppk`,                  // フォルダが1つ少ない
+          `${organizerId}/${organizerId}_camppk`,              // フォルダ名が異なる
+          `${organizerId}_camppk`                              // フォルダなし
+        ];
+        originalLogoUrl = fallbackPaths[0]; // 最初のパスを試す
       }
     }
-    
-    let logoUrl = '';
     
     // Cloudinaryを使用してロゴURLを生成（organizersフォルダを使用）
     if (typeof window.getOrganizerImageUrl === 'function') {
@@ -57,9 +63,31 @@ const OrganizerPageRenderer = {
     } else {
       logoUrl = originalLogoUrl;
     }
+    
+    // 画像読み込みエラー時のフォールバック処理（複数パスを試す）
+    const imageErrorHandler = fallbackPaths.length > 1 ? `
+      (function() {
+        const img = this;
+        const currentSrc = img.src;
+        const fallbackPaths = ${JSON.stringify(fallbackPaths)};
+        const currentPathIndex = fallbackPaths.findIndex(p => currentSrc.includes(p));
+        if (currentPathIndex >= 0 && currentPathIndex < fallbackPaths.length - 1) {
+          const nextPath = fallbackPaths[currentPathIndex + 1];
+          const nextUrl = typeof window.getOrganizerImageUrl === 'function' 
+            ? window.getOrganizerImageUrl(nextPath, { w: 400 })
+            : (typeof window.cloudinaryUrl === 'function' 
+              ? window.cloudinaryUrl(nextPath, { w: 400 })
+              : nextPath);
+          img.src = nextUrl;
+          console.log('[organizer-template] Trying fallback image path:', nextPath);
+        } else {
+          img.style.display = 'none';
+        }
+      }).call(this);
+    ` : 'this.style.display=\'none\';';
 
     header.innerHTML = `
-      ${logoUrl ? `<img src="${logoUrl.replace(/"/g, '&quot;')}" alt="${organizer.name.replace(/"/g, '&quot;')}" class="organizer-logo" loading="lazy" decoding="async" onerror="this.onerror=null; this.style.display='none';" />` : ''}
+      ${logoUrl ? `<img src="${logoUrl.replace(/"/g, '&quot;')}" alt="${organizer.name.replace(/"/g, '&quot;')}" class="organizer-logo" loading="lazy" decoding="async" onerror="${imageErrorHandler.replace(/"/g, '&quot;')}" />` : ''}
       <div class="organizer-info" style="flex: 1;">
         <h1>${organizer.name}</h1>
         <p style="margin: 0; color: #6c7a72; line-height: 1.6; font-size: 1.05rem;">${organizer.description}</p>
