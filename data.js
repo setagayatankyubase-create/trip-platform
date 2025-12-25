@@ -38,16 +38,17 @@ const normalizeId = (v) => {
 // Cloudinary画像URL生成関数
 const CLOUDINARY_CLOUD_NAME = "ddrxsy9jw";
 
-// public_idをそのまま使用（Cloudinaryの実物に合わせる）
-// Cloudinaryのpublic_idには拡張子が含まれる場合がある（例: evt-001.jpg_uqv2y2）
-// そのため、拡張子を削除せずにそのまま使用する
+// public_idから拡張子を正規化（evt-001.jpg_uqv2y2 → evt-001_uqv2y2）
+// Cloudinaryのpublic_idには拡張子が含まれないため、中間・末尾の拡張子を削除
 function normalizeCloudinaryId(id) {
   if (!id) return '';
   if (/^https?:\/\//i.test(id)) return id; // 既にURLならそのまま
   
-  // Cloudinaryのpublic_idをそのまま使用（拡張子は削除しない）
-  // 例: evt-001.jpg_uqv2y2 → evt-001.jpg_uqv2y2（そのまま）
-  // 例: evt-001_uqv2y2 → evt-001_uqv2y2（そのまま）
+  // evt-001.jpg_uqv2y2 → evt-001_uqv2y2（.jpg だけ消す、アンダースコア前の拡張子）
+  id = id.replace(/\.(jpg|jpeg|png|webp|gif)(?=_)/ig, '');
+  // 末尾拡張子も消す（念のため）
+  id = id.replace(/\.(jpg|jpeg|png|webp|gif)$/ig, '');
+  
   return id;
 }
 
