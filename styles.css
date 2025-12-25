@@ -101,6 +101,126 @@ body {
   color: var(--primary);
 }
 
+/* Header Search */
+.header-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  max-width: 600px;
+  margin-left: 24px;
+}
+
+.header-search-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: #f5f5f5;
+  border-radius: 12px;
+  padding: 8px;
+  transition: background 0.2s;
+}
+
+.header-search-form:focus-within {
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.header-category-menu-button {
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.header-category-menu-button:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.header-category-menu-button .hamburger-icon {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 18px;
+  height: 14px;
+}
+
+.header-category-menu-button .hamburger-icon span {
+  display: block;
+  width: 100%;
+  height: 2.5px;
+  background: var(--text);
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+.header-category-menu-button:hover .hamburger-icon span:nth-child(1) {
+  transform: rotate(45deg) translate(4.5px, 4.5px);
+}
+
+.header-category-menu-button:hover .hamburger-icon span:nth-child(2) {
+  opacity: 0;
+}
+
+.header-category-menu-button:hover .hamburger-icon span:nth-child(3) {
+  transform: rotate(-45deg) translate(6px, -5.5px);
+}
+
+.header-search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 0.9rem;
+  padding: 8px 12px;
+  outline: none;
+  color: var(--text);
+}
+
+.header-search-input::placeholder {
+  color: var(--text-secondary);
+}
+
+.header-search-button {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.header-search-button:hover {
+  background: var(--hover);
+}
+
+@media (max-width: 768px) {
+  .header-search {
+    margin-left: 12px;
+    max-width: none;
+  }
+  
+  .header-search-button {
+    padding: 8px 16px;
+    font-size: 0.85rem;
+  }
+  
+  .header-search-input {
+    font-size: 0.85rem;
+    padding: 6px 8px;
+  }
+}
+
 .header-search {
   flex: 1;
   max-width: 500px;
