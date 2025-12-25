@@ -297,33 +297,27 @@
         // 提供元情報を表示（demo-list-containerとは別のコンテナに配置）
       const demoOrganizerContainer = document.getElementById('demo-organizer-container');
       if (demoOrganizerContainer && organizer) {
-        // Cloudinaryを使用してロゴURLを生成（organizersフォルダを使用）
+        // Cloudinaryを使用してロゴURLを生成（public_idをそのまま使用）
+        const organizerId = organizer.id || '';
         let originalLogoUrl = organizer.logo || organizer.image || '';
         
-        // フォールバック：logoが空の場合やプレースホルダーの場合、organizer.idに基づいてCloudinary画像を生成
-        const organizerId = organizer.id || '';
-        let fallbackPaths = [];
+        // websiteフィールドに画像名が入っている場合を優先チェック（例：demoorg-002_elrulz）
+        const websiteValue = organizer.website || '';
+        if (websiteValue && !websiteValue.includes('http') && !websiteValue.includes('.com') && (!websiteValue.includes('.') || websiteValue.includes('_'))) {
+          // public_idをそのまま使用（フォルダ補完しない：Cloudinaryの実体に合わせる）
+          originalLogoUrl = websiteValue;
+        }
         
-        if (!originalLogoUrl || originalLogoUrl.includes('picsum.photos') || originalLogoUrl.includes('placeholder')) {
-          // websiteフィールドに画像名が入っている場合（例：org-001_camppk や demoorg-002_elrulz）をチェック
-          const websiteValue = organizer.website || '';
-          // URLではない場合のみ画像名として扱う（http/httpsを含まない、ドットを含まない、または_を含む）
-          if (websiteValue && !websiteValue.includes('http') && !websiteValue.includes('.com') && (!websiteValue.includes('.') || websiteValue.includes('_'))) {
-            // public_idをそのまま使用（フォルダ補完しない：Cloudinaryの実体に合わせる）
-            originalLogoUrl = websiteValue;
-          }
-          
-          // websiteフィールドから取得できない場合、organizer.idに基づいて生成
-          if (!originalLogoUrl && organizerId) {
-            // public_idをそのまま使用（フォルダ補完しない）
-            originalLogoUrl = `${organizerId}_camppk`;
-          }
+        // logo/image/websiteが空の場合やプレースホルダーの場合、organizer.idに基づいて生成
+        if ((!originalLogoUrl || originalLogoUrl.includes('picsum.photos') || originalLogoUrl.includes('placeholder')) && organizerId) {
+          // public_idをそのまま使用（フォルダ補完しない）
+          originalLogoUrl = `${organizerId}_camppk`;
         }
         
         let logoUrl = '';
         
         if (typeof window.getOrganizerImageUrl === 'function') {
-          logoUrl = window.getOrganizerImageUrl(originalLogoUrl, { w: 400 });
+          logoUrl = window.getOrganizerImageUrl(originalLogoUrl, organizerId, { w: 400 });
         } else if (typeof window.cloudinaryUrl === 'function') {
           logoUrl = window.cloudinaryUrl(originalLogoUrl, { w: 400, type: 'organizer' });
         } else {

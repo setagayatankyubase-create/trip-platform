@@ -112,82 +112,48 @@
       container.innerHTML = eventData.organizers.map(org => {
         const events = eventData.events.filter(e => (e.organizerId || e.organizer_id) === org.id);
         
-        // 提供元ロゴURLを取得（Cloudinaryを使用、フォルダ構造に対応）
+        // 提供元ロゴURLを取得（public_idをそのまま使用）
+        const organizerId = org.id || '';
         let originalLogoUrl = org.logo || org.image || '';
         
-        // フォールバック：logoが空の場合やプレースホルダーの場合、organizer.idに基づいてCloudinary画像を生成
-        const organizerId = org.id || '';
-        let fallbackPaths = [];
+        // websiteフィールドに画像名が入っている場合を優先チェック（例：org-001_camppk）
+        const websiteValue = org.website || '';
+        if (websiteValue && !websiteValue.includes('http') && !websiteValue.includes('.com') && (!websiteValue.includes('.') || websiteValue.includes('_'))) {
+          // public_idをそのまま使用（フォルダ補完しない：Cloudinaryの実体に合わせる）
+          originalLogoUrl = websiteValue;
+        }
         
-        if (!originalLogoUrl || originalLogoUrl.includes('picsum.photos') || originalLogoUrl.includes('placeholder')) {
-          // websiteフィールドに画像名が入っている場合（例：org-001_camppk）をチェック
-          const websiteValue = org.website || '';
-          // URLではない場合のみ画像名として扱う（http/httpsを含まない、ドットを含まない）
-          if (websiteValue && !websiteValue.includes('http') && !websiteValue.includes('.com') && !websiteValue.includes('.')) {
-            if (!websiteValue.includes('/')) {
-              // 単純な画像名（例：org-001_camppk）の場合、フォルダパスを追加
-              fallbackPaths = [
-                `organizers/${organizerId}/${websiteValue}`,
-                `organizers/${websiteValue}`,
-                websiteValue
-              ];
-            } else {
-              // 既にパス形式の場合（例：organizers/org-001/org-001_camppk）
-              fallbackPaths = [websiteValue];
-            }
-          }
-          
-          // websiteフィールドから取得できない場合、organizer.idに基づいて生成
-          if (fallbackPaths.length === 0 && organizerId) {
-            // 複数のパスパターンを準備（拡張子を含むパターンも試す）
-            const extensions = ['', '.jpg', '.jpeg', '.png', '.webp'];
-            fallbackPaths = [];
-            extensions.forEach(function(ext) {
-              fallbackPaths.push('organizers/' + organizerId + '/' + organizerId + '_camppk' + ext);
-              fallbackPaths.push('organizers/' + organizerId + '_camppk' + ext);
-              fallbackPaths.push(organizerId + '/' + organizerId + '_camppk' + ext);
-              fallbackPaths.push(organizerId + '_camppk' + ext);
-            });
-            // 重複を削除
-            fallbackPaths = Array.from(new Set(fallbackPaths));
-          }
-          
-          if (fallbackPaths.length > 0) {
-            originalLogoUrl = fallbackPaths[0];
-          }
+        // logo/image/websiteが空の場合やプレースホルダーの場合、organizer.idに基づいて生成
+        if ((!originalLogoUrl || originalLogoUrl.includes('picsum.photos') || originalLogoUrl.includes('placeholder')) && organizerId) {
+          // public_idをそのまま使用（フォルダ補完しない：Cloudinaryの実体に合わせる）
+          originalLogoUrl = `${organizerId}_camppk`;
         }
         
         let logoUrl = '';
         
         // Cloudinaryを使用してロゴURLを生成（organizersフォルダを使用）
         if (typeof window.getOrganizerImageUrl === 'function') {
-          logoUrl = window.getOrganizerImageUrl(originalLogoUrl, { w: 400 });
+          logoUrl = window.getOrganizerImageUrl(originalLogoUrl, organizerId, { w: 400 });
         } else if (typeof window.cloudinaryUrl === 'function') {
           logoUrl = window.cloudinaryUrl(originalLogoUrl, { w: 400, type: 'organizer' });
         } else {
           logoUrl = originalLogoUrl;
         }
         
-        // 画像読み込みエラー時のフォールバック処理
-        const imageErrorHandler = fallbackPaths.length > 1 ? `
+        // 画像読み込みエラー時のフォールバック処理（1回だけ試行してダメなら非表示）
+        const imageErrorHandler = `
           (function() {
             const img = this;
-            const currentSrc = img.src;
-            const fallbackPaths = ${JSON.stringify(fallbackPaths)};
-            const currentPathIndex = fallbackPaths.findIndex(p => currentSrc.includes(p));
-            if (currentPathIndex >= 0 && currentPathIndex < fallbackPaths.length - 1) {
-              const nextPath = fallbackPaths[currentPathIndex + 1];
-              const nextUrl = typeof window.getOrganizerImageUrl === 'function' 
-                ? window.getOrganizerImageUrl(nextPath, { w: 400 })
-                : (typeof window.cloudinaryUrl === 'function' 
-                  ? window.cloudinaryUrl(nextPath, { w: 400 })
-                  : nextPath);
-              img.src = nextUrl;
-            } else {
+            // 無限リトライ防止：既に試行済みの場合は何もしない
+            if (img.dataset.fallbackDone === "1") {
               img.style.display = 'none';
+              return;
             }
+            img.dataset.fallbackDone = "1";
+            // 1回だけ試行してダメなら非表示
+            img.style.display = 'none';
           }).call(this);
-        ` : 'this.style.display=\'none\';';
+        `;
         
         return `
           <div class="organizer-card">

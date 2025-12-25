@@ -401,83 +401,44 @@ const EventPageRenderer = {
       const organizerId = organizer.id || '';
       let fallbackPaths = [];
       
-      // websiteフィールドに画像名が入っている場合（例：org-001_camppk）をチェック
-      if (!originalLogoUrl || originalLogoUrl.includes('picsum.photos') || originalLogoUrl.includes('placeholder')) {
-        // websiteフィールドに画像名らしい値がある場合、それを優先
-        const websiteValue = organizer.website || '';
-        // URLではない場合のみ画像名として扱う（http/httpsを含まない、ドットを含まない、アンダースコアを含む）
-        if (websiteValue && !websiteValue.includes('http') && !websiteValue.includes('.com') && !websiteValue.includes('.')) {
-          if (!websiteValue.includes('/')) {
-            // 単純な画像名（例：org-001_camppk）の場合、フォルダパスを追加
-            fallbackPaths = [
-              `organizers/${organizerId}/${websiteValue}`,
-              `organizers/${websiteValue}`,
-              websiteValue
-            ];
-          } else {
-            // 既にパス形式の場合（例：organizers/org-001/org-001_camppk）
-            fallbackPaths = [websiteValue];
-          }
-        }
-        
-        // websiteフィールドから取得できない場合、organizer.idに基づいて生成
-        if (fallbackPaths.length === 0 && organizerId) {
-          // 複数のパスパターンを準備（拡張子を含むパターンも試す）
-          const extensions = ['', '.jpg', '.jpeg', '.png', '.webp'];
-          fallbackPaths = [];
-          extensions.forEach(ext => {
-            fallbackPaths.push(`organizers/${organizerId}/${organizerId}_camppk${ext}`);
-            fallbackPaths.push(`organizers/${organizerId}_camppk${ext}`);
-            fallbackPaths.push(`${organizerId}/${organizerId}_camppk${ext}`);
-            fallbackPaths.push(`${organizerId}_camppk${ext}`);
-          });
-          // 重複を削除
-          fallbackPaths = [...new Set(fallbackPaths)];
-        }
-        
-        if (fallbackPaths.length > 0) {
-          originalLogoUrl = fallbackPaths[0];
-        }
+      // websiteフィールドに画像名が入っている場合を優先チェック（例：org-001_camppk）
+      const websiteValue = organizer.website || '';
+      if (websiteValue && !websiteValue.includes('http') && !websiteValue.includes('.com') && (!websiteValue.includes('.') || websiteValue.includes('_'))) {
+        // public_idをそのまま使用（フォルダ補完しない：Cloudinaryの実体に合わせる）
+        originalLogoUrl = websiteValue;
+      }
+      
+      // logo/image/websiteが空の場合やプレースホルダーの場合、organizer.idに基づいて生成
+      if ((!originalLogoUrl || originalLogoUrl.includes('picsum.photos') || originalLogoUrl.includes('placeholder')) && organizerId) {
+        // public_idをそのまま使用（フォルダ補完しない：Cloudinaryの実体に合わせる）
+        originalLogoUrl = `${organizerId}_camppk`;
       }
       
       let logoUrl = '';
       
       // Cloudinaryを使用してロゴURLを生成
       if (typeof window.getOrganizerImageUrl === 'function') {
-        logoUrl = window.getOrganizerImageUrl(originalLogoUrl, { w: 400 });
+        logoUrl = window.getOrganizerImageUrl(originalLogoUrl, organizerId, { w: 400 });
       } else if (typeof window.cloudinaryUrl === 'function') {
         logoUrl = window.cloudinaryUrl(originalLogoUrl, { w: 400 });
       } else {
         logoUrl = originalLogoUrl;
       }
       
-      // 画像読み込みエラー時のフォールバック処理（無限リトライ防止：一度だけ試す）
-      const imageErrorHandler = fallbackPaths.length > 1 ? `
+      // 画像読み込みエラー時のフォールバック処理（1回だけ試行してダメなら非表示）
+      const imageErrorHandler = `
         (function() {
           const img = this;
-          // これがないと404のたびに永遠に試行して地獄になる
+          // 無限リトライ防止：既に試行済みの場合は何もしない
           if (img.dataset.fallbackDone === "1") {
             img.style.display = 'none';
             return;
           }
           img.dataset.fallbackDone = "1";
-          
-          const currentSrc = img.src;
-          const fallbackPaths = ${JSON.stringify(fallbackPaths)};
-          const currentPathIndex = fallbackPaths.findIndex(p => currentSrc.includes(encodeURIComponent(p).replace(/%2F/g, '/')) || currentSrc.includes(p));
-          if (currentPathIndex >= 0 && currentPathIndex < fallbackPaths.length - 1) {
-            const nextPath = fallbackPaths[currentPathIndex + 1];
-            const nextUrl = typeof window.getOrganizerImageUrl === 'function' 
-              ? window.getOrganizerImageUrl(nextPath, { w: 400 })
-              : (typeof window.cloudinaryUrl === 'function' 
-                ? window.cloudinaryUrl(nextPath, { w: 400 })
-                : nextPath);
-            img.src = nextUrl;
-          } else {
-            img.style.display = 'none';
-          }
+          // 1回だけ試行してダメなら非表示
+          img.style.display = 'none';
         }).call(this);
-      ` : 'this.style.display=\'none\';';
+      `;
       
       organizerInfo.innerHTML = `
         <div style="display: flex; gap: 16px; align-items: flex-start;">
