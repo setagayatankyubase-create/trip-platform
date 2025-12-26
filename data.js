@@ -241,6 +241,18 @@ window.loadEventData = function loadEventData() {
         const age = Date.now() - parsed.timestamp;
         if (age < CACHE_TTL_MS) {
           const cachedEvents = parsed.data?.events;
+          
+          // デバッグ：キャッシュされたevt-002のデータを確認
+          const evt002 = cachedEvents?.find(e => e.id === 'evt-002');
+          if (evt002) {
+            console.log('[data.js] キャッシュされたevt-002:', {
+              id: evt002.id,
+              image: evt002.image,
+              thumb: evt002.thumb,
+              mainImage: evt002.mainImage,
+              cachedAge: Math.round(age / 1000 / 60) + '分前'
+            });
+          }
 
           // ★根本治療：organizerId が無いキャッシュは採用しない
           if (!hasOrganizerIdInEvents_(cachedEvents)) {
@@ -334,6 +346,18 @@ window.loadEventIndex = function loadEventIndex() {
       if (parsed?.timestamp && parsed?.data && parsed?.version === EVENT_CACHE_VERSION) {
         const age = Date.now() - parsed.timestamp;
         if (age < CACHE_TTL_MS) {
+          // デバッグ：キャッシュされたevt-002のデータを確認
+          const evt002Cache = parsed.data?.find(e => e.id === 'evt-002');
+          if (evt002Cache) {
+            console.log('[data.js] キャッシュされたevt-002 (index):', {
+              id: evt002Cache.id,
+              image: evt002Cache.image,
+              thumb: evt002Cache.thumb,
+              mainImage: evt002Cache.mainImage,
+              cachedAge: Math.round(age / 1000 / 60) + '分前'
+            });
+          }
+          
           // キャッシュが organizerId を含まない場合は破棄
           if (
             Array.isArray(parsed.data) &&
@@ -358,8 +382,20 @@ window.loadEventIndex = function loadEventIndex() {
 
     let arr = [];
     try {
+      console.log('[data.js] events_index.jsonを取得中:', primaryUrl);
       const json = await fetchJsonStrict_(primaryUrl);
       arr = toIndexArray(json);
+      
+      // デバッグ：取得したevt-002のデータを確認
+      const evt002 = arr.find(e => e.id === 'evt-002');
+      if (evt002) {
+        console.log('[data.js] 取得したevt-002:', {
+          id: evt002.id,
+          image: evt002.image,
+          thumb: evt002.thumb,
+          mainImage: evt002.mainImage
+        });
+      }
       // デバッグログ：evt-001のデータ構造を確認
       const evt001 = arr.find(e => e.id === 'evt-001');
       if (evt001) {
