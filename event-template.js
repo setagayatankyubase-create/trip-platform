@@ -108,8 +108,11 @@ const EventPageRenderer = {
   renderGallery(event) {
     const mainImage = document.getElementById('event-main-image');
     if (mainImage) {
-      // イベント画像URLを取得（getEventImageUrlを使用してデモイベントにも対応）
-      const rawImageUrl = event.image || event.thumb || event.mainImage || '';
+      // メイン画像: imageフィールドを優先（デモイベントはimageのみ、通常イベントはimage/thumb/mainImageの順）
+      const isDemoEvent = event.id && event.id.startsWith('demo');
+      const rawImageUrl = isDemoEvent 
+        ? (event.image || '')
+        : (event.image || event.thumb || event.mainImage || '');
       
       if (rawImageUrl && !rawImageUrl.startsWith('http')) {
         // フォールバック処理を含む画像読み込み

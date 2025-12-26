@@ -510,13 +510,7 @@
         };
         sessionStorage.setItem('demo_auth', JSON.stringify(authData));
         
-        // 全データをキャッシュに保存（有効期限: 24時間）
-        const CACHE_KEY = 'demo_data_cache';
-        sessionStorage.setItem(CACHE_KEY, JSON.stringify({
-          data: data,
-          password: password,
-          expiresAt: Date.now() + (24 * 60 * 60 * 1000) // 24時間
-        }));
+        // データのキャッシュは保存しない（毎回最新データを取得するため）
         
         // リロード
         window.location.reload();
@@ -551,24 +545,18 @@
       }
     }
     
-    // デモデータを取得（共有キャッシュから高速取得）
+    // デモデータを取得（毎回最新データを取得、キャッシュは使用しない）
     async function fetchDemoData(password) {
       const CACHE_KEY = 'demo_data_cache';
       
-      // キャッシュをチェック（即座に返す）
+      // キャッシュを毎回クリア（最新データを常に取得）
       try {
-        const cachedStr = sessionStorage.getItem(CACHE_KEY);
-        if (cachedStr) {
-          const cached = JSON.parse(cachedStr);
-          if (Date.now() < cached.expiresAt && cached.password === password) {
-            return cached.data;
-          }
-        }
+        sessionStorage.removeItem(CACHE_KEY);
       } catch (e) {
-        // キャッシュの読み込みに失敗した場合は無視して続行
+        // キャッシュクリアに失敗しても続行
       }
       
-      // キャッシュがない場合はAPIから取得（通常は発生しないが、念のため）
+      // APIから取得
       try {
         const url = new URL(DEMO_GAS_API_URL);
         url.searchParams.set('password', password);
@@ -585,17 +573,7 @@
           throw new Error(data.error || 'データの取得に失敗しました');
         }
         
-        // キャッシュに保存
-        try {
-          sessionStorage.setItem(CACHE_KEY, JSON.stringify({
-            data: data,
-            password: password,
-            expiresAt: Date.now() + (24 * 60 * 60 * 1000) // 24時間
-          }));
-        } catch (e) {
-          console.warn('[experience-demo] Failed to cache demo data:', e);
-        }
-        
+        // キャッシュは保存しない（毎回最新データを取得するため）
         return data;
       } catch (error) {
         console.error('Error fetching demo data:', error);
