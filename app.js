@@ -725,9 +725,28 @@ const CardRenderer = {
     if (typeof window.getEventImageUrl === 'function' && rawImageUrl && !rawImageUrl.startsWith('http')) {
       // Cloudinaryの画像の場合、getEventImageUrlを使用（拡張子は正規化される）
       optimizedImage = window.getEventImageUrl(rawImageUrl, event.id, { w: 1200 });
+      console.log('[CardRenderer] イベント一覧サムネ:', {
+        eventId: event.id,
+        rawImageUrl: rawImageUrl,
+        optimizedImage: optimizedImage,
+        source: 'Cloudinary ID'
+      });
     } else if (rawImageUrl) {
       // 既にURL形式の場合、またはgetEventImageUrlが利用できない場合はそのまま使用
       optimizedImage = this.optimizeImageUrl(rawImageUrl, { w: 1200 });
+      console.log('[CardRenderer] イベント一覧サムネ:', {
+        eventId: event.id,
+        rawImageUrl: rawImageUrl,
+        optimizedImage: optimizedImage,
+        source: 'Direct URL'
+      });
+    } else {
+      console.log('[CardRenderer] イベント一覧サムネ:', {
+        eventId: event.id,
+        rawImageUrl: rawImageUrl,
+        optimizedImage: optimizedImage,
+        source: 'Fallback'
+      });
     }
     
     // 画像読み込みエラー時のフォールバック処理（1回だけ試行してダメならプレースホルダー）
@@ -739,8 +758,23 @@ const CardRenderer = {
           return;
         }
         img.dataset.fallbackDone = "1";
+        console.log('[CardRenderer] 画像読み込み失敗:', {
+          eventId: '${event.id}',
+          originalSrc: '${optimizedImage.replace(/'/g, "\\'")}',
+          fallbackUrl: '${fallbackUrl}'
+        });
         // プレースホルダーにフォールバック（1回だけ）
         img.src = '${fallbackUrl}';
+      }).call(this);
+    `;
+    
+    // 画像読み込み成功時のログ出力
+    const imageLoadHandler = `
+      (function() {
+        console.log('[CardRenderer] 画像読み込み成功:', {
+          eventId: '${event.id}',
+          src: this.src
+        });
       }).call(this);
     `;
 
@@ -754,7 +788,7 @@ const CardRenderer = {
       <a href="experience.html?id=${event.id}" class="card-link" data-event-id="${event.id}">
         <div class="card" data-event-id="${event.id}">
           <div class="card-image-wrapper">
-            <img src="${optimizedImage}" alt="${event.title}" loading="lazy" decoding="async" onerror="${imageErrorHandler.replace(/"/g, '&quot;')}">
+            <img src="${optimizedImage}" alt="${event.title}" loading="lazy" decoding="async" onload="${imageLoadHandler.replace(/"/g, '&quot;')}" onerror="${imageErrorHandler.replace(/"/g, '&quot;')}">
             <button class="${favoriteClass}" onclick="toggleFavorite('${event.id}', event)" title="${favoriteTitle}">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="${favoriteFill}" stroke="currentColor" stroke-width="2">
                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
