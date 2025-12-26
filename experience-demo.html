@@ -719,8 +719,18 @@
           event.externalLink = event.external_link;
         }
         
-        // デモデータのimagesがundefinedの場合、空配列に初期化（GASからのレスポンスでundefinedが返される場合の対策）
-        if (event.images === undefined) {
+        // デモデータの構造を公開ページと同じに統一
+        // imagesフィールドがundefinedの場合、空配列に初期化（公開ページのJSONファイル構造に合わせる）
+        if (!('images' in event) || event.images === undefined || event.images === null) {
+          event.images = [];
+        }
+        
+        // 公開ページと同じ構造にするため、配列でない場合は変換
+        if (typeof event.images === 'string' && event.images.trim()) {
+          // 文字列の場合は配列に変換（|区切りを想定）
+          event.images = event.images.split(/[|｜]/).map(s => s.trim()).filter(Boolean);
+        } else if (!Array.isArray(event.images)) {
+          // 配列でない場合は空配列に
           event.images = [];
         }
         
