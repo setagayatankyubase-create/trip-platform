@@ -135,21 +135,24 @@ const EventPageRenderer = {
         subImageIds = event.images.split(/[|｜]/).map(s => s.trim()).filter(Boolean);
       }
 
-      // 取得できなければ何もしない
-      if (subImageIds.length === 0) {
-        return;
-      }
-
       // サブ画像をサムネイルに反映（最大2枚想定）
       thumbElements.forEach((thumbEl, index) => {
+        if (!thumbEl) return;
+        
         const publicId = subImageIds[index];
-        if (!thumbEl || !publicId) return;
-
-        // サブ画像もフォールバック処理を含む画像読み込み
-        if (!publicId.startsWith('http')) {
-          this.tryLoadImageWithFallback(thumbEl, publicId, event.id, { w: 600, isMain: false });
+        
+        // サブ画像がある場合
+        if (publicId) {
+          // サブ画像もフォールバック処理を含む画像読み込み
+          if (!publicId.startsWith('http')) {
+            this.tryLoadImageWithFallback(thumbEl, publicId, event.id, { w: 600, isMain: false });
+          } else {
+            thumbEl.style.backgroundImage = `url('${publicId.replace(/'/g, "\\'")}')`;
+          }
         } else {
-          thumbEl.style.backgroundImage = `url('${publicId.replace(/'/g, "\\'")}')`;
+          // サブ画像がない場合、フォールバック画像を表示
+          const fallbackUrl = `https://picsum.photos/seed/${event.id || 'default'}-thumb-${index}/600/400`;
+          thumbEl.style.backgroundImage = `url('${fallbackUrl}')`;
         }
       });
     }
