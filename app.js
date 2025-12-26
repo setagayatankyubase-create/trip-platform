@@ -717,6 +717,14 @@ const CardRenderer = {
     // events_index.jsonではthumbフィールドが使われている可能性があるため、image/thumb/mainImageの順でチェック
     const rawImageUrl = event.image || event.thumb || event.mainImage || '';
     
+    // デバッグ：イベントデータ全体を確認
+    console.log('[CardRenderer] イベントデータ確認:', {
+      eventId: event.id,
+      eventImage: event.image,
+      eventThumb: event.thumb,
+      eventMainImage: event.mainImage,
+      rawImageUrl: rawImageUrl
+    });
     
     // イベント画像URLを生成（拡張子総当たりをやめる：1回だけ試行）
     const fallbackUrl = `https://picsum.photos/seed/${event.id || 'default'}/1200/800`;
