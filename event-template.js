@@ -208,7 +208,8 @@ const EventPageRenderer = {
       const descEl = document.getElementById('event-description');
       if (descEl) {
         const description = event.description || '説明がありません';
-        descEl.innerHTML = this.formatTextWithBullets(description);
+        // 説明は最初の行が説明文の場合があるため、includeFirstLineAsBulletはfalse（デフォルト）
+        descEl.innerHTML = this.formatTextWithBullets(description, { includeFirstLineAsBullet: false });
       } else {
         console.warn('[EventPageRenderer] event-description element not found');
       }
@@ -241,7 +242,8 @@ const EventPageRenderer = {
       const detailEl = document.getElementById('event-detail');
       if (detailEl) {
         const detail = event.detail || event.description || '';
-        detailEl.innerHTML = this.formatTextWithBullets(detail);
+        // 詳細は最初の行が説明文の場合があるため、includeFirstLineAsBulletはfalse（デフォルト）
+        detailEl.innerHTML = this.formatTextWithBullets(detail, { includeFirstLineAsBullet: false });
       }
 
       // 開催日程
@@ -269,7 +271,8 @@ const EventPageRenderer = {
       const notesEl = document.getElementById('event-notes');
       if (notesEl) {
         const notes = event.notes || '特になし';
-        notesEl.innerHTML = this.formatTextWithBullets(notes);
+        // 注意事項は最初の項目も箇条書きにする
+        notesEl.innerHTML = this.formatTextWithBullets(notes, { includeFirstLineAsBullet: true });
       }
 
       // 提供元
@@ -978,8 +981,11 @@ const EventPageRenderer = {
   },
 
   // テキストに「・」があれば箇条書きに変換、「|」があれば改行
-  formatTextWithBullets(text) {
+  formatTextWithBullets(text, options = {}) {
     if (!text || typeof text !== 'string') return '';
+    
+    // 最初の行も箇条書きにするかどうか（デフォルト: false - 最初の行が説明文の場合）
+    const includeFirstLineAsBullet = options.includeFirstLineAsBullet || false;
     
     // 「|」で改行を入れる（特殊文字として扱い、後で<br>に変換）
     // まず「|」を一時的なマーカーに置換して、エスケープ後に<br>に戻す
@@ -994,14 +1000,29 @@ const EventPageRenderer = {
       // 「・」で分割して箇条書きに変換
       const lines = text.split(/[・•]/).map(line => line.trim()).filter(line => line.length > 0);
       if (lines.length > 1) {
-        // 最初の行が「・」で始まっているか、または空でない場合はすべて箇条書きとして表示
-        // 最初の行も含めてすべて箇条書きにする
-        const bulletHtml = lines.map(line => {
+        const firstLine = lines[0];
+        const bulletLines = includeFirstLineAsBullet ? lines : lines.slice(1);
+        
+        if (bulletLines.length === 0) {
+          // 箇条書き項目がない場合は、通常のテキストとして表示
+          const escaped = this.escapeHtml(text);
+          const result = escaped.replace(new RegExp(BR_PLACEHOLDER.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '<br>').replace(/\n/g, '<br>');
+          return result.includes('<br>') ? `<div style="padding-left: 0; margin-left: 0; text-indent: 0;">${result}</div>` : result;
+        }
+        
+        // 箇条書きHTMLを生成（プレースホルダーを<br>に戻す）
+        const bulletHtml = bulletLines.map(line => {
           const escaped = this.escapeHtml(line);
           return `<li>${escaped.replace(new RegExp(BR_PLACEHOLDER.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '<br>')}</li>`;
         }).join('\n');
         
-        return `<ul style="margin: 8px 0; padding-left: 20px; list-style-type: disc;">\n${bulletHtml}\n</ul>`;
+        // 最初の行が説明文の場合
+        if (!includeFirstLineAsBullet && firstLine && !firstLine.match(/^[・•]/)) {
+          const escapedFirst = this.escapeHtml(firstLine).replace(new RegExp(BR_PLACEHOLDER.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '<br>');
+          return `<p style="margin-bottom: 8px; padding-left: 0; margin-left: 0; text-indent: 0;">${escapedFirst}</p>\n<ul style="margin: 8px 0 8px 0; padding-left: 20px; list-style-type: disc;">\n${bulletHtml}\n</ul>`;
+        } else {
+          return `<ul style="margin: 8px 0 8px 0; padding-left: 20px; list-style-type: disc;">\n${bulletHtml}\n</ul>`;
+        }
       }
     }
     
@@ -1009,7 +1030,7 @@ const EventPageRenderer = {
     // プレースホルダーを<br>に戻し、改行も<br>に変換（左詰めスタイルを追加）
     const escaped = this.escapeHtml(text);
     const result = escaped.replace(new RegExp(BR_PLACEHOLDER.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '<br>').replace(/\n/g, '<br>');
-    return result.includes('<br>') ? `<div style="padding-left: 0;">${result}</div>` : result;
+    return result.includes('<br>') ? `<div style="padding-left: 0; margin-left: 0; text-indent: 0;">${result}</div>` : result;
   },
 
   // HTMLエスケープ
