@@ -207,7 +207,8 @@ const EventPageRenderer = {
       // 説明
       const descEl = document.getElementById('event-description');
       if (descEl) {
-        descEl.textContent = event.description || '説明がありません';
+        const description = event.description || '説明がありません';
+        descEl.innerHTML = this.formatTextWithBullets(description);
       } else {
         console.warn('[EventPageRenderer] event-description element not found');
       }
@@ -239,7 +240,8 @@ const EventPageRenderer = {
       // 詳細
       const detailEl = document.getElementById('event-detail');
       if (detailEl) {
-        detailEl.textContent = event.detail || event.description || '';
+        const detail = event.detail || event.description || '';
+        detailEl.innerHTML = this.formatTextWithBullets(detail);
       }
 
       // 開催日程
@@ -947,6 +949,42 @@ const EventPageRenderer = {
         </div>
       `;
     }
+  },
+
+  // テキストに「・」があれば箇条書きに変換（改行も追加）
+  formatTextWithBullets(text) {
+    if (!text || typeof text !== 'string') return '';
+    
+    // 「・」が含まれているかチェック
+    if (text.includes('・')) {
+      // 「・」で分割して箇条書きに変換
+      const lines = text.split(/[・•]/).map(line => line.trim()).filter(line => line.length > 0);
+      if (lines.length > 1) {
+        // 最初の行が箇条書きの前の説明文の場合、それを取り出す
+        const firstLine = lines[0];
+        const bulletLines = lines.slice(1);
+        
+        // 箇条書きHTMLを生成
+        const bulletHtml = bulletLines.map(line => `<li>${this.escapeHtml(line)}</li>`).join('\n');
+        
+        // 最初の行がある場合は説明文として表示、なければ箇条書きのみ
+        if (firstLine && !firstLine.match(/^[・•]/)) {
+          return `<p>${this.escapeHtml(firstLine)}</p>\n<ul style="margin: 12px 0; padding-left: 20px;">\n${bulletHtml}\n</ul>`;
+        } else {
+          return `<ul style="margin: 12px 0; padding-left: 20px;">\n${bulletHtml}\n</ul>`;
+        }
+      }
+    }
+    
+    // 「・」がない場合は通常のテキストとして表示（改行を<br>に変換）
+    return this.escapeHtml(text).replace(/\n/g, '<br>');
+  },
+
+  // HTMLエスケープ
+  escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
   }
 };
 
