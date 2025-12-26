@@ -46,8 +46,6 @@ function cloudinaryUrl(publicId, { w = 1200, q = 'auto', f = 'auto' } = {}) {
   // public_idをそのまま使用（余計な先頭スラッシュを除去）
   const pid = String(publicId).trim().replace(/^\/+/, "");
 
-  // デバッグログ（最終的に生成されるpublic_idを確認）
-  console.log('[cloudinaryUrl]', pid);
 
   // CloudinaryのURL生成：public_idをそのまま使用
   return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/f_${f},q_${q},w_${w}/${pid}`;
@@ -158,14 +156,6 @@ window.getFaviconUrl = getFaviconUrl;
 window.getEventImageUrl = getEventImageUrl;
 window.getOrganizerImageUrl = getOrganizerImageUrl;
 
-// CloudinaryのURL生成を確認（デバッグ用 - 既存動作には影響なし）
-if (typeof console !== 'undefined') {
-  console.log('[Cloudinary URL Check]');
-  console.log('  Logo URL:', getLogoUrl());
-  console.log('  Favicon URL:', getFaviconUrl());
-  console.log('  Logo public_id: logo_tfqqd0');
-  console.log('  Cloudinary cloud name:', CLOUDINARY_CLOUD_NAME);
-}
 
 // index配列の正規化（organizerId / organizer_id どちらでも organizerId に統一）
 const normalizeIndex = (arr) =>
@@ -226,19 +216,11 @@ window.loadEventData = function loadEventData() {
   // すでに構築済みなら即返す（早期リターン）
   if (window.eventData && window.eventIndex) {
     const evt002 = window.eventIndex?.find(e => e.id === 'evt-002');
-    console.log('[data.js] loadEventData: 既にデータあり (早期リターン)', {
-      evt002Image: evt002?.image,
-      evt002Thumb: evt002?.thumb,
-      source: 'cached'
-    });
     return Promise.resolve(window.eventData);
   }
   if (_eventDataLoadingPromise) {
-    console.log('[data.js] loadEventData: 読み込み中...');
     return _eventDataLoadingPromise;
   }
-  
-  console.log('[data.js] loadEventData: 新規読み込み開始');
 
   const STORAGE_KEY = STORAGE_KEY_BASE;
   const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 1日
@@ -253,17 +235,6 @@ window.loadEventData = function loadEventData() {
         if (age < CACHE_TTL_MS) {
           const cachedEvents = parsed.data?.events;
           
-          // デバッグ：キャッシュされたevt-002のデータを確認
-          const evt002 = cachedEvents?.find(e => e.id === 'evt-002');
-          if (evt002) {
-            console.log('[data.js] キャッシュされたevt-002:', {
-              id: evt002.id,
-              image: evt002.image,
-              thumb: evt002.thumb,
-              mainImage: evt002.mainImage,
-              cachedAge: Math.round(age / 1000 / 60) + '分前'
-            });
-          }
 
           // ★根本治療：organizerId が無いキャッシュは採用しない
           if (!hasOrganizerIdInEvents_(cachedEvents)) {
@@ -274,16 +245,6 @@ window.loadEventData = function loadEventData() {
             // ★mapで落とさない：そのまま持つ
             window.eventIndex = cachedEvents;
             
-            // デバッグ：window.eventIndexに設定されたevt-002を確認
-            const evt002Set = window.eventIndex?.find(e => e.id === 'evt-002');
-            if (evt002Set) {
-              console.log('[data.js] loadEventData: window.eventIndexに設定されたevt-002 (キャッシュから):', {
-                id: evt002Set.id,
-                image: evt002Set.image,
-                thumb: evt002Set.thumb,
-                mainImage: evt002Set.mainImage
-              });
-            }
 
             // ★互換：events_index も揃える（ページ側がどっち見てもOK）
             window.eventData.events_index = cachedEvents;
@@ -314,11 +275,6 @@ window.loadEventData = function loadEventData() {
         categories: meta.categories || []
       };
 
-      // 勝利判定用ログ
-      console.log("[FIXED] events organizerId sample:", 
-        (index || []).slice(0, 5).map(e => e.organizerId)
-      );
-      console.log("[FIXED] events count:", (index || []).length);
 
       try {
         const payload = {
@@ -353,18 +309,11 @@ window.loadEventData = function loadEventData() {
 // 一覧用インデックスだけを読み込む（軽量）
 window.loadEventIndex = function loadEventIndex() {
   if (window.eventIndex && Array.isArray(window.eventIndex)) {
-    console.log('[data.js] loadEventIndex: 既にwindow.eventIndexにデータあり', {
-      count: window.eventIndex.length,
-      evt002: window.eventIndex.find(e => e.id === 'evt-002')
-    });
     return Promise.resolve(window.eventIndex);
   }
   if (_eventIndexLoadingPromise) {
-    console.log('[data.js] loadEventIndex: 読み込み中...');
     return _eventIndexLoadingPromise;
   }
-  
-  console.log('[data.js] loadEventIndex: 新規読み込み開始');
 
   const INDEX_STORAGE_KEY = INDEX_STORAGE_KEY_BASE;
   const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
@@ -377,17 +326,6 @@ window.loadEventIndex = function loadEventIndex() {
       if (parsed?.timestamp && parsed?.data && parsed?.version === EVENT_CACHE_VERSION) {
         const age = Date.now() - parsed.timestamp;
         if (age < CACHE_TTL_MS) {
-          // デバッグ：キャッシュされたevt-002のデータを確認
-          const evt002Cache = parsed.data?.find(e => e.id === 'evt-002');
-          if (evt002Cache) {
-            console.log('[data.js] キャッシュされたevt-002 (index):', {
-              id: evt002Cache.id,
-              image: evt002Cache.image,
-              thumb: evt002Cache.thumb,
-              mainImage: evt002Cache.mainImage,
-              cachedAge: Math.round(age / 1000 / 60) + '分前'
-            });
-          }
           
           // キャッシュが organizerId を含まない場合は破棄
           if (
@@ -413,30 +351,8 @@ window.loadEventIndex = function loadEventIndex() {
 
     let arr = [];
     try {
-      console.log('[data.js] events_index.jsonを取得中:', primaryUrl);
       const json = await fetchJsonStrict_(primaryUrl);
       arr = toIndexArray(json);
-      
-      // デバッグ：取得したevt-002のデータを確認
-      const evt002 = arr.find(e => e.id === 'evt-002');
-      if (evt002) {
-        console.log('[data.js] 取得したevt-002:', {
-          id: evt002.id,
-          image: evt002.image,
-          thumb: evt002.thumb,
-          mainImage: evt002.mainImage
-        });
-      }
-      // デバッグログ：evt-001のデータ構造を確認
-      const evt001 = arr.find(e => e.id === 'evt-001');
-      if (evt001) {
-        console.log('[loadEventIndex] evt-001 from JSON:', {
-          'image': evt001.image,
-          'thumb': evt001.thumb,
-          'mainImage': evt001.mainImage,
-          'allKeys': Object.keys(evt001)
-        });
-      }
     } catch (e) {
       console.warn("[INDEX] primary failed:", e.message);
     }
@@ -521,16 +437,9 @@ window.loadEventMeta = function loadEventMeta() {
     let categories = Array.isArray(metaJson?.categories) ? metaJson.categories : [];
     let areas      = Array.isArray(metaJson?.areas) ? metaJson.areas : [];
 
-    // デバッグログ：organizersの最初の要素を確認
-    if (organizers.length > 0) {
-      console.log('[data.js] Sample organizer from meta.json:', organizers[0]);
-      console.log('[data.js] Organizer keys:', Object.keys(organizers[0] || {}));
-    }
 
     // デバッグログ：categoriesの内容を確認
     if (categories.length > 0) {
-      console.log('[data.js] Categories loaded:', categories.length, 'items');
-      console.log('[data.js] Sample categories:', categories.slice(0, 3));
     } else {
       console.warn('[data.js] No categories found in meta.json');
     }
@@ -547,14 +456,10 @@ window.loadEventMeta = function loadEventMeta() {
         
         // デバッグログ：フォールバックからのorganizersも確認
         if (organizers.length > 0) {
-          console.log('[data.js] Sample organizer from fallback:', organizers[0]);
-          console.log('[data.js] Fallback organizer keys:', Object.keys(organizers[0] || {}));
         }
         
         // デバッグログ：フォールバックからのcategoriesも確認
         if (categories.length > 0) {
-          console.log('[data.js] Categories from fallback:', categories.length, 'items');
-          console.log('[data.js] Sample categories from fallback:', categories.slice(0, 3));
         }
       } catch (e) {
         console.warn("[META FALLBACK] failed:", e.message);
@@ -585,7 +490,6 @@ window.loadEventDetail = function loadEventDetail(eventId) {
   }
 
   const url = `${DATA_BASE}/events/${encodeURIComponent(eventId)}.json`;
-  console.log('[data.js] Loading event detail from:', url);
 
   return fetch(url)
     .then((res) => {
@@ -596,10 +500,8 @@ window.loadEventDetail = function loadEventDetail(eventId) {
       return res.json();
     })
     .then((json) => {
-      console.log('[data.js] Event detail JSON received:', json);
       // ファイルが { ...event } か { event: {...} } の両方に対応
       const event = json && json.event ? json.event : json;
-      console.log('[data.js] Event object extracted:', event);
       return event;
     })
     .catch((error) => {
