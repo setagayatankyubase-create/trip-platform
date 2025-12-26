@@ -983,9 +983,9 @@ const EventPageRenderer = {
         // 最初の行がある場合は説明文として表示、なければ箇条書きのみ
         if (firstLine && !firstLine.match(/^[・•]/)) {
           const escapedFirst = this.escapeHtml(firstLine).replace(new RegExp(BR_PLACEHOLDER.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '<br>');
-          return `<p>${escapedFirst}</p>\n<ul style="margin: 12px 0; padding-left: 20px;">\n${bulletHtml}\n</ul>`;
+          return `<p>${escapedFirst}</p>\n<ul style="margin: 8px 0; padding-left: 20px; list-style-type: disc;">\n${bulletHtml}\n</ul>`;
         } else {
-          return `<ul style="margin: 12px 0; padding-left: 20px;">\n${bulletHtml}\n</ul>`;
+          return `<ul style="margin: 8px 0; padding-left: 20px; list-style-type: disc;">\n${bulletHtml}\n</ul>`;
         }
       }
     }
