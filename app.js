@@ -714,8 +714,11 @@ const CardRenderer = {
     const favoriteFill = isFavorite ? 'currentColor' : 'none';
 
     // イベント画像URLを取得（Cloudinaryを使用）
-    // events_index.jsonではthumbフィールドが使われている可能性があるため、image/thumb/mainImageの順でチェック
-    const rawImageUrl = event.image || event.thumb || event.mainImage || '';
+    // デモイベントの場合はimageフィールドのみ使用、通常イベントはimage/thumb/mainImageの順でチェック
+    const isDemoEvent = event.id && event.id.startsWith('demo');
+    const rawImageUrl = isDemoEvent 
+      ? (event.image || '')
+      : (event.image || event.thumb || event.mainImage || '');
     
     // イベント画像URLを生成（拡張子総当たりをやめる：1回だけ試行）
     const fallbackUrl = `https://picsum.photos/seed/${event.id || 'default'}/1200/800`;
