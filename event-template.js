@@ -382,25 +382,30 @@ const EventPageRenderer = {
         event.highlights.forEach(h => {
           const text = String(h);
           // ハイライトの場合、最初の項目も含めてすべて通常の箇条書きとして表示
+          // formatTextWithBulletsは使わず、直接テキストを処理して階層を作らない
           if (text.includes('・')) {
             const lines = text.split(/[・•]/).map(line => line.trim()).filter(line => line.length > 0);
             if (lines.length > 1) {
-              // すべての行を箇条書きとして追加
+              // すべての行を箇条書きとして追加（「|」での改行も処理）
               lines.forEach(line => {
                 const li = document.createElement('li');
-                li.innerHTML = this.formatTextWithBullets(line);
+                // 「|」で改行を処理（左詰め）
+                const formattedLine = line.split('|').map(l => l.trim()).filter(l => l.length > 0).join('<br>');
+                li.innerHTML = this.escapeHtml(formattedLine).replace(/&lt;br&gt;/g, '<br>');
                 highlightsList.appendChild(li);
               });
             } else {
               // 「・」で分割できなかった場合は通常通り処理
               const li = document.createElement('li');
-              li.innerHTML = this.formatTextWithBullets(text);
+              const formattedText = text.split('|').map(l => l.trim()).filter(l => l.length > 0).join('<br>');
+              li.innerHTML = this.escapeHtml(formattedText).replace(/&lt;br&gt;/g, '<br>');
               highlightsList.appendChild(li);
             }
           } else {
-            // 「・」が含まれていない場合は通常通り処理
+            // 「・」が含まれていない場合は通常通り処理（「|」での改行も処理）
             const li = document.createElement('li');
-            li.innerHTML = this.formatTextWithBullets(text);
+            const formattedText = text.split('|').map(l => l.trim()).filter(l => l.length > 0).join('<br>');
+            li.innerHTML = this.escapeHtml(formattedText).replace(/&lt;br&gt;/g, '<br>');
             highlightsList.appendChild(li);
           }
         });
@@ -989,30 +994,22 @@ const EventPageRenderer = {
       // 「・」で分割して箇条書きに変換
       const lines = text.split(/[・•]/).map(line => line.trim()).filter(line => line.length > 0);
       if (lines.length > 1) {
-        // 最初の行が箇条書きの前の説明文の場合、それを取り出す
-        const firstLine = lines[0];
-        const bulletLines = lines.slice(1);
-        
-        // 箇条書きHTMLを生成（プレースホルダーを<br>に戻す）
-        const bulletHtml = bulletLines.map(line => {
+        // 最初の行が「・」で始まっているか、または空でない場合はすべて箇条書きとして表示
+        // 最初の行も含めてすべて箇条書きにする
+        const bulletHtml = lines.map(line => {
           const escaped = this.escapeHtml(line);
           return `<li>${escaped.replace(new RegExp(BR_PLACEHOLDER.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '<br>')}</li>`;
         }).join('\n');
         
-        // 最初の行がある場合は説明文として表示、なければ箇条書きのみ
-        if (firstLine && !firstLine.match(/^[・•]/)) {
-          const escapedFirst = this.escapeHtml(firstLine).replace(new RegExp(BR_PLACEHOLDER.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '<br>');
-          return `<p>${escapedFirst}</p>\n<ul style="margin: 8px 0; padding-left: 20px; list-style-type: disc;">\n${bulletHtml}\n</ul>`;
-        } else {
-          return `<ul style="margin: 8px 0; padding-left: 20px; list-style-type: disc;">\n${bulletHtml}\n</ul>`;
-        }
+        return `<ul style="margin: 8px 0; padding-left: 20px; list-style-type: disc;">\n${bulletHtml}\n</ul>`;
       }
     }
     
     // 「・」がない場合は通常のテキストとして表示
-    // プレースホルダーを<br>に戻し、改行も<br>に変換
+    // プレースホルダーを<br>に戻し、改行も<br>に変換（左詰めスタイルを追加）
     const escaped = this.escapeHtml(text);
-    return escaped.replace(new RegExp(BR_PLACEHOLDER.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '<br>').replace(/\n/g, '<br>');
+    const result = escaped.replace(new RegExp(BR_PLACEHOLDER.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '<br>').replace(/\n/g, '<br>');
+    return result.includes('<br>') ? `<div style="padding-left: 0;">${result}</div>` : result;
   },
 
   // HTMLエスケープ
