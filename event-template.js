@@ -381,7 +381,8 @@ const EventPageRenderer = {
       if (event.highlights && event.highlights.length > 0) {
         event.highlights.forEach(h => {
           const li = document.createElement('li');
-          li.textContent = h;
+          // 「・」があれば箇条書きに変換
+          li.innerHTML = this.formatTextWithBullets(String(h));
           highlightsList.appendChild(li);
         });
         highlightsList.parentElement.style.display = 'block';
