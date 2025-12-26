@@ -7,18 +7,26 @@
   <title>自然体験プラットフォーム | そとなび</title>
   <link rel="icon" type="image/png" id="favicon-link">
   <script>
-    // ファビコンをCloudinaryから取得
+    // ファビコンをCloudinaryから取得（data.js読み込み後に実行）
     (function() {
       function setFavicon() {
         const faviconLink = document.getElementById('favicon-link');
         if (faviconLink && typeof window.getFaviconUrl === 'function') {
           faviconLink.href = window.getFaviconUrl();
+          return true;
         }
+        return false;
+      }
+      // data.js読み込み後に実行されるようにする
+      function trySetFavicon() {
+        if (setFavicon()) return;
+        // window.getFaviconUrlがまだない場合、少し待ってから再試行
+        setTimeout(trySetFavicon, 50);
       }
       if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', setFavicon);
+        document.addEventListener('DOMContentLoaded', trySetFavicon);
       } else {
-        setFavicon();
+        trySetFavicon();
       }
     })();
   </script>
