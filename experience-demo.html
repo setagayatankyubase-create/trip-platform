@@ -719,6 +719,11 @@
           event.externalLink = event.external_link;
         }
         
+        // デモデータのimagesがundefinedの場合、空配列に初期化（GASからのレスポンスでundefinedが返される場合の対策）
+        if (event.images === undefined) {
+          event.images = [];
+        }
+        
         // デモデータの構造を確認（デバッグ用）
         const imageKeys = Object.keys(event).filter(k => k.toLowerCase().includes('image') || k.toLowerCase().includes('img') || k.toLowerCase().includes('photo'));
         console.log('[experience-demo] Event structure:', {

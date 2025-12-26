@@ -136,11 +136,17 @@ const EventPageRenderer = {
     // サブ画像配列を取得
     // 配列の場合はそのまま、文字列の場合は | で分割して配列化
     let subImageIds = [];
-    if (Array.isArray(event.images)) {
+    if (Array.isArray(event.images) && event.images.length > 0) {
       subImageIds = event.images;
     } else if (typeof event.images === 'string' && event.images.trim()) {
       // | または ｜ で区切られた文字列を配列に変換（空白をtrimして空要素を除外）
       subImageIds = event.images.split(/[|｜]/).map(s => s.trim()).filter(Boolean);
+    }
+    
+    // デモイベントの場合、imagesがundefinedの場合は空配列として扱う（GASからのレスポンスでundefinedが返される可能性がある）
+    if (event.id && event.id.startsWith('demo') && event.images === undefined && subImageIds.length === 0) {
+      // デモイベントでimagesがない場合、何もしない（フォールバック画像を使用）
+      subImageIds = [];
     }
     
     // デバッグログ（一時的）
