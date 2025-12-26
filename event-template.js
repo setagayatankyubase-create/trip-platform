@@ -380,10 +380,29 @@ const EventPageRenderer = {
       highlightsList.innerHTML = '';
       if (event.highlights && event.highlights.length > 0) {
         event.highlights.forEach(h => {
-          const li = document.createElement('li');
-          // 「・」があれば箇条書きに変換
-          li.innerHTML = this.formatTextWithBullets(String(h));
-          highlightsList.appendChild(li);
+          const text = String(h);
+          // ハイライトの場合、最初の項目も含めてすべて通常の箇条書きとして表示
+          if (text.includes('・')) {
+            const lines = text.split(/[・•]/).map(line => line.trim()).filter(line => line.length > 0);
+            if (lines.length > 1) {
+              // すべての行を箇条書きとして追加
+              lines.forEach(line => {
+                const li = document.createElement('li');
+                li.innerHTML = this.formatTextWithBullets(line);
+                highlightsList.appendChild(li);
+              });
+            } else {
+              // 「・」で分割できなかった場合は通常通り処理
+              const li = document.createElement('li');
+              li.innerHTML = this.formatTextWithBullets(text);
+              highlightsList.appendChild(li);
+            }
+          } else {
+            // 「・」が含まれていない場合は通常通り処理
+            const li = document.createElement('li');
+            li.innerHTML = this.formatTextWithBullets(text);
+            highlightsList.appendChild(li);
+          }
         });
         highlightsList.parentElement.style.display = 'block';
       } else {

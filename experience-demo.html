@@ -501,7 +501,7 @@
         // パスワード認証とデータ取得を一度に実行
         const url = new URL(DEMO_GAS_API_URL);
         url.searchParams.set('password', password);
-        url.searchParams.set('debug', '1'); // デバッグ情報を取得
+        url.searchParams.set('_t', Date.now().toString()); // キャッシュ回避用タイムスタンプ
         
         const response = await fetch(url.toString());
         if (!response.ok) {
@@ -558,20 +558,11 @@
     
     // デモデータを取得（毎回最新データを取得、キャッシュは使用しない）
     async function fetchDemoData(password) {
-      const CACHE_KEY = 'demo_data_cache';
-      
-      // キャッシュを毎回クリア（最新データを常に取得）
-      try {
-        sessionStorage.removeItem(CACHE_KEY);
-      } catch (e) {
-        // キャッシュクリアに失敗しても続行
-      }
-      
-      // APIから取得
+      // APIから取得（タイムスタンプを付与してキャッシュを回避）
       try {
         const url = new URL(DEMO_GAS_API_URL);
         url.searchParams.set('password', password);
-        url.searchParams.set('debug', '1'); // デバッグ情報を取得
+        url.searchParams.set('_t', Date.now().toString()); // キャッシュ回避用タイムスタンプ
         
         const response = await fetch(url.toString());
         if (!response.ok) {

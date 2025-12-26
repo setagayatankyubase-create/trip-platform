@@ -205,151 +205,173 @@
         errorDiv.textContent = errorMsg;
         errorDiv.style.display = 'block';
         demoContent.style.display = 'none';
+        const demoList = document.getElementById('demo-list');
+        if (demoList) {
+          demoList.innerHTML = '';
+        }
       }
     }
     
     function renderDemoContent(demoData) {
-      const demoList = document.getElementById('demo-list');
-      
-      if (!demoData || !demoData.success) {
-        demoList.innerHTML = `
-          <div class="empty-state">
-            <div class="empty-state-icon">📝</div>
-            <h3>データの取得に失敗しました</h3>
-          </div>
-        `;
-        return;
-      }
-      
-      const organizer = demoData.organizer;
-      let eventList = Array.isArray(demoData.events) ? demoData.events : [];
-      
-      if (eventList.length === 0 && window.eventData && Array.isArray(window.eventData.events)) {
-        eventList = window.eventData.events;
-      }
-      
-      const norm = v => String(v ?? '').trim().replace(/[\s　]+/g, '');
-      let events = eventList;
-      
-      if (organizer && organizer.id) {
-        const organizerId = norm(organizer.id);
-        const idCandidates = new Set([organizerId]);
-        
-        events = eventList.filter(e => {
-          const oid = e.organizerId ?? e.organizer_id ?? e.providerId ?? e.provider_id ?? e.organizer ?? e.organizerID ?? '';
-          return idCandidates.has(norm(oid));
-        });
-        
-        if (events.length === 0 && eventList.length > 0) {
-          events = eventList;
-        }
-      }
-      
-      const demoOrganizerContainer = document.getElementById('demo-organizer-container');
-      if (demoOrganizerContainer && organizer) {
-        const organizerId = organizer.id || '';
-        let originalLogoUrl = organizer.logo || organizer.image || '';
-        
-        const websiteValue = organizer.website || '';
-        if (websiteValue && !websiteValue.includes('http') && !websiteValue.includes('.com') && (!websiteValue.includes('.') || websiteValue.includes('_'))) {
-          originalLogoUrl = websiteValue;
+      try {
+        const demoList = document.getElementById('demo-list');
+        if (!demoList) {
+          console.error('[publish.html] demo-list element not found');
+          return;
         }
         
-        if ((!originalLogoUrl || originalLogoUrl.includes('picsum.photos') || originalLogoUrl.includes('placeholder')) && organizerId) {
-          originalLogoUrl = `${organizerId}_camppk`;
+        if (!demoData || !demoData.success) {
+          demoList.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-state-icon">📝</div>
+              <h3>データの取得に失敗しました</h3>
+            </div>
+          `;
+          return;
         }
         
-        let logoUrl = '';
+        const organizer = demoData.organizer;
+        let eventList = Array.isArray(demoData.events) ? demoData.events : [];
         
-        if (typeof window.getOrganizerImageUrl === 'function') {
-          logoUrl = window.getOrganizerImageUrl(originalLogoUrl, organizerId, { w: 400 });
-        } else if (typeof window.cloudinaryUrl === 'function') {
-          logoUrl = window.cloudinaryUrl(originalLogoUrl, { w: 400, type: 'organizer' });
-        } else {
-          logoUrl = originalLogoUrl;
+        if (eventList.length === 0 && window.eventData && Array.isArray(window.eventData.events)) {
+          eventList = window.eventData.events;
         }
         
-        const imageErrorHandler = `
-          (function() {
-            const img = this;
-            if (img.dataset.fallbackDone === "1") {
+        const norm = v => String(v ?? '').trim().replace(/[\s　]+/g, '');
+        let events = eventList;
+        
+        if (organizer && organizer.id) {
+          const organizerId = norm(organizer.id);
+          const idCandidates = new Set([organizerId]);
+          
+          events = eventList.filter(e => {
+            const oid = e.organizerId ?? e.organizer_id ?? e.providerId ?? e.provider_id ?? e.organizer ?? e.organizerID ?? '';
+            return idCandidates.has(norm(oid));
+          });
+          
+          if (events.length === 0 && eventList.length > 0) {
+            events = eventList;
+          }
+        }
+        
+        const demoOrganizerContainer = document.getElementById('demo-organizer-container');
+        if (demoOrganizerContainer && organizer) {
+          const organizerId = organizer.id || '';
+          let originalLogoUrl = organizer.logo || organizer.image || '';
+          
+          const websiteValue = organizer.website || '';
+          if (websiteValue && !websiteValue.includes('http') && !websiteValue.includes('.com') && (!websiteValue.includes('.') || websiteValue.includes('_'))) {
+            originalLogoUrl = websiteValue;
+          }
+          
+          if ((!originalLogoUrl || originalLogoUrl.includes('picsum.photos') || originalLogoUrl.includes('placeholder')) && organizerId) {
+            originalLogoUrl = `${organizerId}_camppk`;
+          }
+          
+          let logoUrl = '';
+          
+          if (typeof window.getOrganizerImageUrl === 'function') {
+            logoUrl = window.getOrganizerImageUrl(originalLogoUrl, organizerId, { w: 400 });
+          } else if (typeof window.cloudinaryUrl === 'function') {
+            logoUrl = window.cloudinaryUrl(originalLogoUrl, { w: 400, type: 'organizer' });
+          } else {
+            logoUrl = originalLogoUrl;
+          }
+          
+          const imageErrorHandler = `
+            (function() {
+              const img = this;
+              if (img.dataset.fallbackDone === "1") {
+                img.style.display = 'none';
+                return;
+              }
+              img.dataset.fallbackDone = "1";
               img.style.display = 'none';
-              return;
-            }
-            img.dataset.fallbackDone = "1";
-            img.style.display = 'none';
-          }).call(this);
-        `;
-        
-        const establishedYear = organizer.establishedYear || organizer.founded_year || organizer.foundedYear || '';
-        
-        demoOrganizerContainer.innerHTML = `
-          <a href="organizer-demo.html?id=${organizer.id}" style="text-decoration: none; color: inherit; display: block; margin-bottom: 32px;">
-            <div class="organizer-card" style="cursor: pointer;">
-              <div class="organizer-header">
-                ${logoUrl ? `<img src="${logoUrl.replace(/"/g, '&quot;')}" alt="${(organizer.name || '').replace(/"/g, '&quot;')}" class="organizer-logo" loading="lazy" decoding="async" onerror="${imageErrorHandler.replace(/"/g, '&quot;')}" />` : ''}
-                <div class="organizer-info" style="flex: 1;">
-                  <h3 style="margin: 0 0 8px 0; font-size: 1.5rem;">${organizer.name || 'デモ提供元'}</h3>
-                  <p style="margin: 0; color: #6c7a72; line-height: 1.6;">${organizer.description || ''}</p>
-                  <div class="organizer-meta" style="margin-top: 12px; font-size: 0.9rem; color: #6c7a72;">
-                    ${establishedYear && establishedYear !== 'undefined' && establishedYear.trim() !== '' ? `<span>設立: ${establishedYear}年</span>` : ''}
-                    ${(() => {
-                      const rating = parseFloat(organizer.rating) || 0;
-                      const reviewCount = parseInt(organizer.reviewCount) || 0;
-                      if (rating > 0 && reviewCount > 0) {
-                        return `${establishedYear && establishedYear !== 'undefined' && establishedYear.trim() !== '' ? ' • ' : ''}評価: ★${rating} (${reviewCount}件)`;
-                      }
-                      return '';
-                    })()}
+            }).call(this);
+          `;
+          
+          const establishedYear = organizer.establishedYear || organizer.founded_year || organizer.foundedYear || '';
+          
+          demoOrganizerContainer.innerHTML = `
+            <a href="organizer-demo.html?id=${organizer.id}" style="text-decoration: none; color: inherit; display: block; margin-bottom: 32px;">
+              <div class="organizer-card" style="cursor: pointer;">
+                <div class="organizer-header">
+                  ${logoUrl ? `<img src="${logoUrl.replace(/"/g, '&quot;')}" alt="${(organizer.name || '').replace(/"/g, '&quot;')}" class="organizer-logo" loading="lazy" decoding="async" onerror="${imageErrorHandler.replace(/"/g, '&quot;')}" />` : ''}
+                  <div class="organizer-info" style="flex: 1;">
+                    <h3 style="margin: 0 0 8px 0; font-size: 1.5rem;">${organizer.name || 'デモ提供元'}</h3>
+                    <p style="margin: 0; color: #6c7a72; line-height: 1.6;">${organizer.description || ''}</p>
+                    <div class="organizer-meta" style="margin-top: 12px; font-size: 0.9rem; color: #6c7a72;">
+                      ${establishedYear && establishedYear !== 'undefined' && establishedYear.trim() !== '' ? `<span>設立: ${establishedYear}年</span>` : ''}
+                      ${(() => {
+                        const rating = parseFloat(organizer.rating) || 0;
+                        const reviewCount = parseInt(organizer.reviewCount) || 0;
+                        if (rating > 0 && reviewCount > 0) {
+                          return `${establishedYear && establishedYear !== 'undefined' && establishedYear.trim() !== '' ? ' • ' : ''}評価: ★${rating} (${reviewCount}件)`;
+                        }
+                        return '';
+                      })()}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </a>
-        `;
-      }
-      
-      const demoTitle = document.getElementById('demo-events-title');
-      if (events.length === 0) {
-        if (demoTitle) demoTitle.style.display = 'none';
-        const html = `
-          <div class="empty-state">
-            <div class="empty-state-icon">📝</div>
-            <h3>デモイベントがありません</h3>
-            <p>この提供元のデモイベントが登録されていません</p>
-          </div>
-        `;
-        demoList.innerHTML = html;
-      } else {
-        if (demoTitle) demoTitle.style.display = 'block';
+            </a>
+          `;
+        }
         
-        if (typeof CardRenderer !== 'undefined' && CardRenderer.renderList) {
-          CardRenderer.renderList(events, 'demo-list');
+        const demoTitle = document.getElementById('demo-events-title');
+        if (events.length === 0) {
+          if (demoTitle) demoTitle.style.display = 'none';
+          const html = `
+            <div class="empty-state">
+              <div class="empty-state-icon">📝</div>
+              <h3>デモイベントがありません</h3>
+              <p>この提供元のデモイベントが登録されていません</p>
+            </div>
+          `;
+          demoList.innerHTML = html;
+        } else {
+          if (demoTitle) demoTitle.style.display = 'block';
           
-          const links = demoList.querySelectorAll('.card-link[href^="experience.html"]');
-          links.forEach(link => {
-            const href = link.getAttribute('href');
-            if (href && href.startsWith('experience.html')) {
-              link.setAttribute('href', href.replace('experience.html', 'experience-demo.html'));
+          if (typeof CardRenderer !== 'undefined' && CardRenderer.renderList) {
+            try {
+              CardRenderer.renderList(events, 'demo-list');
+              
+              const links = demoList.querySelectorAll('.card-link[href^="experience.html"]');
+              links.forEach(link => {
+                const href = link.getAttribute('href');
+                if (href && href.startsWith('experience.html')) {
+                  link.setAttribute('href', href.replace('experience.html', 'experience-demo.html'));
+                }
+              });
+            } catch (renderError) {
+              console.error('[publish.html] Error in CardRenderer.renderList:', renderError);
+              demoList.innerHTML = `<p style="color: #d32f2f; padding: 40px; text-align: center;">レンダリングエラー: ${renderError.message}</p>`;
+            }
+          } else {
+            console.error('[publish.html] CardRenderer or renderList not available');
+            demoList.innerHTML = '<p style="color: #6c7a72; padding: 40px; text-align: center;">イベントの読み込みに失敗しました（CardRendererが見つかりません）</p>';
+          }
+        }
+        
+        const eventCardsContainer = demoList.querySelector('.grid') || demoList;
+        const links = eventCardsContainer.querySelectorAll('.card-link');
+        links.forEach(link => {
+          link.addEventListener('click', (e) => {
+            const eventId = link.getAttribute('data-event-id');
+            if (typeof ClickTracker !== 'undefined' && ClickTracker.track) {
+              const event = events.find(ev => ev.id === eventId);
+              const organizerId = event ? (event.organizerId || event.organizer_id || '') : '';
+              ClickTracker.track(eventId, organizerId);
             }
           });
-        } else {
-          demoList.innerHTML = '<p style="color: #6c7a72; padding: 40px; text-align: center;">イベントの読み込みに失敗しました</p>';
+        });
+      } catch (error) {
+        console.error('[publish.html] Error in renderDemoContent:', error);
+        const demoList = document.getElementById('demo-list');
+        if (demoList) {
+          demoList.innerHTML = `<p style="color: #d32f2f; padding: 40px; text-align: center;">エラーが発生しました: ${error.message}</p>`;
         }
       }
-      
-      const eventCardsContainer = demoList.querySelector('.grid') || demoList;
-      const links = eventCardsContainer.querySelectorAll('.card-link');
-      links.forEach(link => {
-        link.addEventListener('click', (e) => {
-          const eventId = link.getAttribute('data-event-id');
-          if (typeof ClickTracker !== 'undefined' && ClickTracker.track) {
-            const event = events.find(ev => ev.id === eventId);
-            const organizerId = event ? (event.organizerId || event.organizer_id || '') : '';
-            ClickTracker.track(eventId, organizerId);
-          }
-        });
-      });
     }
     
     function clearDemoAuth() {
