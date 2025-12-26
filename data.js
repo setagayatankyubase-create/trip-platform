@@ -16,7 +16,7 @@ const GITHUB_RAW_BASE = sanitizeBase(
 );
 
 // キャッシュ無効化用バージョン（構造変えたら必ず上げる）
-const EVENT_CACHE_VERSION = "v5_2025-01-15";
+const EVENT_CACHE_VERSION = "v6_2025-12-26";
 
 // キャッシュキー（バージョンと連動）
 const STORAGE_KEY_BASE = `sotonavi_eventData_${EVENT_CACHE_VERSION}`;
@@ -225,9 +225,20 @@ let _eventMetaLoadingPromise = null;
 window.loadEventData = function loadEventData() {
   // すでに構築済みなら即返す（早期リターン）
   if (window.eventData && window.eventIndex) {
+    const evt002 = window.eventIndex?.find(e => e.id === 'evt-002');
+    console.log('[data.js] loadEventData: 既にデータあり (早期リターン)', {
+      evt002Image: evt002?.image,
+      evt002Thumb: evt002?.thumb,
+      source: 'cached'
+    });
     return Promise.resolve(window.eventData);
   }
-  if (_eventDataLoadingPromise) return _eventDataLoadingPromise;
+  if (_eventDataLoadingPromise) {
+    console.log('[data.js] loadEventData: 読み込み中...');
+    return _eventDataLoadingPromise;
+  }
+  
+  console.log('[data.js] loadEventData: 新規読み込み開始');
 
   const STORAGE_KEY = STORAGE_KEY_BASE;
   const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 1日
@@ -262,6 +273,17 @@ window.loadEventData = function loadEventData() {
 
             // ★mapで落とさない：そのまま持つ
             window.eventIndex = cachedEvents;
+            
+            // デバッグ：window.eventIndexに設定されたevt-002を確認
+            const evt002Set = window.eventIndex?.find(e => e.id === 'evt-002');
+            if (evt002Set) {
+              console.log('[data.js] loadEventData: window.eventIndexに設定されたevt-002 (キャッシュから):', {
+                id: evt002Set.id,
+                image: evt002Set.image,
+                thumb: evt002Set.thumb,
+                mainImage: evt002Set.mainImage
+              });
+            }
 
             // ★互換：events_index も揃える（ページ側がどっち見てもOK）
             window.eventData.events_index = cachedEvents;
@@ -331,9 +353,18 @@ window.loadEventData = function loadEventData() {
 // 一覧用インデックスだけを読み込む（軽量）
 window.loadEventIndex = function loadEventIndex() {
   if (window.eventIndex && Array.isArray(window.eventIndex)) {
+    console.log('[data.js] loadEventIndex: 既にwindow.eventIndexにデータあり', {
+      count: window.eventIndex.length,
+      evt002: window.eventIndex.find(e => e.id === 'evt-002')
+    });
     return Promise.resolve(window.eventIndex);
   }
-  if (_eventIndexLoadingPromise) return _eventIndexLoadingPromise;
+  if (_eventIndexLoadingPromise) {
+    console.log('[data.js] loadEventIndex: 読み込み中...');
+    return _eventIndexLoadingPromise;
+  }
+  
+  console.log('[data.js] loadEventIndex: 新規読み込み開始');
 
   const INDEX_STORAGE_KEY = INDEX_STORAGE_KEY_BASE;
   const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
