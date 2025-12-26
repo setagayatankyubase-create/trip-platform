@@ -712,6 +712,16 @@
           event.images = [];
         }
         
+        // メイン画像（image）とサブ画像（images[0]）が同じ場合は、imagesから除外して独立させる
+        if (event.image && Array.isArray(event.images) && event.images.length > 0) {
+          // imageと同じIDをimagesから除外
+          event.images = event.images.filter(img => {
+            const imgId = String(img).trim();
+            const mainImageId = String(event.image).trim();
+            return imgId !== mainImageId;
+          });
+        }
+        
         // デモデータの構造を確認（デバッグ用）
         const imageKeys = Object.keys(event).filter(k => k.toLowerCase().includes('image') || k.toLowerCase().includes('img') || k.toLowerCase().includes('photo'));
         console.log('[experience-demo] Event structure:', {

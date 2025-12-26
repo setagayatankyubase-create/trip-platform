@@ -146,6 +146,15 @@ const EventPageRenderer = {
       subImageIds = event.images.split(/[|｜]/).map(s => s.trim()).filter(Boolean);
     }
     
+    // メイン画像（image）とサブ画像が重複しないように、メイン画像と同じIDをサブ画像から除外
+    if (event.image && subImageIds.length > 0) {
+      const mainImageId = String(event.image).trim();
+      subImageIds = subImageIds.filter(imgId => {
+        const imgIdStr = String(imgId).trim();
+        return imgIdStr !== mainImageId;
+      });
+    }
+    
     // デモイベントの場合、imagesがundefinedの場合は空配列として扱う（GASからのレスポンスでundefinedが返される可能性がある）
     if (event.id && event.id.startsWith('demo') && event.images === undefined && subImageIds.length === 0) {
       // デモイベントでimagesがない場合、何もしない（フォールバック画像を使用）
