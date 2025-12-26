@@ -953,9 +953,17 @@ const EventPageRenderer = {
     }
   },
 
-  // テキストに「・」があれば箇条書きに変換（改行も追加）
+  // テキストに「・」があれば箇条書きに変換、「|」があれば改行
   formatTextWithBullets(text) {
     if (!text || typeof text !== 'string') return '';
+    
+    // 「|」で改行を入れる（特殊文字として扱い、後で<br>に変換）
+    // まず「|」を一時的なマーカーに置換して、エスケープ後に<br>に戻す
+    const BR_PLACEHOLDER = '___BR___';
+    if (text.includes('|')) {
+      // 「|」を一時的なプレースホルダーに置換
+      text = text.split('|').map(line => line.trim()).filter(line => line.length > 0).join(BR_PLACEHOLDER);
+    }
     
     // 「・」が含まれているかチェック
     if (text.includes('・')) {
@@ -966,20 +974,26 @@ const EventPageRenderer = {
         const firstLine = lines[0];
         const bulletLines = lines.slice(1);
         
-        // 箇条書きHTMLを生成
-        const bulletHtml = bulletLines.map(line => `<li>${this.escapeHtml(line)}</li>`).join('\n');
+        // 箇条書きHTMLを生成（プレースホルダーを<br>に戻す）
+        const bulletHtml = bulletLines.map(line => {
+          const escaped = this.escapeHtml(line);
+          return `<li>${escaped.replace(new RegExp(BR_PLACEHOLDER.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '<br>')}</li>`;
+        }).join('\n');
         
         // 最初の行がある場合は説明文として表示、なければ箇条書きのみ
         if (firstLine && !firstLine.match(/^[・•]/)) {
-          return `<p>${this.escapeHtml(firstLine)}</p>\n<ul style="margin: 12px 0; padding-left: 20px;">\n${bulletHtml}\n</ul>`;
+          const escapedFirst = this.escapeHtml(firstLine).replace(new RegExp(BR_PLACEHOLDER.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '<br>');
+          return `<p>${escapedFirst}</p>\n<ul style="margin: 12px 0; padding-left: 20px;">\n${bulletHtml}\n</ul>`;
         } else {
           return `<ul style="margin: 12px 0; padding-left: 20px;">\n${bulletHtml}\n</ul>`;
         }
       }
     }
     
-    // 「・」がない場合は通常のテキストとして表示（改行を<br>に変換）
-    return this.escapeHtml(text).replace(/\n/g, '<br>');
+    // 「・」がない場合は通常のテキストとして表示
+    // プレースホルダーを<br>に戻し、改行も<br>に変換
+    const escaped = this.escapeHtml(text);
+    return escaped.replace(new RegExp(BR_PLACEHOLDER.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '<br>').replace(/\n/g, '<br>');
   },
 
   // HTMLエスケープ
