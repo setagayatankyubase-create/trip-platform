@@ -638,6 +638,19 @@
         // デモデータを取得
         const demoData = await fetchDemoData(password);
         
+        // デモデータの生データを確認（デバッグ用）
+        if (demoData?.events && demoData.events.length > 0) {
+          const firstEvent = demoData.events[0];
+          console.log('[experience-demo] First event from GAS:', {
+            id: firstEvent.id,
+            title: firstEvent.title,
+            hasImages: 'images' in firstEvent,
+            images: firstEvent.images,
+            imagesType: typeof firstEvent.images,
+            image: firstEvent.image,
+            allKeys: Object.keys(firstEvent)
+          });
+        }
         
         // イベントリストを取得（フォールバック対応）
         const list = Array.isArray(demoData?.events) ? demoData.events : [];
@@ -651,6 +664,19 @@
         
         // 指定されたIDのイベントを検索（フォールバックリストから）
         const event = fallbackList.find(e => e.id === eventId);
+        
+        // 見つかったイベントの生データを確認（デバッグ用）
+        if (event) {
+          console.log('[experience-demo] Found event raw data:', {
+            id: event.id,
+            hasImages: 'images' in event,
+            images: event.images,
+            imagesType: typeof event.images,
+            image: event.image,
+            allKeys: Object.keys(event).filter(k => k.toLowerCase().includes('image'))
+          });
+        }
+        
         if (!event) {
           document.getElementById('demo-error').style.display = 'block';
           document.getElementById('demo-error').innerHTML = `
