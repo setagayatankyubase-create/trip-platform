@@ -122,40 +122,64 @@ const EventPageRenderer = {
     
     // サブ画像（複数枚）を設定
     const thumbsContainer = document.querySelector('.thumbs');
-    if (thumbsContainer && typeof window.getEventImageUrl === 'function') {
-      const thumbElements = thumbsContainer.querySelectorAll('.thumb');
+    if (!thumbsContainer) {
+      console.warn('[EventPageRenderer] .thumbs container not found');
+      return;
+    }
+    
+    const thumbElements = thumbsContainer.querySelectorAll('.thumb');
+    if (thumbElements.length === 0) {
+      console.warn('[EventPageRenderer] No .thumb elements found');
+      return;
+    }
 
-      // サブ画像配列を取得
-      // 配列の場合はそのまま、文字列の場合は | で分割して配列化
-      let subImageIds = [];
-      if (Array.isArray(event.images)) {
-        subImageIds = event.images;
-      } else if (typeof event.images === 'string' && event.images.trim()) {
-        // | または ｜ で区切られた文字列を配列に変換（空白をtrimして空要素を除外）
-        subImageIds = event.images.split(/[|｜]/).map(s => s.trim()).filter(Boolean);
-      }
+    // サブ画像配列を取得
+    // 配列の場合はそのまま、文字列の場合は | で分割して配列化
+    let subImageIds = [];
+    if (Array.isArray(event.images)) {
+      subImageIds = event.images;
+    } else if (typeof event.images === 'string' && event.images.trim()) {
+      // | または ｜ で区切られた文字列を配列に変換（空白をtrimして空要素を除外）
+      subImageIds = event.images.split(/[|｜]/).map(s => s.trim()).filter(Boolean);
+    }
+    
+    // デバッグログ（一時的）
+    if (subImageIds.length === 0 && event.id && event.id.startsWith('demo')) {
+      console.log('[EventPageRenderer] No sub images found for demo event:', event.id, 'event.images:', event.images);
+    }
 
-      // サブ画像をサムネイルに反映（最大2枚想定）
-      thumbElements.forEach((thumbEl, index) => {
-        if (!thumbEl) return;
-        
-        const publicId = subImageIds[index];
-        
-        // サブ画像がある場合
-        if (publicId) {
-          // サブ画像もフォールバック処理を含む画像読み込み
-          if (!publicId.startsWith('http')) {
+    // サブ画像をサムネイルに反映（最大2枚想定）
+    thumbElements.forEach((thumbEl, index) => {
+      if (!thumbEl) return;
+      
+      const publicId = subImageIds[index];
+      
+      // サブ画像がある場合
+      if (publicId) {
+        // サブ画像もフォールバック処理を含む画像読み込み
+        if (!publicId.startsWith('http')) {
+          // Cloudinaryから取得する場合
+          if (typeof window.getEventImageUrl === 'function') {
+            const imageUrl = window.getEventImageUrl(publicId, event.id, { w: 600 });
+            this.tryLoadImageWithFallback(thumbEl, publicId, event.id, { w: 600, isMain: false });
+          } else if (typeof window.cloudinaryUrl === 'function') {
+            // getEventImageUrlがない場合でも、cloudinaryUrlがあれば使用
+            const imageUrl = window.cloudinaryUrl(publicId, { w: 600 });
             this.tryLoadImageWithFallback(thumbEl, publicId, event.id, { w: 600, isMain: false });
           } else {
-            thumbEl.style.backgroundImage = `url('${publicId.replace(/'/g, "\\'")}')`;
+            // Cloudinary関数がない場合、直接URLとして扱う
+            this.tryLoadImageWithFallback(thumbEl, publicId, event.id, { w: 600, isMain: false });
           }
         } else {
-          // サブ画像がない場合、フォールバック画像を表示
-          const fallbackUrl = `https://picsum.photos/seed/${event.id || 'default'}-thumb-${index}/600/400`;
-          thumbEl.style.backgroundImage = `url('${fallbackUrl}')`;
+          // 既にURL形式の場合
+          thumbEl.style.backgroundImage = `url('${publicId.replace(/'/g, "\\'")}')`;
         }
-      });
-    }
+      } else {
+        // サブ画像がない場合、フォールバック画像を表示
+        const fallbackUrl = `https://picsum.photos/seed/${event.id || 'default'}-thumb-${index}/600/400`;
+        thumbEl.style.backgroundImage = `url('${fallbackUrl}')`;
+      }
+    });
   },
 
   // メインコンテンツ
