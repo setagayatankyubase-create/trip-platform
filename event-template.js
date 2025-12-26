@@ -391,25 +391,77 @@ const EventPageRenderer = {
             if (lines.length > 1) {
               // すべての行を箇条書きとして追加（「|」での改行も処理）
               lines.forEach(line => {
-                const li = document.createElement('li');
-                // 「|」で改行を処理（左詰め）
-                const formattedLine = line.split('|').map(l => l.trim()).filter(l => l.length > 0).join('<br>');
-                li.innerHTML = this.escapeHtml(formattedLine).replace(/&lt;br&gt;/g, '<br>');
-                highlightsList.appendChild(li);
+                if (line.includes('|')) {
+                  // 「|」で分割して、最初の項目を箇条書きとして、残りを左詰めで追加
+                  const parts = line.split('|').map(l => l.trim()).filter(l => l.length > 0);
+                  if (parts.length > 0) {
+                    const firstLi = document.createElement('li');
+                    firstLi.innerHTML = this.escapeHtml(parts[0]);
+                    highlightsList.appendChild(firstLi);
+                    
+                    // 残りの項目を左詰めで追加
+                    for (let i = 1; i < parts.length; i++) {
+                      const subLi = document.createElement('li');
+                      subLi.style.paddingLeft = '0';
+                      subLi.style.marginLeft = '0';
+                      subLi.style.listStyle = 'none';
+                      subLi.innerHTML = this.escapeHtml(parts[i]);
+                      highlightsList.appendChild(subLi);
+                    }
+                  }
+                } else {
+                  const li = document.createElement('li');
+                  li.innerHTML = this.escapeHtml(line);
+                  highlightsList.appendChild(li);
+                }
               });
             } else {
               // 「・」で分割できなかった場合は通常通り処理
-              const li = document.createElement('li');
-              const formattedText = text.split('|').map(l => l.trim()).filter(l => l.length > 0).join('<br>');
-              li.innerHTML = this.escapeHtml(formattedText).replace(/&lt;br&gt;/g, '<br>');
-              highlightsList.appendChild(li);
+              if (text.includes('|')) {
+                const parts = text.split('|').map(l => l.trim()).filter(l => l.length > 0);
+                if (parts.length > 0) {
+                  const firstLi = document.createElement('li');
+                  firstLi.innerHTML = this.escapeHtml(parts[0]);
+                  highlightsList.appendChild(firstLi);
+                  
+                  for (let i = 1; i < parts.length; i++) {
+                    const subLi = document.createElement('li');
+                    subLi.style.paddingLeft = '0';
+                    subLi.style.marginLeft = '0';
+                    subLi.style.listStyle = 'none';
+                    subLi.innerHTML = this.escapeHtml(parts[i]);
+                    highlightsList.appendChild(subLi);
+                  }
+                }
+              } else {
+                const li = document.createElement('li');
+                li.innerHTML = this.escapeHtml(text);
+                highlightsList.appendChild(li);
+              }
             }
           } else {
             // 「・」が含まれていない場合は通常通り処理（「|」での改行も処理）
-            const li = document.createElement('li');
-            const formattedText = text.split('|').map(l => l.trim()).filter(l => l.length > 0).join('<br>');
-            li.innerHTML = this.escapeHtml(formattedText).replace(/&lt;br&gt;/g, '<br>');
-            highlightsList.appendChild(li);
+            if (text.includes('|')) {
+              const parts = text.split('|').map(l => l.trim()).filter(l => l.length > 0);
+              if (parts.length > 0) {
+                const firstLi = document.createElement('li');
+                firstLi.innerHTML = this.escapeHtml(parts[0]);
+                highlightsList.appendChild(firstLi);
+                
+                for (let i = 1; i < parts.length; i++) {
+                  const subLi = document.createElement('li');
+                  subLi.style.paddingLeft = '0';
+                  subLi.style.marginLeft = '0';
+                  subLi.style.listStyle = 'none';
+                  subLi.innerHTML = this.escapeHtml(parts[i]);
+                  highlightsList.appendChild(subLi);
+                }
+              }
+            } else {
+              const li = document.createElement('li');
+              li.innerHTML = this.escapeHtml(text);
+              highlightsList.appendChild(li);
+            }
           }
         });
         highlightsList.parentElement.style.display = 'block';
@@ -1010,11 +1062,27 @@ const EventPageRenderer = {
           return result.includes('<br>') ? `<div style="padding-left: 0; margin-left: 0; text-indent: 0;">${result}</div>` : result;
         }
         
-        // 箇条書きHTMLを生成（プレースホルダーを<br>に戻す）
-        const bulletHtml = bulletLines.map(line => {
-          const escaped = this.escapeHtml(line);
-          return `<li>${escaped.replace(new RegExp(BR_PLACEHOLDER.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '<br>')}</li>`;
-        }).join('\n');
+        // 箇条書きHTMLを生成（「|」改行は左詰めの新しい項目として追加）
+        let bulletHtml = '';
+        bulletLines.forEach(line => {
+          if (line.includes(BR_PLACEHOLDER)) {
+            // 「|」で分割して、最初の項目を箇条書きとして、残りを左詰めで追加
+            const parts = line.split(BR_PLACEHOLDER).map(l => l.trim()).filter(l => l.length > 0);
+            if (parts.length > 0) {
+              const firstEscaped = this.escapeHtml(parts[0]);
+              bulletHtml += `<li>${firstEscaped}</li>\n`;
+              
+              // 残りの項目を左詰めで追加
+              for (let i = 1; i < parts.length; i++) {
+                const partEscaped = this.escapeHtml(parts[i]);
+                bulletHtml += `<li style="padding-left: 0; margin-left: 0; list-style: none;">${partEscaped}</li>\n`;
+              }
+            }
+          } else {
+            const escaped = this.escapeHtml(line);
+            bulletHtml += `<li>${escaped}</li>\n`;
+          }
+        });
         
         // 最初の行が説明文の場合
         if (!includeFirstLineAsBullet && firstLine && !firstLine.match(/^[・•]/)) {
