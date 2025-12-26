@@ -694,13 +694,18 @@
         }
         
         // デモデータの構造を確認（デバッグ用）
+        const imageKeys = Object.keys(event).filter(k => k.toLowerCase().includes('image') || k.toLowerCase().includes('img') || k.toLowerCase().includes('photo'));
         console.log('[experience-demo] Event structure:', {
           id: event.id,
           hasImages: 'images' in event,
           images: event.images,
           imagesType: typeof event.images,
-          allKeys: Object.keys(event).filter(k => k.toLowerCase().includes('image') || k.toLowerCase().includes('img') || k.toLowerCase().includes('photo'))
+          allKeys: imageKeys,
+          allKeysValues: imageKeys.reduce((acc, key) => { acc[key] = event[key]; return acc; }, {})
         });
+        
+        // イベントデータ全体のキーも確認
+        console.log('[experience-demo] All event keys:', Object.keys(event));
         
         try {
           // 公開版と同じ構成でレンダリング
