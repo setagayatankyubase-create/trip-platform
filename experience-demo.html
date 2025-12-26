@@ -693,6 +693,15 @@
           event.externalLink = event.external_link;
         }
         
+        // デモデータの構造を確認（デバッグ用）
+        console.log('[experience-demo] Event structure:', {
+          id: event.id,
+          hasImages: 'images' in event,
+          images: event.images,
+          imagesType: typeof event.images,
+          allKeys: Object.keys(event).filter(k => k.toLowerCase().includes('image') || k.toLowerCase().includes('img') || k.toLowerCase().includes('photo'))
+        });
+        
         try {
           // 公開版と同じ構成でレンダリング
           EventPageRenderer.render(event, organizer);

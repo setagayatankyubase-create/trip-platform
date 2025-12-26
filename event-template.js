@@ -145,7 +145,9 @@ const EventPageRenderer = {
     
     // デバッグログ（一時的）
     if (subImageIds.length === 0 && event.id && event.id.startsWith('demo')) {
-      console.log('[EventPageRenderer] No sub images found for demo event:', event.id, 'event.images:', event.images);
+      console.warn('[EventPageRenderer] No sub images found for demo event:', event.id, 'event.images:', event.images, 'subImageIds:', subImageIds);
+    } else if (subImageIds.length > 0) {
+      console.log('[EventPageRenderer] Found sub images for event:', event.id, 'subImageIds:', subImageIds);
     }
 
     // サブ画像をサムネイルに反映（最大2枚想定）
