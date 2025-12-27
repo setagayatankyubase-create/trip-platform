@@ -255,25 +255,9 @@
     window.selectEvent = function(eventId) {
       selectedEventId = eventId;
       
-      // リストの該当イベントカードをハイライト（.card クラスを使用）
-      document.querySelectorAll('.card').forEach(card => {
-        const cardEventId = card.dataset.eventId;
-        if (cardEventId === eventId) {
-          card.classList.add('selected');
-          // スクロールして表示（15px上に調整）
-          card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          // スクロール完了後に15px上に調整
-          setTimeout(() => {
-            window.scrollBy({ top: -15, behavior: 'smooth' });
-          }, 300);
-        } else {
-          card.classList.remove('selected');
-        }
-      });
-      
-      // マップのマーカーにフォーカス
-      if (typeof MapManager !== 'undefined' && MapManager.focusMarker) {
-        MapManager.focusMarker(eventId);
+      // イベント詳細ページに遷移
+      if (eventId) {
+        window.location.href = `experience.html?id=${encodeURIComponent(eventId)}`;
       }
     };
 
