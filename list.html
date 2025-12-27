@@ -341,15 +341,22 @@
         });
       }
 
-      // フリーワード検索
+      // フリーワード検索（タグ検索を含む）
       if (params.q) {
         const q = params.q.toLowerCase();
         filtered = filtered.filter(e => {
           const texts = [
             e.title,
+            e.name, // API側で title が name になっている場合に対応
+            e.description,
             e.city,
-            e.prefecture
-          ];
+            e.prefecture,
+            e.area,
+            e.area_name,
+            e.category,
+            e.category_name,
+            e.category && e.category.name ? e.category.name : null
+          ].filter(Boolean); // null/undefinedを除外
           return texts.some(t => typeof t === 'string' && t.toLowerCase().includes(q));
         });
       }

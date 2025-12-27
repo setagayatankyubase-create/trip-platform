@@ -542,14 +542,31 @@
       return matches.length;
     }
 
-    // キーワード別イベント数をカウント
+    // キーワード別イベント数をカウント（eventData.eventsを優先）
     function countEventsByKeyword(keyword) {
-      if (!Array.isArray(window.eventIndex)) return 0;
+      // eventData.eventsを優先、なければeventIndexを使用
+      const source = Array.isArray(window.eventData?.events) && window.eventData.events.length > 0
+        ? window.eventData.events
+        : (Array.isArray(window.eventIndex) ? window.eventIndex : []);
+      
+      if (source.length === 0) return 0;
+      
       const kw = keyword.toLowerCase();
-      return window.eventIndex.filter(e => {
-        const title = (e.title || '').toLowerCase();
-        const desc = (e.description || '').toLowerCase();
-        return title.includes(kw) || desc.includes(kw);
+      return source.filter(e => {
+        const texts = [
+          e.title,
+          e.name, // API側で title が name になっている場合に対応
+          e.description,
+          e.city,
+          e.prefecture,
+          e.area,
+          e.area_name,
+          e.category,
+          e.category_name,
+          e.category && e.category.name ? e.category.name : null
+        ].filter(Boolean); // null/undefinedを除外
+        
+        return texts.some(t => typeof t === 'string' && t.toLowerCase().includes(kw));
       }).length;
     }
 
