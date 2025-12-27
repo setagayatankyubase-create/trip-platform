@@ -1121,28 +1121,84 @@
         return null;
       };
 
+      // イベントの位置情報から市区町村を取得する関数（キャッシュ付き）
+      const eventLocationCache = {};
+      const getEventLocationName = async (lat, lng) => {
+        const cacheKey = `${lat.toFixed(4)},${lng.toFixed(4)}`;
+        if (eventLocationCache[cacheKey]) {
+          return eventLocationCache[cacheKey];
+        }
+
+        const apiKey = window.GOOGLE_MAPS_API_KEY || 'AIzaSyDNV6H5ImWmE2DhWdRYupUER85Rb8ZqmQM';
+        if (!apiKey || apiKey === 'YOUR_API_KEY_HERE') {
+          return null;
+        }
+
+        try {
+          const response = await fetch(
+            `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}&language=ja&region=jp`
+          );
+          const data = await response.json();
+          
+          if (data.status === 'OK' && data.results && data.results.length > 0) {
+            // 結果から市区町村名を取得
+            for (const result of data.results) {
+              const addressComponents = result.address_components || [];
+              // 市区町村を探す
+              for (const component of addressComponents) {
+                if (component.types.includes('locality') || component.types.includes('administrative_area_level_2')) {
+                  eventLocationCache[cacheKey] = component.long_name;
+                  return component.long_name;
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.warn('[renderLocationBasedEvents] Failed to get event location name:', error);
+        }
+        eventLocationCache[cacheKey] = null;
+        return null;
+      };
+
       // 位置情報の取得許可を求める（失敗時はデフォルト位置を使用）
       const processNearbyEvents = async (userLat, userLng, isDefaultLocation = false) => {
         console.log('[renderLocationBasedEvents] Processing events for location:', userLat, userLng);
 
-        // 距離を計算してソート
-        const eventsWithDistance = eventsWithLocation.map(event => {
-          const lat = parseFloat(event.location.lat);
-          const lng = parseFloat(event.location.lng);
-          const distance = calculateDistance(userLat, userLng, lat, lng);
-          return { event, distance };
-        });
+        // ユーザーの市区町村を取得
+        const userLocationName = await getLocationName(userLat, userLng);
+        console.log('[renderLocationBasedEvents] User location name:', userLocationName);
 
-        // 距離の近い順にソート（8件まで）
-        const nearbyEvents = eventsWithDistance
-          .sort((a, b) => a.distance - b.distance)
+        // 各イベントの距離と市区町村を計算
+        const eventsWithInfo = await Promise.all(
+          eventsWithLocation.map(async (event) => {
+            const lat = parseFloat(event.location.lat);
+            const lng = parseFloat(event.location.lng);
+            const distance = calculateDistance(userLat, userLng, lat, lng);
+            const eventLocationName = await getEventLocationName(lat, lng);
+            const isSameLocation = userLocationName && eventLocationName && 
+                                   userLocationName === eventLocationName;
+            return { event, distance, isSameLocation };
+          })
+        );
+
+        // ソート：同じ市区町村のイベントを優先、その後距離順
+        const nearbyEvents = eventsWithInfo
+          .sort((a, b) => {
+            // 同じ市区町村のイベントを優先
+            if (a.isSameLocation && !b.isSameLocation) return -1;
+            if (!a.isSameLocation && b.isSameLocation) return 1;
+            // 同じ条件なら距離順
+            return a.distance - b.distance;
+          })
           .slice(0, 8)
           .map(item => item.event);
 
         console.log('[renderLocationBasedEvents] Nearby events:', nearbyEvents.length);
         if (nearbyEvents.length > 0) {
-          const firstEventDistance = eventsWithDistance.find(e => e.event.id === nearbyEvents[0].id)?.distance;
-          console.log('[renderLocationBasedEvents] First nearby event:', nearbyEvents[0].title, 'distance:', firstEventDistance ? firstEventDistance.toFixed(2) + 'km' : 'unknown');
+          const firstEventInfo = eventsWithInfo.find(e => e.event.id === nearbyEvents[0].id);
+          console.log('[renderLocationBasedEvents] First nearby event:', nearbyEvents[0].title, 
+            'distance:', firstEventInfo ? firstEventInfo.distance.toFixed(2) + 'km' : 'unknown',
+            'same location:', firstEventInfo ? firstEventInfo.isSameLocation : false);
         }
 
         if (nearbyEvents.length > 0) {
@@ -1151,7 +1207,13 @@
           
           // 地名を取得してタイトルを更新
           let locationName = null;
-          if (!isDefaultLocation) {
+          if (isDefaultLocation) {
+            // デフォルト位置（世田谷区）の場合も地名を取得
+            locationName = await getLocationName(userLat, userLng);
+            if (!locationName) {
+              locationName = '世田谷区'; // フォールバック
+            }
+          } else {
             locationName = await getLocationName(userLat, userLng);
           }
           
@@ -1196,10 +1258,10 @@
         },
         async (error) => {
           console.log('[renderLocationBasedEvents] Geolocation error:', error.code, error.message);
-          // エラー時はデフォルト位置（東京）を使用して近くのイベントを表示
-          console.log('[renderLocationBasedEvents] Using default location (Tokyo)');
-          const defaultLat = 35.6762; // 東京の緯度
-          const defaultLng = 139.6503; // 東京の経度
+          // エラー時はデフォルト位置（世田谷区）を使用して近くのイベントを表示
+          console.log('[renderLocationBasedEvents] Using default location (Setagaya)');
+          const defaultLat = 35.6466; // 世田谷区の緯度
+          const defaultLng = 139.6533; // 世田谷区の経度
           await processNearbyEvents(defaultLat, defaultLng, true);
         },
         {
