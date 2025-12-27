@@ -109,16 +109,6 @@
       </div>
     </section>
 
-    <!-- 位置情報ベースのイベント（ポップセクションの直後、最優先表示） -->
-    <section class="section event-block" id="location-based-events" style="display: none;">
-      <div class="event-block-header">
-        <h2 id="location-events-title">近くのおすすめイベント</h2>
-      </div>
-      <div class="card-carousel-wrapper">
-        <div class="card-carousel" id="location-events-list"></div>
-      </div>
-    </section>
-
     <!-- 今週のイベント -->
     <section class="section event-block">
       <div class="week-event-header">
@@ -127,6 +117,16 @@
       <div class="week-calendar-wrapper">
         <div class="week-calendar" id="week-calendar"></div>
         <button id="next-week-btn" class="week-nav-arrow" onclick="showNextWeek()">→</button>
+      </div>
+    </section>
+
+    <!-- 位置情報ベースのイベント（今週のイベントの下） -->
+    <section class="section event-block" id="location-based-events" style="display: none;">
+      <div class="event-block-header">
+        <h2 id="location-events-title">近くのおすすめイベント</h2>
+      </div>
+      <div class="card-carousel-wrapper">
+        <div class="card-carousel" id="location-events-list"></div>
       </div>
     </section>
 
