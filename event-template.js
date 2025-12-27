@@ -477,7 +477,7 @@ const EventPageRenderer = {
 
       facilityList.innerHTML = '';
       
-      // facilityが文字列の場合（| または ｜ で区切られている）
+      // facilityが文字列の場合
       const facilityRaw = (event.facility || '').trim();
       
       // 'undefined'文字列もチェック
@@ -488,25 +488,58 @@ const EventPageRenderer = {
         return;
       }
 
-      // 半角・全角のパイプで分割
-      const items = facilityRaw.split(/[|｜]/).map(s => s.trim()).filter(Boolean);
-      
-      if (items.length === 0) {
-        if (facilityList.parentElement) {
-          facilityList.parentElement.style.display = 'none';
+      // 「・」がある場合は箇条書きとして表示、ない場合はそのままの文章で表示
+      if (facilityRaw.includes('・')) {
+        // 「・」がある場合、formatTextWithBulletsを使用して箇条書きとして表示
+        // 設備は最初の項目も箇条書きにする
+        const html = this.formatTextWithBullets(facilityRaw, { includeFirstLineAsBullet: true });
+        // formatTextWithBulletsは<ul>タグを含むHTML文字列を返すため、facilityListを置き換える
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+        // 既存の<ul id="event-facility">の中身を置き換え
+        facilityList.innerHTML = '';
+        // <ul>タグが含まれている場合、その中身を取り出してfacilityListに追加
+        const ulElement = tempDiv.querySelector('ul');
+        if (ulElement) {
+          // <ul>の中身をfacilityListにコピー
+          while (ulElement.firstChild) {
+            facilityList.appendChild(ulElement.firstChild);
+          }
+          // <p>タグがある場合（説明文）、それも追加
+          const pElement = tempDiv.querySelector('p');
+          if (pElement) {
+            facilityList.parentElement.insertBefore(pElement, facilityList);
+          }
+        } else {
+          // <ul>タグがない場合、そのままinnerHTMLを設定
+          facilityList.innerHTML = html;
         }
-        return;
+      } else {
+        // 「・」がない場合は、| または ｜ で区切られているか確認
+        if (facilityRaw.includes('|') || facilityRaw.includes('｜')) {
+          // | で区切られている場合は分割してリスト表示
+          const items = facilityRaw.split(/[|｜]/).map(s => s.trim()).filter(Boolean);
+          items.forEach(item => {
+            const li = document.createElement('li');
+            li.textContent = item;
+            facilityList.appendChild(li);
+          });
+        } else {
+          // そのままの文章として表示（段落として）
+          // facilityList（<ul>）を非表示にして、その位置に<p>を挿入
+          const p = document.createElement('p');
+          p.textContent = facilityRaw;
+          p.style.margin = '0';
+          p.style.paddingLeft = '0';
+          p.style.paddingRight = '0';
+          facilityList.style.display = 'none';
+          facilityList.parentElement.insertBefore(p, facilityList);
+        }
       }
 
-      // リストアイテムを生成
-      items.forEach(item => {
-        const li = document.createElement('li');
-        li.textContent = item;
-        facilityList.appendChild(li);
-      });
-      
       if (facilityList.parentElement) {
-        facilityList.parentElement.style.display = 'block';
+        const hasContent = facilityList.innerHTML.trim() !== '' || facilityList.nextSibling;
+        facilityList.parentElement.style.display = hasContent ? 'block' : 'none';
       }
     },
 
