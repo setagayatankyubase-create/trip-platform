@@ -810,15 +810,13 @@
       function hideMenu() {
         if (hideTimer) {
           clearTimeout(hideTimer);
-        }
-        hideTimer = setTimeout(() => {
-          menu.style.opacity = '0';
-          menu.style.visibility = 'hidden';
-          menu.style.pointerEvents = 'none';
-          menu.style.transform = 'translateY(-10px)';
           hideTimer = null;
-          isMenuOpen = false;
-        }, 600); // 0.6秒後
+        }
+        menu.style.opacity = '0';
+        menu.style.visibility = 'hidden';
+        menu.style.pointerEvents = 'none';
+        menu.style.transform = 'translateY(-10px)';
+        isMenuOpen = false;
       }
 
       // メニューをトグルする関数（クリック時）
@@ -837,16 +835,25 @@
           e.stopPropagation();
           toggleMenu();
         });
-        
-        // ハンバーガーボタンにカーソルが入った時も表示（既存の動作を維持）
-        categoryButton.addEventListener('mouseenter', showMenu);
-        categoryButton.addEventListener('mouseleave', hideMenu);
       }
 
       // メニュー自体にカーソルが入った時（メニュー内を移動する際に非表示にならないように）
       if (menu) {
-        menu.addEventListener('mouseenter', showMenu);
-        menu.addEventListener('mouseleave', hideMenu);
+        menu.addEventListener('mouseenter', () => {
+          if (isMenuOpen) {
+            // メニューが開いている時のみ、マウスが入ったら表示を維持
+            if (hideTimer) {
+              clearTimeout(hideTimer);
+              hideTimer = null;
+            }
+          }
+        });
+        menu.addEventListener('mouseleave', () => {
+          // メニューからマウスが離れたら閉じる（クリックで開いた場合も）
+          if (isMenuOpen) {
+            hideMenu();
+          }
+        });
       }
 
       // メニュー外をクリックしたら閉じる
@@ -935,15 +942,13 @@
             function hideMenu() {
               if (hideTimer) {
                 clearTimeout(hideTimer);
-              }
-              hideTimer = setTimeout(() => {
-                menu.style.opacity = '0';
-                menu.style.visibility = 'hidden';
-                menu.style.pointerEvents = 'none';
-                menu.style.transform = 'translateY(-10px)';
                 hideTimer = null;
-                isMenuOpen = false;
-              }, 600);
+              }
+              menu.style.opacity = '0';
+              menu.style.visibility = 'hidden';
+              menu.style.pointerEvents = 'none';
+              menu.style.transform = 'translateY(-10px)';
+              isMenuOpen = false;
             }
 
             function toggleMenu() {
@@ -961,13 +966,22 @@
               toggleMenu();
             });
             
-            // ホバーイベント（既存の動作を維持）
-            headerCategoryButton.addEventListener('mouseenter', showMenu);
-            headerCategoryButton.addEventListener('mouseleave', hideMenu);
+            // メニュー自体にカーソルが入った時（メニューが開いている時のみ表示を維持）
+            menu.addEventListener('mouseenter', () => {
+              if (isMenuOpen) {
+                if (hideTimer) {
+                  clearTimeout(hideTimer);
+                  hideTimer = null;
+                }
+              }
+            });
             
-            // メニュー自体にカーソルが入った時
-            menu.addEventListener('mouseenter', showMenu);
-            menu.addEventListener('mouseleave', hideMenu);
+            // メニューからマウスが離れたら閉じる
+            menu.addEventListener('mouseleave', () => {
+              if (isMenuOpen) {
+                hideMenu();
+              }
+            });
 
             // メニュー外をクリックしたら閉じる
             document.addEventListener('click', (e) => {
