@@ -1468,7 +1468,7 @@
       const topojsonClient = window.topojson;
       if (!topojsonClient) {
         console.warn('[createKantoSVGMap] topojson is not defined, retrying...');
-        console.warn('[createKantoSVGMap] Make sure this script is loaded: <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>');
+        console.warn('[createKantoSVGMap] Make sure this script is loaded: script src="https://cdn.jsdelivr.net/npm/topojson-client@3"');
         setTimeout(() => createKantoSVGMap(), 100);
         return;
       }
@@ -1667,22 +1667,53 @@
         console.error('[createKantoSVGMap] Error loading map:', error);
         console.error('[createKantoSVGMap] Error stack:', error.stack);
         
-        // フォールバック：エラーメッセージを表示（直接DOM操作）
+        // フォールバック：エラーメッセージを表示（DOM APIで生成、テンプレート文字列を使わない）
         const svgElement = document.getElementById("kantoMap");
         if (svgElement) {
           const width = 900, height = 700;
-          svgElement.innerHTML = `
-            <rect x="0" y="0" width="${width}" height="${height}" fill="#f0f0f0"></rect>
-            <text x="${width / 2}" y="${height / 2 - 20}" text-anchor="middle" font-size="20" fill="#666">
-              地図の読み込みに失敗しました
-            </text>
-            <text x="${width / 2}" y="${height / 2 + 10}" text-anchor="middle" font-size="14" fill="#999">
-              ${error.message || 'Unknown error'}
-            </text>
-            <text x="${width / 2}" y="${height / 2 + 40}" text-anchor="middle" font-size="12" fill="#999">
-              コンソールを確認してください
-            </text>
-          `;
+          const NS = "http://www.w3.org/2000/svg";
+          
+          // SVGをクリア
+          svgElement.innerHTML = '';
+          
+          // 背景
+          const rect = document.createElementNS(NS, "rect");
+          rect.setAttribute("x", "0");
+          rect.setAttribute("y", "0");
+          rect.setAttribute("width", String(width));
+          rect.setAttribute("height", String(height));
+          rect.setAttribute("fill", "#f0f0f0");
+          svgElement.appendChild(rect);
+          
+          // エラーメッセージ1
+          const text1 = document.createElementNS(NS, "text");
+          text1.setAttribute("x", String(width / 2));
+          text1.setAttribute("y", String(height / 2 - 20));
+          text1.setAttribute("text-anchor", "middle");
+          text1.setAttribute("font-size", "20");
+          text1.setAttribute("fill", "#666");
+          text1.textContent = "地図の読み込みに失敗しました";
+          svgElement.appendChild(text1);
+          
+          // エラーメッセージ2
+          const text2 = document.createElementNS(NS, "text");
+          text2.setAttribute("x", String(width / 2));
+          text2.setAttribute("y", String(height / 2 + 10));
+          text2.setAttribute("text-anchor", "middle");
+          text2.setAttribute("font-size", "14");
+          text2.setAttribute("fill", "#999");
+          text2.textContent = error.message || 'Unknown error';
+          svgElement.appendChild(text2);
+          
+          // エラーメッセージ3
+          const text3 = document.createElementNS(NS, "text");
+          text3.setAttribute("x", String(width / 2));
+          text3.setAttribute("y", String(height / 2 + 40));
+          text3.setAttribute("text-anchor", "middle");
+          text3.setAttribute("font-size", "12");
+          text3.setAttribute("fill", "#999");
+          text3.textContent = "コンソールを確認してください";
+          svgElement.appendChild(text3);
         }
       }
     }
