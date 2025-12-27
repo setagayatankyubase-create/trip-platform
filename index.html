@@ -303,9 +303,10 @@
         `;
       }
 
-      // 2段目：キャンペーンカードのレンダリング
+      // 2段目：キャンペーンカードのレンダリング（無限スクロール対応）
       if (carouselContainer && campaignData && campaignData.length > 0) {
-        carouselContainer.innerHTML = campaignData.map(pop => {
+        // カードをレンダリングする関数
+        const renderCard = (pop) => {
           let imageUrl = '';
           if (pop.image) {
             if (typeof window.cloudinaryUrl === 'function') {
@@ -333,7 +334,19 @@
               </div>
             </a>
           `;
-        }).join('');
+        };
+
+        // カードを2セット作成（無限ループ用）
+        const cardsHtml = campaignData.map(renderCard).join('');
+        carouselContainer.innerHTML = cardsHtml + cardsHtml; // 元のセット + 複製セット
+        
+        // 無限スクロールアニメーションを開始
+        setTimeout(() => {
+          const wrapper = carouselContainer.parentElement;
+          if (wrapper) {
+            wrapper.classList.add('pop-carousel-infinite');
+          }
+        }, 100);
       } else if (carouselContainer && (!campaignData || campaignData.length === 0)) {
         carouselContainer.parentElement.parentElement.style.display = 'none';
       }

@@ -1200,16 +1200,19 @@ body {
 
 
 .pop-carousel-wrapper {
-  overflow-x: auto;
+  overflow-x: hidden;
   overflow-y: hidden;
   scrollbar-width: none;
   -ms-overflow-style: none;
-  scroll-behavior: smooth;
-  -webkit-overflow-scrolling: touch;
   padding-bottom: 8px;
   /* スマホでのスワイプを改善 */
   touch-action: pan-x;
   overscroll-behavior-x: contain;
+  position: relative;
+}
+
+.pop-carousel-wrapper.pop-carousel-infinite {
+  overflow-x: hidden;
 }
 
 .pop-carousel-wrapper::-webkit-scrollbar {
@@ -1223,6 +1226,25 @@ body {
   width: max-content;
   /* スマホでのスクロールをスムーズに */
   will-change: transform;
+}
+
+/* 無限スクロールアニメーション */
+.pop-carousel-wrapper.pop-carousel-infinite .pop-carousel {
+  animation: popCarouselScroll 40s linear infinite;
+}
+
+@keyframes popCarouselScroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+/* ホバー時にアニメーションを一時停止 */
+.pop-carousel-wrapper.pop-carousel-infinite:hover .pop-carousel {
+  animation-play-state: paused;
 }
 
 @media (min-width: 769px) {
