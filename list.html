@@ -255,15 +255,22 @@
     window.selectEvent = function(eventId) {
       selectedEventId = eventId;
       
-      // 該当イベントカードにスクロール
+      // 該当イベントカードにスクロール（真ん中に表示）
       if (eventId) {
         const eventCard = document.querySelector(`[data-event-id="${eventId}"]`);
         if (eventCard) {
-          eventCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          // 少し上にスクロール（15px）
-          setTimeout(() => {
-            window.scrollBy({ top: -15, behavior: 'smooth' });
-          }, 100);
+          // カードの位置を取得
+          const cardRect = eventCard.getBoundingClientRect();
+          const viewportHeight = window.innerHeight;
+          const scrollY = window.scrollY || window.pageYOffset;
+          
+          // カードをビューポートの中央に配置
+          const targetScrollY = scrollY + cardRect.top - (viewportHeight / 2) + (cardRect.height / 2);
+          
+          window.scrollTo({
+            top: targetScrollY,
+            behavior: 'smooth'
+          });
         }
       }
     };
