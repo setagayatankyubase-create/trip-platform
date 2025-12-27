@@ -221,13 +221,13 @@
       // バナーデータ
       const bannerData = {
         type: 'banner',
-        title: '冬の自然体験',
-        subtitle: '雪・野鳥・里山の探究プログラム受付中',
-        badge: '季節限定',
+        title: '季節で楽しむ、自然のあそび。',
+        subtitle: '山・森・川・海。<br>子どもも大人も、気軽に参加できる自然体験を集めました。',
+        badge: '',
         cta: '体験を探す',
         image: 'pop1_j2wr9k', // バナー画像
         bgColor: '#6BB6FF', // 右側の背景色
-        link: '/?season=winter'
+        link: '/list.html'
       };
 
       // キャンペーンカードデータ
@@ -297,7 +297,6 @@
             </div>
             <div class="pop-banner-content" style="background: ${bgColor};">
               <div class="pop-banner-subtitle">${bannerData.subtitle || ''}</div>
-              <div class="pop-banner-info">自然体験・探究学習</div>
               ${bannerData.cta ? `<span class="pop-banner-button">${bannerData.cta}</span>` : ''}
             </div>
           </a>
