@@ -956,6 +956,8 @@ body {
   max-height: 800px;
   /* スクロールしても固定 */
   will-change: transform;
+  /* 常に固定 */
+  z-index: 10;
 }
 
 .map-container {

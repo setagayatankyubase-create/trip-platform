@@ -710,6 +710,7 @@
       const menu = document.querySelector('.category-menu');
       const categoryButton = document.getElementById('category-menu-button');
       let hideTimer = null;
+      let isMenuOpen = false; // メニューの開閉状態を管理
 
       // メニューを表示する関数
       function showMenu() {
@@ -722,9 +723,10 @@
         menu.style.visibility = 'visible';
         menu.style.pointerEvents = 'auto';
         menu.style.transform = 'translateY(0)';
+        isMenuOpen = true;
       }
 
-      // メニューを非表示にする関数（3秒後）
+      // メニューを非表示にする関数
       function hideMenu() {
         if (hideTimer) {
           clearTimeout(hideTimer);
@@ -735,11 +737,28 @@
           menu.style.pointerEvents = 'none';
           menu.style.transform = 'translateY(-10px)';
           hideTimer = null;
+          isMenuOpen = false;
         }, 600); // 0.6秒後
       }
 
-      // ハンバーガーボタンにカーソルが入った時のみ表示
+      // メニューをトグルする関数（クリック時）
+      function toggleMenu() {
+        if (isMenuOpen) {
+          hideMenu();
+        } else {
+          showMenu();
+        }
+      }
+
+      // ハンバーガーボタンのクリックイベント
       if (categoryButton) {
+        categoryButton.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          toggleMenu();
+        });
+        
+        // ハンバーガーボタンにカーソルが入った時も表示（既存の動作を維持）
         categoryButton.addEventListener('mouseenter', showMenu);
         categoryButton.addEventListener('mouseleave', hideMenu);
       }
@@ -749,6 +768,15 @@
         menu.addEventListener('mouseenter', showMenu);
         menu.addEventListener('mouseleave', hideMenu);
       }
+
+      // メニュー外をクリックしたら閉じる
+      document.addEventListener('click', (e) => {
+        if (isMenuOpen && 
+            !menu.contains(e.target) && 
+            !categoryButton.contains(e.target)) {
+          hideMenu();
+        }
+      });
 
       // リサイズ/スクロール時にも位置を更新
       window.addEventListener('resize', () => {
@@ -807,6 +835,7 @@
           const menu = document.querySelector('.category-menu');
           if (menu) {
             let hideTimer = null;
+            let isMenuOpen = false; // メニューの開閉状態を管理
 
             function showMenu() {
               if (hideTimer) {
@@ -820,7 +849,57 @@
               menu.style.visibility = 'visible';
               menu.style.pointerEvents = 'auto';
               menu.style.transform = 'translateY(0)';
+              isMenuOpen = true;
             }
+
+            function hideMenu() {
+              if (hideTimer) {
+                clearTimeout(hideTimer);
+              }
+              hideTimer = setTimeout(() => {
+                menu.style.opacity = '0';
+                menu.style.visibility = 'hidden';
+                menu.style.pointerEvents = 'none';
+                menu.style.transform = 'translateY(-10px)';
+                hideTimer = null;
+                isMenuOpen = false;
+              }, 600);
+            }
+
+            function toggleMenu() {
+              if (isMenuOpen) {
+                hideMenu();
+              } else {
+                showMenu();
+              }
+            }
+
+            // クリックイベント
+            headerCategoryButton.addEventListener('click', (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              toggleMenu();
+            });
+            
+            // ホバーイベント（既存の動作を維持）
+            headerCategoryButton.addEventListener('mouseenter', showMenu);
+            headerCategoryButton.addEventListener('mouseleave', hideMenu);
+            
+            // メニュー自体にカーソルが入った時
+            menu.addEventListener('mouseenter', showMenu);
+            menu.addEventListener('mouseleave', hideMenu);
+
+            // メニュー外をクリックしたら閉じる
+            document.addEventListener('click', (e) => {
+              if (isMenuOpen && 
+                  !menu.contains(e.target) && 
+                  !headerCategoryButton.contains(e.target)) {
+                hideMenu();
+              }
+            });
+          }
+        }, 100);
+      }
 
             function hideMenu() {
               if (hideTimer) {
