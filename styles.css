@@ -1800,8 +1800,25 @@ body {
     width: 100%;
   }
 
+  /* モバイルでは1カラム（マップを下に） */
+  .list-map-container {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .event-list-column {
+    max-height: none;
+    padding-right: 0;
+  }
+
+  .map-column {
+    position: static;
+    height: 400px;
+    min-height: 400px;
+  }
+
   .map-container {
-    height: 300px;
+    height: 400px;
   }
 
   .event-block-header {

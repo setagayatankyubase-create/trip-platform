@@ -550,6 +550,16 @@ const MapManager = {
 
   addMarker(event, onClick) {
     if (!event.location || !event.location.lat) return;
+    
+    // マーカーオブジェクトを保存（後でフォーカスできるように）
+    const marker = {
+      eventId: event.id,
+      lat: event.location.lat,
+      lng: event.location.lng,
+      onClick: onClick
+    };
+    
+    this.markers.push(marker);
 
     // ダミーマーカー（実際の実装時は以下に置き換え）
     // const marker = new google.maps.Marker({ position: { lat: event.location.lat, lng: event.location.lng }, map: this.mapInstance });

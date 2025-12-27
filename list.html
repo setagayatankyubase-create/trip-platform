@@ -172,11 +172,11 @@
     }
 
     // イベント選択（マーカー or リストクリック時）
-    function selectEvent(eventId) {
+    window.selectEvent = function(eventId) {
       selectedEventId = eventId;
       
-      // リストの該当イベントカードをハイライト
-      document.querySelectorAll('.event-card').forEach(card => {
+      // リストの該当イベントカードをハイライト（.card クラスを使用）
+      document.querySelectorAll('.card').forEach(card => {
         const cardEventId = card.dataset.eventId;
         if (cardEventId === eventId) {
           card.classList.add('selected');
@@ -186,7 +186,12 @@
           card.classList.remove('selected');
         }
       });
-    }
+      
+      // マップのマーカーにフォーカス
+      if (typeof MapManager !== 'undefined' && MapManager.focusMarker) {
+        MapManager.focusMarker(eventId);
+      }
+    };
 
     // フィルタ適用
     async function applyFilters() {
