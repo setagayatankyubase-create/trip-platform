@@ -723,27 +723,28 @@
       // 検索・フィルタ適用
       currentEvents = filterIndexEvents(index, params, urlParams);
 
-      // 位置情報がないイベントの詳細を読み込んで位置情報を補完
+      // 位置情報がないイベントの詳細を読み込んで位置情報を補完（すべてのイベントを対象）
       const eventsWithoutLocation = currentEvents.filter(e => !e.location || !e.location.lat || !e.location.lng);
       if (eventsWithoutLocation.length > 0) {
         console.log('[loadEvents] Loading location data for', eventsWithoutLocation.length, 'events');
         try {
-          const detailPromises = eventsWithoutLocation.slice(0, 20).map(e => 
+          // すべてのイベントの詳細を読み込んで位置情報を補完
+          const detailPromises = eventsWithoutLocation.map(e => 
             loadEventDetail(e.id).catch(() => null)
           );
           const details = await Promise.all(detailPromises);
           const detailMap = {};
           details.forEach(d => {
             if (d && d.id && d.location && d.location.lat && d.location.lng) {
-              detailMap[d.id] = d;
+              detailMap[d.id] = d.location;
             }
           });
           
           // currentEventsに位置情報を補完
           currentEvents = currentEvents.map(item => {
-            const detail = detailMap[item.id];
-            if (detail && detail.location) {
-              return { ...item, location: detail.location };
+            const location = detailMap[item.id];
+            if (location) {
+              return { ...item, location: location };
             }
             return item;
           });
