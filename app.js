@@ -598,18 +598,25 @@ const MapManager = {
         lng: parseFloat(event.location.lng)
       };
 
-      // 価格ラベルを作成（日本円表示：¥と数字の間にスペース）
+      // 価格ラベルを作成（日本円表示、スペース入り）
       const eventPrice = event.price ? event.price : 0;
       const priceLabel = eventPrice > 0 ? `¥ ${eventPrice.toLocaleString()}` : '';
       
-      // カスタムマーカーアイコンを作成（価格ラベルを統合）
+      // カスタムマーカーアイコンを作成（白い矩形デザイン）
       let markerIcon = null;
       if (priceLabel) {
-        // SVGでカスタムマーカーを作成（価格ラベルを統合）
+        // 価格テキストの幅を計算（おおよその値）
+        const textWidth = priceLabel.length * 7 + 16; // 文字数 × 7px + パディング
+        const textHeight = 20;
+        const padding = 8;
+        const rectWidth = Math.max(textWidth, 60);
+        const rectHeight = textHeight + padding * 2;
+        
+        // SVGで白い矩形マーカーを作成
         const svg = `
-          <svg width="60" height="80" xmlns="http://www.w3.org/2000/svg">
+          <svg width="${rectWidth}" height="${rectHeight}" xmlns="http://www.w3.org/2000/svg">
             <defs>
-              <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+              <filter id="shadow-${event.id}" x="-50%" y="-50%" width="200%" height="200%">
                 <feGaussianBlur in="SourceAlpha" stdDeviation="2"/>
                 <feOffset dx="0" dy="2" result="offsetblur"/>
                 <feComponentTransfer>
@@ -621,21 +628,19 @@ const MapManager = {
                 </feMerge>
               </filter>
             </defs>
-            <g filter="url(#shadow)">
-              <!-- マーカーのピン部分 -->
-              <path d="M30 0C18 0 8 10 8 22c0 12 22 58 22 58s22-46 22-58C52 10 42 0 30 0z" fill="#ea4335" stroke="#fff" stroke-width="2"/>
-              <!-- 価格ラベルの背景（丸） -->
-              <circle cx="30" cy="22" r="18" fill="#fff" stroke="#ea4335" stroke-width="2"/>
+            <g filter="url(#shadow-${event.id})">
+              <!-- 白い矩形背景 -->
+              <rect x="0" y="0" width="${rectWidth}" height="${rectHeight}" rx="4" ry="4" fill="#ffffff" stroke="#e0e0e0" stroke-width="1"/>
               <!-- 価格テキスト -->
-              <text x="30" y="28" text-anchor="middle" font-size="11" font-weight="bold" fill="#ea4335" font-family="Arial, sans-serif">${priceLabel}</text>
+              <text x="${rectWidth / 2}" y="${rectHeight / 2 + 6}" text-anchor="middle" font-size="12" font-weight="600" fill="#333333" font-family="Arial, sans-serif">${priceLabel}</text>
             </g>
           </svg>
         `;
         
         markerIcon = {
           url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
-          scaledSize: new google.maps.Size(60, 80),
-          anchor: new google.maps.Point(30, 80),
+          scaledSize: new google.maps.Size(rectWidth, rectHeight),
+          anchor: new google.maps.Point(rectWidth / 2, rectHeight),
           origin: new google.maps.Point(0, 0)
         };
       }
