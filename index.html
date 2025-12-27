@@ -158,6 +158,22 @@
     </section>
   </main>
 
+  <!-- 人気タグ・地域検索セクション -->
+  <section class="section popular-search-section">
+    <div class="popular-search-container">
+      <div class="popular-search-tabs">
+        <button class="popular-tab active" data-tab="categories">人気カテゴリー</button>
+        <button class="popular-tab" data-tab="areas">人気の行き先</button>
+        <button class="popular-tab" data-tab="tags">人気のタグ</button>
+      </div>
+      <div class="popular-search-content">
+        <div class="popular-list-container" id="popular-categories-list"></div>
+        <div class="popular-list-container hidden" id="popular-areas-list"></div>
+        <div class="popular-list-container hidden" id="popular-tags-list"></div>
+      </div>
+    </div>
+  </section>
+
   <footer class="main-footer">
     <div class="footer-content">
       <div class="footer-column">
@@ -294,6 +310,125 @@
       } else if (carouselContainer && (!campaignData || campaignData.length === 0)) {
         carouselContainer.parentElement.parentElement.style.display = 'none';
       }
+    }
+
+    // 人気タグ・地域検索セクションのレンダリング
+    function renderPopularSearch() {
+      // タブ切り替え
+      document.querySelectorAll('.popular-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          const tabName = tab.dataset.tab;
+          
+          // すべてのタブとコンテナを非アクティブに
+          document.querySelectorAll('.popular-tab').forEach(t => t.classList.remove('active'));
+          document.querySelectorAll('.popular-list-container').forEach(c => c.classList.add('hidden'));
+          
+          // 選択されたタブとコンテナをアクティブに
+          tab.classList.add('active');
+          document.getElementById(`popular-${tabName}-list`).classList.remove('hidden');
+        });
+      });
+
+      // カテゴリ一覧をレンダリング
+      renderPopularCategories();
+      renderPopularAreas();
+      renderPopularTags();
+    }
+
+    // 人気カテゴリ一覧
+    function renderPopularCategories() {
+      const container = document.getElementById('popular-categories-list');
+      if (!container || !window.eventMeta || !window.eventMeta.categories) return;
+
+      const categories = window.eventMeta.categories.slice(0, 24); // 上位24件
+      container.innerHTML = categories.map(cat => {
+        const eventCount = countEventsByCategory(cat.id);
+        return `
+          <a href="list.html?category=${cat.id}" class="popular-item" data-item-id="${cat.id}">
+            <span class="popular-item-name">${cat.name}</span>
+            <span class="popular-item-count">${eventCount} イベント</span>
+          </a>
+        `;
+      }).join('');
+    }
+
+    // 人気エリア一覧
+    function renderPopularAreas() {
+      const container = document.getElementById('popular-areas-list');
+      if (!container || !Array.isArray(window.eventIndex)) return;
+
+      // エリアごとにイベント数を集計
+      const areaMap = new Map();
+      window.eventIndex.forEach(event => {
+        const area = event.area || event.city || event.prefecture || '';
+        if (area) {
+          areaMap.set(area, (areaMap.get(area) || 0) + 1);
+        }
+      });
+
+      const areas = Array.from(areaMap.entries())
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 24);
+
+      container.innerHTML = areas.map(area => {
+        return `
+          <a href="list.html?area=${encodeURIComponent(area.name)}" class="popular-item" data-item-name="${area.name}">
+            <span class="popular-item-name">${area.name}</span>
+            <span class="popular-item-count">${area.count} イベント</span>
+          </a>
+        `;
+      }).join('');
+    }
+
+    // 人気タグ一覧（仮実装：カテゴリから生成）
+    function renderPopularTags() {
+      const container = document.getElementById('popular-tags-list');
+      if (!container || !Array.isArray(window.eventIndex)) return;
+
+      // タグとして人気のキーワードを使用（簡易実装）
+      const tags = [
+        { name: '川遊び', count: countEventsByKeyword('川') },
+        { name: '海・ビーチ', count: countEventsByKeyword('海') },
+        { name: '里山体験', count: countEventsByKeyword('里山') },
+        { name: '自然観察', count: countEventsByKeyword('観察') },
+        { name: '生き物', count: countEventsByKeyword('生き物') },
+        { name: '農業体験', count: countEventsByKeyword('農業') },
+        { name: '収穫体験', count: countEventsByKeyword('収穫') },
+        { name: '植物', count: countEventsByKeyword('植物') },
+        { name: '野鳥', count: countEventsByKeyword('野鳥') },
+        { name: '星空', count: countEventsByKeyword('星空') },
+        { name: 'キャンプ', count: countEventsByKeyword('キャンプ') },
+        { name: '親子', count: countEventsByKeyword('親子') },
+      ].filter(tag => tag.count > 0).sort((a, b) => b.count - a.count).slice(0, 24);
+
+      container.innerHTML = tags.map(tag => {
+        return `
+          <a href="list.html?q=${encodeURIComponent(tag.name)}" class="popular-item" data-tag-name="${tag.name}">
+            <span class="popular-item-name">${tag.name}</span>
+            <span class="popular-item-count">${tag.count} イベント</span>
+          </a>
+        `;
+      }).join('');
+    }
+
+    // カテゴリ別イベント数をカウント
+    function countEventsByCategory(categoryId) {
+      if (!Array.isArray(window.eventIndex)) return 0;
+      return window.eventIndex.filter(e => 
+        (e.categoryId || e.category_id) === categoryId
+      ).length;
+    }
+
+    // キーワード別イベント数をカウント
+    function countEventsByKeyword(keyword) {
+      if (!Array.isArray(window.eventIndex)) return 0;
+      const kw = keyword.toLowerCase();
+      return window.eventIndex.filter(e => {
+        const title = (e.title || '').toLowerCase();
+        const desc = (e.description || '').toLowerCase();
+        return title.includes(kw) || desc.includes(kw);
+      }).length;
     }
 
     // カテゴリIDからlucide-staticアイコン名へのマッピング
@@ -961,6 +1096,7 @@
         renderCategories();
         initCategoryMenu(); // カテゴリメニューを初期化（ホバー表示用）
         renderWeekCalendar();
+        renderPopularSearch(); // 人気タグ・地域検索セクションを描画
         await renderEventBlocks();
 
       } catch (e) {
