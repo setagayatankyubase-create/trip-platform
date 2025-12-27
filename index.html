@@ -439,10 +439,17 @@
 
     // カテゴリ別イベント数をカウント
     function countEventsByCategory(categoryId) {
-      if (!Array.isArray(window.eventIndex)) return 0;
-      return window.eventIndex.filter(e => 
-        (e.categoryId || e.category_id) === categoryId
-      ).length;
+      // eventIndexを優先、なければeventData.eventsを使用
+      let source = Array.isArray(window.eventIndex) && window.eventIndex.length > 0
+        ? window.eventIndex
+        : (Array.isArray(window.eventData?.events) ? window.eventData.events : []);
+      
+      if (source.length === 0) return 0;
+      
+      return source.filter(e => {
+        const catId = e.categoryId || e.category_id || e.category;
+        return String(catId) === String(categoryId);
+      }).length;
     }
 
     // キーワード別イベント数をカウント
@@ -899,13 +906,30 @@
       const container = document.getElementById('location-events-list');
       const titleEl = document.getElementById('location-events-title');
       
-      if (!section || !container) return;
+      if (!section || !container) {
+        console.log('[renderLocationBasedEvents] Section or container not found');
+        return;
+      }
 
       // 位置情報が利用可能かチェック
       if (!navigator.geolocation) {
         console.log('[renderLocationBasedEvents] Geolocation is not supported');
         return;
       }
+
+      // イベントデータが読み込まれるまで待機
+      let source = Array.isArray(window.eventIndex) && window.eventIndex.length > 0
+        ? window.eventIndex
+        : (Array.isArray(window.eventData?.events) ? window.eventData.events : []);
+
+      if (source.length === 0) {
+        console.log('[renderLocationBasedEvents] No event data available yet, waiting...');
+        // データが読み込まれるまで少し待つ
+        setTimeout(() => renderLocationBasedEvents(), 1000);
+        return;
+      }
+
+      console.log('[renderLocationBasedEvents] Event data available:', source.length, 'events');
 
       // 位置情報の取得許可を求める
       navigator.geolocation.getCurrentPosition(
@@ -915,19 +939,18 @@
           
           console.log('[renderLocationBasedEvents] User location:', userLat, userLng);
 
-          // イベントデータを取得
-          let source = Array.isArray(window.eventIndex) && window.eventIndex.length > 0
-            ? window.eventIndex
-            : (Array.isArray(window.eventData?.events) ? window.eventData.events : []);
-
-          // 位置情報があるイベントをフィルタリング
+          // 位置情報があるイベントをフィルタリング（数値型と文字列型の両方に対応）
           const eventsWithLocation = source.filter(event => {
-            return event.location && 
-                   typeof event.location.lat === 'number' && 
-                   typeof event.location.lng === 'number' &&
-                   !isNaN(event.location.lat) && 
-                   !isNaN(event.location.lng);
+            if (!event.location) return false;
+            
+            // lat/lngを数値に変換
+            const lat = parseFloat(event.location.lat);
+            const lng = parseFloat(event.location.lng);
+            
+            return !isNaN(lat) && !isNaN(lng) && isFinite(lat) && isFinite(lng);
           });
+
+          console.log('[renderLocationBasedEvents] Events with location:', eventsWithLocation.length);
 
           if (eventsWithLocation.length === 0) {
             console.log('[renderLocationBasedEvents] No events with location data');
@@ -936,12 +959,9 @@
 
           // 距離を計算してソート
           const eventsWithDistance = eventsWithLocation.map(event => {
-            const distance = calculateDistance(
-              userLat, 
-              userLng, 
-              event.location.lat, 
-              event.location.lng
-            );
+            const lat = parseFloat(event.location.lat);
+            const lng = parseFloat(event.location.lng);
+            const distance = calculateDistance(userLat, userLng, lat, lng);
             return { event, distance };
           });
 
@@ -952,6 +972,9 @@
             .map(item => item.event);
 
           console.log('[renderLocationBasedEvents] Nearby events:', nearbyEvents.length);
+          if (nearbyEvents.length > 0) {
+            console.log('[renderLocationBasedEvents] First nearby event:', nearbyEvents[0].title, 'distance:', eventsWithDistance.find(e => e.event.id === nearbyEvents[0].id)?.distance.toFixed(2), 'km');
+          }
 
           if (nearbyEvents.length > 0) {
             // セクションを表示
@@ -965,14 +988,16 @@
             // カルーセルで表示
             if (typeof CardRenderer !== 'undefined' && CardRenderer.renderCarousel) {
               CardRenderer.renderCarousel(nearbyEvents, 'location-events-list');
+              console.log('[renderLocationBasedEvents] Events rendered successfully');
             } else {
               console.error('[renderLocationBasedEvents] CardRenderer is not available');
             }
           }
         },
         (error) => {
-          console.log('[renderLocationBasedEvents] Geolocation error:', error.message);
+          console.log('[renderLocationBasedEvents] Geolocation error:', error.code, error.message);
           // エラー時はセクションを非表示のまま
+          // エラーコード: 1=PERMISSION_DENIED, 2=POSITION_UNAVAILABLE, 3=TIMEOUT
         },
         {
           enableHighAccuracy: false,

@@ -5,8 +5,10 @@
 if (typeof window.DATA_BASE === 'undefined') {
   window.DATA_BASE = "/data";
 }
-// window.DATA_BASEのエイリアス（既存コードとの互換性のため、constではなくletで再宣言可能にする）
-const DATA_BASE = window.DATA_BASE;
+// window.DATA_BASEのエイリアス（既存コードとの互換性のため、重複チェック付き）
+if (typeof DATA_BASE === 'undefined') {
+  var DATA_BASE = window.DATA_BASE;
+}
 
 // 例: "https://raw.githubusercontent.com/owner/repo/main"
 const sanitizeBase = (s) => String(s || "").trim().replace(/\/+$/, "");
