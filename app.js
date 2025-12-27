@@ -602,17 +602,60 @@ const MapManager = {
       const eventPrice = event.price ? event.price : 0;
       const priceLabel = eventPrice > 0 ? `¥${eventPrice.toLocaleString()}` : '';
       
-      // マーカーを作成（価格ラベル付き）
+      // カスタムマーカーアイコンを作成（価格ラベルを統合）
+      let markerIcon = null;
+      if (priceLabel) {
+        // SVGでカスタムマーカーを作成（価格ラベルを統合）
+        const svg = `
+          <svg width="60" height="80" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur in="SourceAlpha" stdDeviation="2"/>
+                <feOffset dx="0" dy="2" result="offsetblur"/>
+                <feComponentTransfer>
+                  <feFuncA type="linear" slope="0.3"/>
+                </feComponentTransfer>
+                <feMerge>
+                  <feMergeNode/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+            </defs>
+            <g filter="url(#shadow)">
+              <!-- マーカーのピン部分 -->
+              <path d="M30 0C18 0 8 10 8 22c0 12 22 58 22 58s22-46 22-58C52 10 42 0 30 0z" fill="#ea4335" stroke="#fff" stroke-width="2"/>
+              <!-- 価格ラベルの背景（丸） -->
+              <circle cx="30" cy="22" r="18" fill="#fff" stroke="#ea4335" stroke-width="2"/>
+              <!-- 価格テキスト -->
+              <text x="30" y="28" text-anchor="middle" font-size="11" font-weight="bold" fill="#ea4335" font-family="Arial, sans-serif">${priceLabel}</text>
+            </g>
+          </svg>
+        `;
+        
+        markerIcon = {
+          url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
+          scaledSize: new google.maps.Size(60, 80),
+          anchor: new google.maps.Point(30, 80),
+          origin: new google.maps.Point(0, 0)
+        };
+      }
+      
+      // マーカーを作成（カスタムアイコンで価格ラベルを統合）
       const marker = new google.maps.Marker({
         position: position,
         map: this.mapInstance,
         title: `${event.title || ''} - ${priceLabel}`,
+        icon: markerIcon,
         animation: google.maps.Animation.DROP,
-        label: {
-          text: priceLabel || '',
-          color: '#fff',
-          fontSize: '10px',
-          fontWeight: 'bold'
+        optimized: false // 滑らかな動作のため最適化を無効化
+      });
+      
+      // マーカーのアニメーションを滑らかに
+      google.maps.event.addListener(marker, 'animation_changed', () => {
+        if (marker.getAnimation() === google.maps.Animation.DROP) {
+          setTimeout(() => {
+            marker.setAnimation(null);
+          }, 750);
         }
       });
 
