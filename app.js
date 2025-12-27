@@ -599,8 +599,8 @@ const MapManager = {
       };
 
       // 価格ラベルを作成（簡潔に表示）
-      const price = event.price ? event.price : 0;
-      const priceLabel = price >= 1000 ? `¥${Math.floor(price / 1000)}k` : `¥${price}`;
+      const eventPrice = event.price ? event.price : 0;
+      const priceLabel = eventPrice >= 1000 ? `¥${Math.floor(eventPrice / 1000)}k` : `¥${eventPrice}`;
       
       // マーカーを作成（価格ラベル付き）
       const marker = new google.maps.Marker({
@@ -617,13 +617,13 @@ const MapManager = {
       });
 
       // インフォウィンドウ（価格を含む）
-      const price = event.price ? `¥ ${event.price.toLocaleString()}` : '';
+      const priceDisplay = event.price ? `¥ ${event.price.toLocaleString()}` : '';
       const infoWindow = new google.maps.InfoWindow({
         content: `
           <div style="padding: 8px; max-width: 200px;">
             <h4 style="margin: 0 0 8px 0; font-size: 1rem; font-weight: 700;">${event.title || 'イベント'}</h4>
             ${event.city ? `<p style="margin: 0; color: #666; font-size: 0.85rem;">${event.city}</p>` : ''}
-            ${price ? `<p style="margin: 4px 0 0 0; color: #000; font-size: 1rem; font-weight: 700;">${price}</p>` : ''}
+            ${priceDisplay ? `<p style="margin: 4px 0 0 0; color: #000; font-size: 1rem; font-weight: 700;">${priceDisplay}</p>` : ''}
             <a href="experience.html?id=${event.id}" style="display: inline-block; margin-top: 8px; color: var(--primary); text-decoration: none; font-size: 0.85rem;">詳細を見る →</a>
           </div>
         `

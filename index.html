@@ -107,10 +107,10 @@
       </div>
     </section>
 
-    <!-- 位置情報ベースのイベント -->
+    <!-- 位置情報ベースのイベント（ポップセクションの直後、最優先表示） -->
     <section class="section event-block" id="location-based-events" style="display: none;">
       <div class="event-block-header">
-        <h2 id="location-events-title">近くのイベント</h2>
+        <h2 id="location-events-title">近くのおすすめイベント</h2>
       </div>
       <div class="card-carousel-wrapper">
         <div class="card-carousel" id="location-events-list"></div>
@@ -1018,6 +1018,37 @@
 
       console.log('[renderLocationBasedEvents] Event data available:', source.length, 'events');
 
+      // 位置情報がないイベントの詳細を読み込んで位置情報を補完
+      const eventsWithoutLocation = source.filter(e => !e.location || !e.location.lat || !e.location.lng);
+      if (eventsWithoutLocation.length > 0) {
+        console.log('[renderLocationBasedEvents] Loading location data for', eventsWithoutLocation.length, 'events');
+        try {
+          const detailPromises = eventsWithoutLocation.slice(0, 20).map(e => 
+            loadEventDetail(e.id).catch(() => null)
+          );
+          const details = await Promise.all(detailPromises);
+          const detailMap = {};
+          details.forEach(d => {
+            if (d && d.id && d.location && d.location.lat && d.location.lng) {
+              detailMap[d.id] = d.location;
+            }
+          });
+          
+          // sourceに位置情報を補完
+          source = source.map(item => {
+            const location = detailMap[item.id];
+            if (location) {
+              return { ...item, location: location };
+            }
+            return item;
+          });
+          
+          console.log('[renderLocationBasedEvents] Enriched location data for', Object.keys(detailMap).length, 'events');
+        } catch (e) {
+          console.warn('[renderLocationBasedEvents] Failed to enrich location data:', e);
+        }
+      }
+
       // 位置情報の取得許可を求める
       navigator.geolocation.getCurrentPosition(
         async (position) => {
@@ -1072,12 +1103,21 @@
               titleEl.textContent = '近くのおすすめイベント';
             }
 
-            // カルーセルで表示
+            // カルーセルで表示（CardRendererが読み込まれるまで待機）
             if (typeof CardRenderer !== 'undefined' && CardRenderer.renderCarousel) {
               CardRenderer.renderCarousel(nearbyEvents, 'location-events-list');
               console.log('[renderLocationBasedEvents] Events rendered successfully');
             } else {
-              console.error('[renderLocationBasedEvents] CardRenderer is not available');
+              console.warn('[renderLocationBasedEvents] CardRenderer not loaded yet, waiting...');
+              // CardRendererが読み込まれるまで待機してリトライ
+              setTimeout(() => {
+                if (typeof CardRenderer !== 'undefined' && CardRenderer.renderCarousel) {
+                  CardRenderer.renderCarousel(nearbyEvents, 'location-events-list');
+                  console.log('[renderLocationBasedEvents] Events rendered successfully (retry)');
+                } else {
+                  console.error('[renderLocationBasedEvents] CardRenderer is still not available after retry');
+                }
+              }, 200);
             }
           }
         },
@@ -1224,9 +1264,11 @@
       
       console.log('[renderEventBlocks] final upcoming count:', upcoming.length);
 
-      // CardRendererが定義されているか確認
+      // CardRendererが定義されているか確認（読み込まれるまで待機）
       if (typeof CardRenderer === 'undefined' || !CardRenderer.renderCarousel) {
-        console.error('CardRenderer is not defined. Make sure app.js is loaded.');
+        console.warn('[renderEventBlocks] CardRenderer not loaded yet, waiting...');
+        // CardRendererが読み込まれるまで待機してリトライ
+        setTimeout(() => renderEventBlocks(), 100);
         return;
       }
 
@@ -1332,6 +1374,8 @@
         }
 
         renderPopSection(); // ポップセクションを描画
+        // 位置情報ベースのイベントを最優先で表示（データ読み込み後すぐに実行）
+        await renderLocationBasedEvents();
         renderCategories();
         initCategoryMenu(); // カテゴリメニューを初期化（ホバー表示用）
         renderWeekCalendar();
@@ -1344,7 +1388,6 @@
           console.log('[index.html] Sample event categoryId:', window.eventData.events[0].categoryId);
         }
         renderPopularSearch(); // 人気タグ・地域検索セクションを描画
-        await renderLocationBasedEvents(); // 位置情報ベースのイベントを表示
 
       } catch (e) {
         console.error(e);

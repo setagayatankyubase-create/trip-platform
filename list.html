@@ -144,6 +144,7 @@
     </div>
   </footer>
 
+  <script src="app.js"></script>
   <!-- Google Maps API -->
   <script>
     // Google Maps API キー（環境に応じて設定）
@@ -151,33 +152,42 @@
     window.GOOGLE_MAPS_API_KEY = window.GOOGLE_MAPS_API_KEY || 'AIzaSyDNV6H5ImWmE2DhWdRYupUER85Rb8ZqmQM';
     
     // APIキーが設定されている場合のみGoogle Maps APIを読み込む
+    // app.jsが読み込まれた後に実行（initGoogleMapsコールバックが定義されていることを確認）
     if (window.GOOGLE_MAPS_API_KEY && window.GOOGLE_MAPS_API_KEY !== 'YOUR_API_KEY_HERE') {
       // 既に読み込まれていないかチェック
       if (!document.querySelector('script[src*="maps.googleapis.com"]')) {
-        const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${window.GOOGLE_MAPS_API_KEY}&callback=initGoogleMaps&language=ja&region=JP&loading=async`;
-        script.async = true;
-        script.defer = true;
-        script.onerror = function() {
-          console.error('[Google Maps] Failed to load Google Maps API');
-          const mapContainer = document.getElementById('map');
-          if (mapContainer) {
-            mapContainer.innerHTML = `
-              <div class="map-placeholder" style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #f0f0f0; color: var(--text-secondary);">
-                <div style="text-align: center;">
-                  <div style="font-size: 2rem; margin-bottom: 10px;">🗺️</div>
-                  <div>Google Maps APIの読み込みに失敗しました</div>
-                  <div style="font-size: 0.8rem; margin-top: 8px;">APIキーを確認してください</div>
-                </div>
-              </div>
-            `;
+        // app.jsが読み込まれるまで少し待つ
+        function loadGoogleMapsAPI() {
+          if (typeof window.initGoogleMaps === 'function') {
+            const script = document.createElement('script');
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${window.GOOGLE_MAPS_API_KEY}&callback=initGoogleMaps&language=ja&region=JP&loading=async`;
+            script.async = true;
+            script.defer = true;
+            script.onerror = function() {
+              console.error('[Google Maps] Failed to load Google Maps API');
+              const mapContainer = document.getElementById('map');
+              if (mapContainer) {
+                mapContainer.innerHTML = `
+                  <div class="map-placeholder" style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #f0f0f0; color: var(--text-secondary);">
+                    <div style="text-align: center;">
+                      <div style="font-size: 2rem; margin-bottom: 10px;">🗺️</div>
+                      <div>Google Maps APIの読み込みに失敗しました</div>
+                      <div style="font-size: 0.8rem; margin-top: 8px;">APIキーを確認してください</div>
+                    </div>
+                  </div>
+                `;
+              }
+            };
+            document.head.appendChild(script);
+          } else {
+            // initGoogleMapsがまだ定義されていない場合は少し待つ
+            setTimeout(loadGoogleMapsAPI, 100);
           }
-        };
-        document.head.appendChild(script);
+        }
+        loadGoogleMapsAPI();
       }
     }
   </script>
-  <script src="app.js"></script>
   <script>
     let currentEvents = [];
     let selectedEventId = null;
@@ -185,6 +195,12 @@
     // マップ初期化（常時表示）
     function initMap() {
       console.log('[list.html] initMap called');
+      // MapManagerが読み込まれるまで待機
+      if (typeof MapManager === 'undefined') {
+        console.log('[list.html] MapManager not loaded yet, retrying...');
+        setTimeout(() => initMap(), 100);
+        return;
+      }
       if (!MapManager.mapInstance) {
         console.log('[list.html] Initializing map...');
         MapManager.init('map');
