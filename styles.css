@@ -931,12 +931,10 @@ body {
 }
 
 .event-list-column {
-  overflow-y: auto;
+  overflow: visible;
+  height: auto;
   max-height: none;
-  height: calc(100vh - 250px);
   padding-right: 10px;
-  /* スクロールをスムーズに */
-  scroll-behavior: smooth;
 }
 
 /* イベント一覧ページのグリッドを3カラムに固定（3つずつ横並び） */
@@ -955,6 +953,8 @@ body {
   height: calc(100vh - 40px);
   min-height: 400px;
   max-height: 800px;
+  /* スクロールしても固定 */
+  will-change: transform;
 }
 
 .map-container {
