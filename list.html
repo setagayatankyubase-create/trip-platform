@@ -260,8 +260,12 @@
         const cardEventId = card.dataset.eventId;
         if (cardEventId === eventId) {
           card.classList.add('selected');
-          // スクロールして表示
+          // スクロールして表示（15px上に調整）
           card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // スクロール完了後に15px上に調整
+          setTimeout(() => {
+            window.scrollBy({ top: -15, behavior: 'smooth' });
+          }, 300);
         } else {
           card.classList.remove('selected');
         }
