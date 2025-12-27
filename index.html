@@ -1230,7 +1230,7 @@
       ]
     };
 
-    // イベント数をカウントする関数
+    // イベント数をカウントする関数（地名とイベントを正確に紐づける）
     async function countEventsByArea(area) {
       let source = Array.isArray(window.eventIndex) && window.eventIndex.length > 0
         ? window.eventIndex
@@ -1239,11 +1239,96 @@
       if (source.length === 0) return 0;
       
       const count = source.filter(event => {
-        const eventArea = event.area || event.city || event.prefecture || '';
-        return eventArea.includes(area);
+        const eventArea = (event.area || event.city || event.prefecture || '').trim();
+        const searchArea = area.trim();
+        
+        if (!eventArea || !searchArea) return false;
+        
+        // 完全一致を最優先
+        if (eventArea === searchArea) return true;
+        
+        // 部分一致のチェック（より厳密に）
+        // 「世田谷区」で検索する場合、「世田谷区 世田谷」は除外
+        if (eventArea.includes(searchArea)) {
+          // 都道府県名（「都」「府」「県」で終わる）の場合は部分一致も許可
+          if (searchArea.endsWith('都') || searchArea.endsWith('府') || searchArea.endsWith('県')) {
+            return true;
+          }
+          
+          // 市区町村名（「区」「市」「町」「村」で終わる）の場合は厳密にチェック
+          if (searchArea.endsWith('区') || searchArea.endsWith('市') || searchArea.endsWith('町') || searchArea.endsWith('村')) {
+            // 「世田谷区」で始まる場合は一致（「世田谷区 世田谷」は除外）
+            if (eventArea.startsWith(searchArea)) {
+              // スペースやその他の文字が続く場合は除外
+              const nextChar = eventArea[searchArea.length];
+              if (!nextChar || nextChar === ' ' || nextChar === '　') {
+                return true;
+              }
+            }
+            // 「世田谷区」を含むが、前に文字がある場合は除外（例：「東京都世田谷区」は「世田谷区」に一致）
+            const index = eventArea.indexOf(searchArea);
+            if (index > 0) {
+              const beforeChar = eventArea[index - 1];
+              // 前の文字が都道府県名の一部でない場合は一致
+              if (beforeChar !== '都' && beforeChar !== '府' && beforeChar !== '県') {
+                return false;
+              }
+            }
+            return false;
+          }
+          
+          // その他の場合は部分一致を許可
+          return true;
+        }
+        
+        return false;
       }).length;
       
       return count;
+    }
+    
+    // マーカーの位置を調整して重複を防ぐ関数
+    function adjustMarkerPositions(markers, minDistance = 0.01) {
+      if (!markers || markers.length === 0) return;
+      
+      // 距離が近いマーカーを検出して位置を調整
+      for (let i = 0; i < markers.length; i++) {
+        for (let j = i + 1; j < markers.length; j++) {
+          try {
+            const pos1 = markers[i].getPosition();
+            const pos2 = markers[j].getPosition();
+            
+            if (!pos1 || !pos2) continue;
+            
+            const lat1 = pos1.lat();
+            const lng1 = pos1.lng();
+            const lat2 = pos2.lat();
+            const lng2 = pos2.lng();
+            
+            const latDiff = Math.abs(lat1 - lat2);
+            const lngDiff = Math.abs(lng1 - lng2);
+            const distance = Math.sqrt(latDiff * latDiff + lngDiff * lngDiff);
+            
+            // 距離が近すぎる場合、位置を調整
+            if (distance < minDistance) {
+              // 2つのマーカーを対角線上に少しずらす
+              const offset = (minDistance - distance) / 2 + 0.001;
+              const angle = Math.atan2(lat2 - lat1, lng2 - lng1);
+              
+              // マーカー1を左上に、マーカー2を右下にずらす
+              const newLat1 = lat1 - Math.sin(angle) * offset;
+              const newLng1 = lng1 - Math.cos(angle) * offset;
+              const newLat2 = lat2 + Math.sin(angle) * offset;
+              const newLng2 = lng2 + Math.cos(angle) * offset;
+              
+              markers[i].setPosition({ lat: newLat1, lng: newLng1 });
+              markers[j].setPosition({ lat: newLat2, lng: newLng2 });
+            }
+          } catch (e) {
+            console.warn('[adjustMarkerPositions] Error adjusting marker position:', e);
+          }
+        }
+      }
     }
 
     // 地図から探す機能の初期化
@@ -1384,7 +1469,8 @@
       };
       
       // 都道府県マーカーを追加
-      Object.keys(prefecturePositions).forEach(async (prefId) => {
+      const prefectureMarkers = [];
+      const markerPromises = Object.keys(prefecturePositions).map(async (prefId) => {
         const pos = prefecturePositions[prefId];
         const prefectureName = pos.name;
         const count = await countEventsByArea(prefectureName);
@@ -1447,6 +1533,14 @@
             window.location.href = `list.html?area=${encodeURIComponent(prefectureName)}`;
           }
         });
+        
+        return marker;
+      });
+      
+      // すべてのマーカーが追加されたら位置を調整
+      Promise.all(markerPromises).then(markers => {
+        prefectureMarkers.push(...markers);
+        // マーカーの位置を調整（都道府県レベルでは距離が十分離れているので調整不要）
       });
     }
     
@@ -1511,11 +1605,12 @@
       
       // 市区町村マーカーを追加
       const bounds = new google.maps.LatLngBounds();
+      const cityMarkers = [];
       
-      cities.forEach(async (city) => {
+      const cityMarkerPromises = cities.map(async (city) => {
         const count = await countEventsByArea(city.area);
-        const lat = city.lat || centerPos.lat;
-        const lng = city.lng || centerPos.lng;
+        let lat = city.lat || centerPos.lat;
+        let lng = city.lng || centerPos.lng;
         
         bounds.extend({ lat, lng });
         
@@ -1571,18 +1666,30 @@
             // 三段階目：さらに細かいエリアを表示
             initSubAreaMap(city, container, map);
           } else {
-            // イベント一覧ページに遷移
+            // イベント一覧ページに遷移（地名とイベントを正確に紐づける）
             window.location.href = `list.html?area=${encodeURIComponent(city.area)}`;
           }
         });
+        
+        return { marker, lat, lng };
       });
       
-      // すべてのマーカーが表示されるように地図を調整
-      if (cities.length > 0) {
+      // すべてのマーカーが追加されたら位置を調整
+      Promise.all(cityMarkerPromises).then(markerData => {
+        markerData.forEach(({ marker }) => {
+          cityMarkers.push(marker);
+        });
+        
+        // マーカーの位置を調整して重複を防ぐ
         setTimeout(() => {
+          adjustMarkerPositions(cityMarkers, 0.008); // 市区町村レベルでは0.008度（約800m）以上離す
+        }, 100);
+        
+        // すべてのマーカーが表示されるように地図を調整
+        if (cities.length > 0) {
           map.fitBounds(bounds);
-        }, 500);
-      }
+        }
+      });
     }
     
     // 三段階目：細かいエリアのGoogle Maps（イベントが多い場合）
