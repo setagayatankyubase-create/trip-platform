@@ -20,6 +20,8 @@
   <script>
     // GitHub raw URL（全ページ共通設定）
     window.GITHUB_RAW_BASE = "https://raw.githubusercontent.com/setagayatankyubase-create/trip-platform/main";
+    // Google Maps API キー
+    window.GOOGLE_MAPS_API_KEY = window.GOOGLE_MAPS_API_KEY || 'AIzaSyDNV6H5ImWmE2DhWdRYupUER85Rb8ZqmQM';
   </script>
   <script>
     // ロゴ画像をCloudinaryから取得（data.js読み込み後に実行）
@@ -113,7 +115,7 @@
         <h2 id="location-events-title">近くのおすすめイベント</h2>
       </div>
       <div class="card-carousel-wrapper">
-        <div class="card-carousel" id="location-events-list"></div>
+        <div class="grid" id="location-events-list"></div>
       </div>
     </section>
 
@@ -1068,8 +1070,59 @@
         return;
       }
 
+      // 位置情報から地名を取得する関数
+      const getLocationName = async (lat, lng) => {
+        const apiKey = window.GOOGLE_MAPS_API_KEY || 'AIzaSyDNV6H5ImWmE2DhWdRYupUER85Rb8ZqmQM';
+        if (!apiKey || apiKey === 'YOUR_API_KEY_HERE') {
+          return null;
+        }
+
+        try {
+          const response = await fetch(
+            `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}&language=ja&region=jp`
+          );
+          const data = await response.json();
+          
+          if (data.status === 'OK' && data.results && data.results.length > 0) {
+            // 結果から市区町村名を取得
+            for (const result of data.results) {
+              const addressComponents = result.address_components || [];
+              // 市区町村を探す
+              for (const component of addressComponents) {
+                if (component.types.includes('locality') || component.types.includes('administrative_area_level_2')) {
+                  return component.long_name;
+                }
+              }
+              // 都道府県を探す
+              for (const component of addressComponents) {
+                if (component.types.includes('administrative_area_level_1')) {
+                  return component.long_name;
+                }
+              }
+            }
+            // フォールバック: 最初の結果のフォーマット済み住所から市区町村を抽出
+            const formattedAddress = data.results[0].formatted_address;
+            if (formattedAddress) {
+              // 「東京都渋谷区」のような形式から「渋谷区」を抽出
+              const match = formattedAddress.match(/([都道府県])([市区町村]+)/);
+              if (match && match[2]) {
+                return match[2];
+              }
+              // 「渋谷区」のような形式を直接抽出
+              const match2 = formattedAddress.match(/([^都道府県市区町村]+[市区町村])/);
+              if (match2 && match2[1]) {
+                return match2[1];
+              }
+            }
+          }
+        } catch (error) {
+          console.warn('[renderLocationBasedEvents] Failed to get location name:', error);
+        }
+        return null;
+      };
+
       // 位置情報の取得許可を求める（失敗時はデフォルト位置を使用）
-      const processNearbyEvents = async (userLat, userLng) => {
+      const processNearbyEvents = async (userLat, userLng, isDefaultLocation = false) => {
         console.log('[renderLocationBasedEvents] Processing events for location:', userLat, userLng);
 
         // 距離を計算してソート
@@ -1096,32 +1149,41 @@
           // セクションを表示
           section.style.display = 'block';
           
-          // タイトルを更新
+          // 地名を取得してタイトルを更新
+          let locationName = null;
+          if (!isDefaultLocation) {
+            locationName = await getLocationName(userLat, userLng);
+          }
+          
           if (titleEl) {
-            titleEl.textContent = '近くのおすすめイベント';
+            if (locationName) {
+              titleEl.textContent = `${locationName}のおすすめイベント`;
+            } else {
+              titleEl.textContent = '近くのおすすめイベント';
+            }
           }
 
-          // カルーセルで表示（CardRendererが読み込まれるまで待機）
-          if (typeof CardRenderer !== 'undefined' && CardRenderer.renderCarousel) {
-            CardRenderer.renderCarousel(nearbyEvents, 'location-events-list');
-            console.log('[renderLocationBasedEvents] Events rendered successfully');
-          } else {
-            console.warn('[renderLocationBasedEvents] CardRenderer not loaded yet, waiting...');
-            // CardRendererが読み込まれるまで待機してリトライ
-            let retryCount = 0;
-            const maxRetries = 10;
-            const retryInterval = setInterval(() => {
-              retryCount++;
-              if (typeof CardRenderer !== 'undefined' && CardRenderer.renderCarousel) {
-                CardRenderer.renderCarousel(nearbyEvents, 'location-events-list');
-                console.log('[renderLocationBasedEvents] Events rendered successfully (retry ' + retryCount + ')');
-                clearInterval(retryInterval);
-              } else if (retryCount >= maxRetries) {
-                console.error('[renderLocationBasedEvents] CardRenderer is still not available after retries');
-                clearInterval(retryInterval);
-              }
-            }, 200);
-          }
+            // グリッド表示で表示（CardRendererが読み込まれるまで待機）
+            if (typeof CardRenderer !== 'undefined' && CardRenderer.renderList) {
+              CardRenderer.renderList(nearbyEvents, 'location-events-list');
+              console.log('[renderLocationBasedEvents] Events rendered successfully');
+            } else {
+              console.warn('[renderLocationBasedEvents] CardRenderer not loaded yet, waiting...');
+              // CardRendererが読み込まれるまで待機してリトライ
+              let retryCount = 0;
+              const maxRetries = 10;
+              const retryInterval = setInterval(() => {
+                retryCount++;
+                if (typeof CardRenderer !== 'undefined' && CardRenderer.renderList) {
+                  CardRenderer.renderList(nearbyEvents, 'location-events-list');
+                  console.log('[renderLocationBasedEvents] Events rendered successfully (retry ' + retryCount + ')');
+                  clearInterval(retryInterval);
+                } else if (retryCount >= maxRetries) {
+                  console.error('[renderLocationBasedEvents] CardRenderer is still not available after retries');
+                  clearInterval(retryInterval);
+                }
+              }, 200);
+            }
         }
       };
 
@@ -1130,7 +1192,7 @@
         async (position) => {
           const userLat = position.coords.latitude;
           const userLng = position.coords.longitude;
-          await processNearbyEvents(userLat, userLng);
+          await processNearbyEvents(userLat, userLng, false);
         },
         async (error) => {
           console.log('[renderLocationBasedEvents] Geolocation error:', error.code, error.message);
@@ -1138,7 +1200,7 @@
           console.log('[renderLocationBasedEvents] Using default location (Tokyo)');
           const defaultLat = 35.6762; // 東京の緯度
           const defaultLng = 139.6503; // 東京の経度
-          await processNearbyEvents(defaultLat, defaultLng);
+          await processNearbyEvents(defaultLat, defaultLng, true);
         },
         {
           enableHighAccuracy: true, // より正確な位置情報を取得
