@@ -1018,12 +1018,13 @@
 
       console.log('[renderLocationBasedEvents] Event data available:', source.length, 'events');
 
-      // 位置情報がないイベントの詳細を読み込んで位置情報を補完
+      // 位置情報がないイベントの詳細を読み込んで位置情報を補完（より多くのイベントを補完）
       const eventsWithoutLocation = source.filter(e => !e.location || !e.location.lat || !e.location.lng);
       if (eventsWithoutLocation.length > 0) {
         console.log('[renderLocationBasedEvents] Loading location data for', eventsWithoutLocation.length, 'events');
         try {
-          const detailPromises = eventsWithoutLocation.slice(0, 20).map(e => 
+          // より多くのイベント（50件）から位置情報を補完
+          const detailPromises = eventsWithoutLocation.slice(0, 50).map(e => 
             loadEventDetail(e.id).catch(() => null)
           );
           const details = await Promise.all(detailPromises);
@@ -1049,86 +1050,99 @@
         }
       }
 
-      // 位置情報の取得許可を求める
+      // 位置情報があるイベントを事前にフィルタリング
+      const eventsWithLocation = source.filter(event => {
+        if (!event.location) return false;
+        
+        // lat/lngを数値に変換
+        const lat = parseFloat(event.location.lat);
+        const lng = parseFloat(event.location.lng);
+        
+        return !isNaN(lat) && !isNaN(lng) && isFinite(lat) && isFinite(lng);
+      });
+
+      console.log('[renderLocationBasedEvents] Events with location:', eventsWithLocation.length);
+
+      if (eventsWithLocation.length === 0) {
+        console.log('[renderLocationBasedEvents] No events with location data');
+        return;
+      }
+
+      // 位置情報の取得許可を求める（失敗時はデフォルト位置を使用）
+      const processNearbyEvents = async (userLat, userLng) => {
+        console.log('[renderLocationBasedEvents] Processing events for location:', userLat, userLng);
+
+        // 距離を計算してソート
+        const eventsWithDistance = eventsWithLocation.map(event => {
+          const lat = parseFloat(event.location.lat);
+          const lng = parseFloat(event.location.lng);
+          const distance = calculateDistance(userLat, userLng, lat, lng);
+          return { event, distance };
+        });
+
+        // 距離の近い順にソート（8件まで）
+        const nearbyEvents = eventsWithDistance
+          .sort((a, b) => a.distance - b.distance)
+          .slice(0, 8)
+          .map(item => item.event);
+
+        console.log('[renderLocationBasedEvents] Nearby events:', nearbyEvents.length);
+        if (nearbyEvents.length > 0) {
+          const firstEventDistance = eventsWithDistance.find(e => e.event.id === nearbyEvents[0].id)?.distance;
+          console.log('[renderLocationBasedEvents] First nearby event:', nearbyEvents[0].title, 'distance:', firstEventDistance ? firstEventDistance.toFixed(2) + 'km' : 'unknown');
+        }
+
+        if (nearbyEvents.length > 0) {
+          // セクションを表示
+          section.style.display = 'block';
+          
+          // タイトルを更新
+          if (titleEl) {
+            titleEl.textContent = '近くのおすすめイベント';
+          }
+
+          // カルーセルで表示（CardRendererが読み込まれるまで待機）
+          if (typeof CardRenderer !== 'undefined' && CardRenderer.renderCarousel) {
+            CardRenderer.renderCarousel(nearbyEvents, 'location-events-list');
+            console.log('[renderLocationBasedEvents] Events rendered successfully');
+          } else {
+            console.warn('[renderLocationBasedEvents] CardRenderer not loaded yet, waiting...');
+            // CardRendererが読み込まれるまで待機してリトライ
+            let retryCount = 0;
+            const maxRetries = 10;
+            const retryInterval = setInterval(() => {
+              retryCount++;
+              if (typeof CardRenderer !== 'undefined' && CardRenderer.renderCarousel) {
+                CardRenderer.renderCarousel(nearbyEvents, 'location-events-list');
+                console.log('[renderLocationBasedEvents] Events rendered successfully (retry ' + retryCount + ')');
+                clearInterval(retryInterval);
+              } else if (retryCount >= maxRetries) {
+                console.error('[renderLocationBasedEvents] CardRenderer is still not available after retries');
+                clearInterval(retryInterval);
+              }
+            }, 200);
+          }
+        }
+      };
+
+      // 位置情報の取得を試みる
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           const userLat = position.coords.latitude;
           const userLng = position.coords.longitude;
-          
-          console.log('[renderLocationBasedEvents] User location:', userLat, userLng);
-
-          // 位置情報があるイベントをフィルタリング（数値型と文字列型の両方に対応）
-          const eventsWithLocation = source.filter(event => {
-            if (!event.location) return false;
-            
-            // lat/lngを数値に変換
-            const lat = parseFloat(event.location.lat);
-            const lng = parseFloat(event.location.lng);
-            
-            return !isNaN(lat) && !isNaN(lng) && isFinite(lat) && isFinite(lng);
-          });
-
-          console.log('[renderLocationBasedEvents] Events with location:', eventsWithLocation.length);
-
-          if (eventsWithLocation.length === 0) {
-            console.log('[renderLocationBasedEvents] No events with location data');
-            return;
-          }
-
-          // 距離を計算してソート
-          const eventsWithDistance = eventsWithLocation.map(event => {
-            const lat = parseFloat(event.location.lat);
-            const lng = parseFloat(event.location.lng);
-            const distance = calculateDistance(userLat, userLng, lat, lng);
-            return { event, distance };
-          });
-
-          // 距離の近い順にソート（8件まで）
-          const nearbyEvents = eventsWithDistance
-            .sort((a, b) => a.distance - b.distance)
-            .slice(0, 8)
-            .map(item => item.event);
-
-          console.log('[renderLocationBasedEvents] Nearby events:', nearbyEvents.length);
-          if (nearbyEvents.length > 0) {
-            console.log('[renderLocationBasedEvents] First nearby event:', nearbyEvents[0].title, 'distance:', eventsWithDistance.find(e => e.event.id === nearbyEvents[0].id)?.distance.toFixed(2), 'km');
-          }
-
-          if (nearbyEvents.length > 0) {
-            // セクションを表示
-            section.style.display = 'block';
-            
-            // タイトルを更新
-            if (titleEl) {
-              titleEl.textContent = '近くのおすすめイベント';
-            }
-
-            // カルーセルで表示（CardRendererが読み込まれるまで待機）
-            if (typeof CardRenderer !== 'undefined' && CardRenderer.renderCarousel) {
-              CardRenderer.renderCarousel(nearbyEvents, 'location-events-list');
-              console.log('[renderLocationBasedEvents] Events rendered successfully');
-            } else {
-              console.warn('[renderLocationBasedEvents] CardRenderer not loaded yet, waiting...');
-              // CardRendererが読み込まれるまで待機してリトライ
-              setTimeout(() => {
-                if (typeof CardRenderer !== 'undefined' && CardRenderer.renderCarousel) {
-                  CardRenderer.renderCarousel(nearbyEvents, 'location-events-list');
-                  console.log('[renderLocationBasedEvents] Events rendered successfully (retry)');
-                } else {
-                  console.error('[renderLocationBasedEvents] CardRenderer is still not available after retry');
-                }
-              }, 200);
-            }
-          }
+          await processNearbyEvents(userLat, userLng);
         },
-        (error) => {
+        async (error) => {
           console.log('[renderLocationBasedEvents] Geolocation error:', error.code, error.message);
-          // エラー時はセクションを非表示のまま
-          // エラーコード: 1=PERMISSION_DENIED, 2=POSITION_UNAVAILABLE, 3=TIMEOUT
+          // エラー時はデフォルト位置（東京）を使用して近くのイベントを表示
+          console.log('[renderLocationBasedEvents] Using default location (Tokyo)');
+          const defaultLat = 35.6762; // 東京の緯度
+          const defaultLng = 139.6503; // 東京の経度
+          await processNearbyEvents(defaultLat, defaultLng);
         },
         {
-          enableHighAccuracy: false,
-          timeout: 10000,
+          enableHighAccuracy: true, // より正確な位置情報を取得
+          timeout: 15000, // タイムアウトを15秒に延長
           maximumAge: 300000 // 5分間キャッシュ
         }
       );
