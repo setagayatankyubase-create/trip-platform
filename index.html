@@ -453,27 +453,62 @@
     // タグ一覧
     function renderPopularTags() {
       const container = document.getElementById('popular-tags-list');
-      if (!container || !Array.isArray(window.eventIndex)) return;
+      if (!container) return;
 
-      // タグとして人気のキーワードを使用
-      const tags = [
-        { name: '川遊び', count: countEventsByKeyword('川') },
-        { name: '海・ビーチ', count: countEventsByKeyword('海') },
-        { name: '里山体験', count: countEventsByKeyword('里山') },
-        { name: '自然観察', count: countEventsByKeyword('観察') },
-        { name: '生き物', count: countEventsByKeyword('生き物') },
-        { name: '農業体験', count: countEventsByKeyword('農業') },
-        { name: '収穫体験', count: countEventsByKeyword('収穫') },
-        { name: '植物', count: countEventsByKeyword('植物') },
-        { name: '野鳥', count: countEventsByKeyword('野鳥') },
-        { name: '星空', count: countEventsByKeyword('星空') },
-        { name: 'キャンプ', count: countEventsByKeyword('キャンプ') },
-        { name: '親子', count: countEventsByKeyword('親子') },
-      ].filter(tag => tag.count > 0).sort((a, b) => b.count - a.count);
+      // eventData.eventsを優先、なければeventIndexを使用
+      const source = Array.isArray(window.eventData?.events) && window.eventData.events.length > 0
+        ? window.eventData.events
+        : (Array.isArray(window.eventIndex) ? window.eventIndex : []);
+
+      if (source.length === 0) return;
+
+      // タグとして人気のキーワードを使用（タグ名と検索キーワードのマッピング）
+      const tagConfigs = [
+        { name: '川遊び', keywords: ['川', '川遊び', '水遊び'] },
+        { name: '海・ビーチ', keywords: ['海', 'ビーチ', '海岸', 'マリンスポーツ'] },
+        { name: '里山体験', keywords: ['里山', '里山体験', '田舎'] },
+        { name: '自然観察', keywords: ['観察', '自然観察', '観察会'] },
+        { name: '生き物', keywords: ['生き物', '生物', '動物', '昆虫'] },
+        { name: '農業体験', keywords: ['農業', '農業体験', '農作業'] },
+        { name: '収穫体験', keywords: ['収穫', '収穫体験', '採り'] },
+        { name: '植物', keywords: ['植物', '草花', '花', '樹木'] },
+        { name: '野鳥', keywords: ['野鳥', '鳥', 'バードウォッチング'] },
+        { name: '星空', keywords: ['星空', '星', '天体', '星座'] },
+        { name: 'キャンプ', keywords: ['キャンプ', 'テント', '焚き火'] },
+        { name: '親子', keywords: ['親子', '家族', '子ども', '子供'] },
+      ];
+
+      // 各タグのイベント数をカウント（複数のキーワードで検索）
+      const tags = tagConfigs.map(tagConfig => {
+        const count = source.filter(e => {
+          const searchTexts = [
+            e.title,
+            e.name,
+            e.description,
+            e.detail,
+            e.city,
+            e.prefecture,
+            e.area,
+            e.area_name,
+            e.category,
+            e.category_name,
+            e.category && e.category.name ? e.category.name : null
+          ].filter(Boolean).join(' ').toLowerCase();
+          
+          // タグのキーワードのいずれかが含まれているかチェック
+          return tagConfig.keywords.some(keyword => 
+            searchTexts.includes(keyword.toLowerCase())
+          );
+        }).length;
+        
+        return { name: tagConfig.name, count: count, keywords: tagConfig.keywords };
+      }).filter(tag => tag.count > 0).sort((a, b) => b.count - a.count);
 
       container.innerHTML = tags.map(tag => {
+        // タグ名とキーワードの両方で検索できるように、最初のキーワードを使用
+        const searchQuery = tag.keywords[0];
         return `
-          <a href="list.html?q=${encodeURIComponent(tag.name)}" class="popular-item" data-tag-name="${tag.name}">
+          <a href="list.html?q=${encodeURIComponent(searchQuery)}" class="popular-item" data-tag-name="${tag.name}">
             <span class="popular-item-name">${tag.name}</span>
             <span class="popular-item-count">${tag.count} イベント</span>
           </a>
