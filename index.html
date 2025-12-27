@@ -124,53 +124,14 @@
     <section class="section event-block" id="map-search-section">
       <div class="event-block-header">
         <h2>地図から探す</h2>
+        <button class="map-nearby-button" id="map-nearby-button">
+          <span class="map-nearby-icon">📍</span>
+          <span>近くから探す</span>
+        </button>
       </div>
       <div class="map-search-container">
-        <div class="map-search-sidebar" id="map-search-sidebar">
-          <div class="map-region-list">
-            <div class="map-region-item active" data-region="kanto">
-              <span class="region-icon">▶</span>
-              <span class="region-name">首都圏</span>
-            </div>
-            <div class="map-region-item" data-region="tohoku">
-              <span class="region-icon">▶</span>
-              <span class="region-name">東北</span>
-            </div>
-            <div class="map-region-item" data-region="koshinetsu">
-              <span class="region-icon">▶</span>
-              <span class="region-name">甲信越</span>
-            </div>
-            <div class="map-region-item" data-region="hokuriku">
-              <span class="region-icon">▶</span>
-              <span class="region-name">北陸</span>
-            </div>
-            <div class="map-region-item" data-region="tokai">
-              <span class="region-icon">▶</span>
-              <span class="region-name">東海</span>
-            </div>
-            <div class="map-region-item" data-region="kinki">
-              <span class="region-icon">▶</span>
-              <span class="region-name">近畿</span>
-            </div>
-            <div class="map-region-item" data-region="chugoku">
-              <span class="region-icon">▶</span>
-              <span class="region-name">山陰・山陽</span>
-            </div>
-            <div class="map-region-item" data-region="shikoku">
-              <span class="region-icon">▶</span>
-              <span class="region-name">四国</span>
-            </div>
-            <div class="map-region-item" data-region="kyushu">
-              <span class="region-icon">▶</span>
-              <span class="region-name">九州</span>
-            </div>
-            <div class="map-region-item" data-region="okinawa">
-              <span class="region-icon">▶</span>
-              <span class="region-name">沖縄</span>
-            </div>
-          </div>
-        </div>
         <div class="map-search-map" id="map-search-map">
+          <div class="map-simple-map" id="map-simple-map" style="display: none;"></div>
           <div class="map-area" id="kanto-map">
             <div class="map-prefecture" data-prefecture="tokyo" data-area="東京都">
               <span class="prefecture-name">▶ 東京都</span>
@@ -1321,7 +1282,6 @@
 
     // 地図から探す機能の初期化
     function initMapSearch() {
-      const regionItems = document.querySelectorAll('.map-region-item');
       const mapArea = document.getElementById('map-search-map');
       const citiesList = document.getElementById('map-cities-list');
       const citiesGrid = document.getElementById('map-cities-grid');
@@ -1397,22 +1357,115 @@
         updatePrefectureCounts();
       }, 500);
       
-      // 地域選択時の処理
-      regionItems.forEach(item => {
-        item.addEventListener('click', () => {
-          // アクティブ状態を更新
-          regionItems.forEach(r => r.classList.remove('active'));
-          item.classList.add('active');
-          
-          const region = item.dataset.region;
-          // 地域に応じた地図を表示（現在は関東のみ実装）
-          if (region === 'kanto') {
-            citiesList.style.display = 'none';
-            kantoMap.style.display = 'block';
-            setupPrefectureClick();
+      // 「近くから探す」ボタンの処理
+      const nearbyButton = document.getElementById('map-nearby-button');
+      
+      if (nearbyButton) {
+        nearbyButton.addEventListener('click', () => {
+          // 位置情報を取得
+          if (!navigator.geolocation) {
+            alert('位置情報が利用できません');
+            return;
           }
+          
+          nearbyButton.disabled = true;
+          nearbyButton.innerHTML = '<span class="map-nearby-icon">📍</span><span>位置情報を取得中...</span>';
+          
+          navigator.geolocation.getCurrentPosition(
+            async (position) => {
+              const lat = position.coords.latitude;
+              const lng = position.coords.longitude;
+              
+              // 地図表示を切り替え
+              kantoMap.style.display = 'none';
+              if (citiesList) citiesList.style.display = 'none';
+              const simpleMapContainer = document.getElementById('map-simple-map');
+              if (simpleMapContainer) {
+                simpleMapContainer.style.display = 'block';
+                // シンプルな地図を表示（現在地と近くのイベント）
+                showSimpleNearbyMap(lat, lng, simpleMapContainer);
+              }
+              
+              nearbyButton.disabled = false;
+              nearbyButton.innerHTML = '<span class="map-nearby-icon">📍</span><span>近くから探す</span>';
+            },
+            (error) => {
+              alert('位置情報の取得に失敗しました');
+              nearbyButton.disabled = false;
+              nearbyButton.innerHTML = '<span class="map-nearby-icon">📍</span><span>近くから探す</span>';
+            },
+            {
+              enableHighAccuracy: true,
+              timeout: 20000,
+              maximumAge: 0
+            }
+          );
         });
+      }
+    }
+    
+    // シンプルな地図で近くのイベントを表示
+    function showSimpleNearbyMap(userLat, userLng, container) {
+      // イベントデータを取得
+      let source = Array.isArray(window.eventIndex) && window.eventIndex.length > 0
+        ? window.eventIndex
+        : (Array.isArray(window.eventData?.events) ? window.eventData.events : []);
+      
+      if (source.length === 0) {
+        container.innerHTML = '<div class="map-simple-message">イベントデータが見つかりませんでした</div>';
+        return;
+      }
+      
+      // 位置情報があるイベントをフィルタリング
+      const eventsWithLocation = source.filter(event => {
+        const lat = event.location?.lat;
+        const lng = event.location?.lng;
+        return lat && lng && !isNaN(parseFloat(lat)) && !isNaN(parseFloat(lng));
       });
+      
+      // 距離でソート（近い順）
+      const eventsWithDistance = eventsWithLocation.map(event => {
+        const eventLat = parseFloat(event.location.lat);
+        const eventLng = parseFloat(event.location.lng);
+        const distance = calculateDistance(userLat, userLng, eventLat, eventLng);
+        return { event, distance };
+      }).sort((a, b) => a.distance - b.distance);
+      
+      // 近くのイベント（20km以内、最大10件）
+      const nearbyEvents = eventsWithDistance
+        .filter(item => item.distance <= 20)
+        .slice(0, 10);
+      
+      // シンプルな地図表示
+      let html = '<div class="map-simple-content">';
+      html += '<div class="map-simple-header">';
+      html += '<h3>現在地周辺のイベント</h3>';
+      html += `<p class="map-simple-location">📍 現在地から ${nearbyEvents.length}件のイベントが見つかりました</p>`;
+      html += '</div>';
+      
+      if (nearbyEvents.length > 0) {
+        html += '<div class="map-simple-events">';
+        nearbyEvents.forEach(({ event, distance }) => {
+          const price = event.price ? event.price : 0;
+          const priceLabel = price > 0 ? `¥ ${price.toLocaleString()}` : '無料';
+          html += `
+            <div class="map-simple-event-item" onclick="window.location.href='experience.html?id=${event.id}'">
+              <div class="map-simple-event-info">
+                <h4>${event.title || 'イベント'}</h4>
+                <p class="map-simple-event-distance">📍 ${distance.toFixed(1)}km</p>
+                <p class="map-simple-event-price">${priceLabel}</p>
+              </div>
+            </div>
+          `;
+        });
+        html += '</div>';
+      } else {
+        html += '<div class="map-simple-message">近くにイベントが見つかりませんでした</div>';
+      }
+      
+      html += '</div>';
+      container.innerHTML = html;
+      
     }
 
     // 位置情報を取得して近場のイベントを表示（非推奨：地図から探すに置き換え）
