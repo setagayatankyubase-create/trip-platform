@@ -598,9 +598,9 @@ const MapManager = {
         lng: parseFloat(event.location.lng)
       };
 
-      // 価格ラベルを作成（簡潔に表示）
+      // 価格ラベルを作成（日本円表示）
       const eventPrice = event.price ? event.price : 0;
-      const priceLabel = eventPrice >= 1000 ? `¥${Math.floor(eventPrice / 1000)}k` : `¥${eventPrice}`;
+      const priceLabel = eventPrice > 0 ? `¥${eventPrice.toLocaleString()}` : '';
       
       // マーカーを作成（価格ラベル付き）
       const marker = new google.maps.Marker({
@@ -609,9 +609,9 @@ const MapManager = {
         title: `${event.title || ''} - ${priceLabel}`,
         animation: google.maps.Animation.DROP,
         label: {
-          text: priceLabel,
+          text: priceLabel || '',
           color: '#fff',
-          fontSize: '11px',
+          fontSize: '10px',
           fontWeight: 'bold'
         }
       });
