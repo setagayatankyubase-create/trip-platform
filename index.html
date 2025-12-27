@@ -131,41 +131,7 @@
       </div>
       <div class="map-search-container">
         <div class="map-search-map" id="map-search-map">
-          <div class="map-google-map" id="map-google-map" style="display: none;"></div>
-          <div class="map-area" id="kanto-map">
-            <div class="map-prefecture" data-prefecture="tokyo" data-area="東京都">
-              <span class="prefecture-name">▶ 東京都</span>
-              <span class="prefecture-count">0 イベント</span>
-            </div>
-            <div class="map-prefecture" data-prefecture="kanagawa" data-area="神奈川県">
-              <span class="prefecture-name">▶ 神奈川県</span>
-              <span class="prefecture-count">0 イベント</span>
-            </div>
-            <div class="map-prefecture" data-prefecture="saitama" data-area="埼玉県">
-              <span class="prefecture-name">▶ 埼玉県</span>
-              <span class="prefecture-count">0 イベント</span>
-            </div>
-            <div class="map-prefecture" data-prefecture="chiba" data-area="千葉県">
-              <span class="prefecture-name">▶ 千葉県</span>
-              <span class="prefecture-count">0 イベント</span>
-            </div>
-            <div class="map-prefecture" data-prefecture="ibaraki" data-area="茨城県">
-              <span class="prefecture-name">▶ 茨城県</span>
-              <span class="prefecture-count">0 イベント</span>
-            </div>
-            <div class="map-prefecture" data-prefecture="tochigi" data-area="栃木県">
-              <span class="prefecture-name">栃木県</span>
-              <span class="prefecture-count">0 イベント</span>
-            </div>
-            <div class="map-prefecture" data-prefecture="gunma" data-area="群馬県">
-              <span class="prefecture-name">群馬県</span>
-              <span class="prefecture-count">0 イベント</span>
-            </div>
-            <div class="map-prefecture" data-prefecture="yamanashi" data-area="山梨県">
-              <span class="prefecture-name">山梨県</span>
-              <span class="prefecture-count">0 イベント</span>
-            </div>
-          </div>
+          <div class="map-google-map" id="map-google-map"></div>
           <div class="map-cities-list" id="map-cities-list" style="display: none;">
             <button class="map-back-button" id="map-back-button">← 戻る</button>
             <h3 class="map-cities-title" id="map-cities-title"></h3>
@@ -1282,80 +1248,26 @@
 
     // 地図から探す機能の初期化
     function initMapSearch() {
-      const mapArea = document.getElementById('map-search-map');
       const citiesList = document.getElementById('map-cities-list');
       const citiesGrid = document.getElementById('map-cities-grid');
       const citiesTitle = document.getElementById('map-cities-title');
       const backButton = document.getElementById('map-back-button');
-      const kantoMap = document.getElementById('kanto-map');
+      const googleMapContainer = document.getElementById('map-google-map');
       
       // 戻るボタンの処理
       if (backButton) {
         backButton.addEventListener('click', () => {
           citiesList.style.display = 'none';
-          kantoMap.style.display = 'block';
+          googleMapContainer.style.display = 'block';
+          // 関東地方の地図を再表示
+          initKantoMap(googleMapContainer);
         });
       }
       
-      // 都道府県クリック時の処理
-      function setupPrefectureClick() {
-        const prefectures = mapArea.querySelectorAll('.map-prefecture');
-        prefectures.forEach(pref => {
-          pref.addEventListener('click', async () => {
-            const prefectureId = pref.dataset.prefecture;
-            const prefectureName = pref.dataset.area;
-            const cities = prefectureCities[prefectureId];
-            
-            if (cities && cities.length > 0) {
-              // 市区町村リストを表示
-              kantoMap.style.display = 'none';
-              citiesList.style.display = 'block';
-              citiesTitle.textContent = prefectureName;
-              
-              // 市区町村リストを生成
-              citiesGrid.innerHTML = '';
-              
-              for (const city of cities) {
-                const count = await countEventsByArea(city.area);
-                const cityItem = document.createElement('div');
-                cityItem.className = 'map-city-item';
-                cityItem.innerHTML = `
-                  <span class="city-name">${city.name}</span>
-                  <span class="city-count">${count} イベント</span>
-                `;
-                cityItem.addEventListener('click', () => {
-                  window.location.href = `list.html?area=${encodeURIComponent(city.area)}`;
-                });
-                citiesGrid.appendChild(cityItem);
-              }
-            } else {
-              // 市区町村データがない場合は都道府県で検索
-              window.location.href = `list.html?area=${encodeURIComponent(prefectureName)}`;
-            }
-          });
-        });
+      // 関東地方のGoogle Mapsを初期化
+      if (googleMapContainer) {
+        initKantoMap(googleMapContainer);
       }
-      
-      // 都道府県のイベント数を表示
-      async function updatePrefectureCounts() {
-        const prefectures = mapArea.querySelectorAll('.map-prefecture');
-        for (const pref of prefectures) {
-          const prefectureName = pref.dataset.area;
-          const count = await countEventsByArea(prefectureName);
-          const countElement = pref.querySelector('.prefecture-count');
-          if (countElement) {
-            countElement.textContent = `${count} イベント`;
-          }
-        }
-      }
-      
-      // 初期状態で都道府県クリックイベントを設定
-      setupPrefectureClick();
-      
-      // イベント数を更新
-      setTimeout(() => {
-        updatePrefectureCounts();
-      }, 500);
       
       // 「近くから探す」ボタンの処理
       const nearbyButton = document.getElementById('map-nearby-button');
@@ -1377,12 +1289,10 @@
               const lng = position.coords.longitude;
               
               // 地図表示を切り替え
-              kantoMap.style.display = 'none';
               if (citiesList) citiesList.style.display = 'none';
-              const googleMapContainer = document.getElementById('map-google-map');
               if (googleMapContainer) {
                 googleMapContainer.style.display = 'block';
-                // Google Mapsを初期化
+                // Google Mapsを初期化（現在地周辺）
                 initNearbyMap(lat, lng, googleMapContainer);
               }
               
@@ -1402,6 +1312,150 @@
           );
         });
       }
+    }
+    
+    // 関東地方のGoogle Mapsを初期化
+    function initKantoMap(container) {
+      // Google Maps APIが読み込まれているか確認
+      if (typeof google === 'undefined' || typeof google.maps === 'undefined') {
+        // Google Maps APIを読み込む
+        if (!document.querySelector('script[src*="maps.googleapis.com"]')) {
+          const script = document.createElement('script');
+          script.src = `https://maps.googleapis.com/maps/api/js?key=${window.GOOGLE_MAPS_API_KEY}&callback=initKantoMapCallback&language=ja&region=JP&loading=async`;
+          script.async = true;
+          script.defer = true;
+          window.initKantoMapCallback = () => {
+            createKantoMap(container);
+          };
+          document.head.appendChild(script);
+        } else {
+          // 既に読み込まれている場合は直接作成
+          setTimeout(() => {
+            createKantoMap(container);
+          }, 500);
+        }
+      } else {
+        createKantoMap(container);
+      }
+    }
+    
+    // 関東地方のGoogle Mapsを作成
+    function createKantoMap(container) {
+      // コンテナをクリア
+      container.innerHTML = '';
+      
+      // 関東地方の中心（東京）
+      const centerLat = 35.6762;
+      const centerLng = 139.6503;
+      
+      // 地図を作成
+      const map = new google.maps.Map(container, {
+        center: { lat: centerLat, lng: centerLng },
+        zoom: 8,
+        mapTypeControl: true,
+        streetViewControl: false,
+        fullscreenControl: true
+      });
+      
+      // 都道府県の座標
+      const prefecturePositions = {
+        'tokyo': { lat: 35.6762, lng: 139.6503, name: '東京都' },
+        'kanagawa': { lat: 35.4475, lng: 139.6425, name: '神奈川県' },
+        'saitama': { lat: 35.8617, lng: 139.6455, name: '埼玉県' },
+        'chiba': { lat: 35.6074, lng: 140.1065, name: '千葉県' },
+        'ibaraki': { lat: 36.3414, lng: 140.4467, name: '茨城県' },
+        'tochigi': { lat: 36.5658, lng: 139.8836, name: '栃木県' },
+        'gunma': { lat: 36.3911, lng: 139.0608, name: '群馬県' },
+        'yamanashi': { lat: 35.6636, lng: 138.5684, name: '山梨県' }
+      };
+      
+      // 都道府県マーカーを追加
+      Object.keys(prefecturePositions).forEach(async (prefId) => {
+        const pos = prefecturePositions[prefId];
+        const prefectureName = pos.name;
+        const count = await countEventsByArea(prefectureName);
+        
+        // カスタムマーカーアイコン（都道府県名とイベント数）
+        const textLength = Math.max(prefectureName.length, 8);
+        const baseWidth = 100;
+        const charWidth = 10;
+        const padding = 20;
+        const rectWidth = Math.max(baseWidth, textLength * charWidth + padding);
+        const rectHeight = 50;
+        const borderRadius = 8;
+        
+        const svg = `
+          <svg width="${rectWidth}" height="${rectHeight + 8}" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <filter id="shadow${prefId}" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur in="SourceAlpha" stdDeviation="2"/>
+                <feOffset dx="0" dy="2" result="offsetblur"/>
+                <feComponentTransfer>
+                  <feFuncA type="linear" slope="0.3"/>
+                </feComponentTransfer>
+                <feMerge>
+                  <feMergeNode/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+            </defs>
+            <rect x="0" y="0" rx="${borderRadius}" ry="${borderRadius}" width="${rectWidth}" height="${rectHeight}" fill="#ffffff" stroke="#0b7a5d" stroke-width="2" filter="url(#shadow${prefId})"/>
+            <text x="${rectWidth / 2}" y="${rectHeight / 2 - 4}" text-anchor="middle" font-size="13" font-weight="700" fill="#0b7a5d" font-family="Arial, sans-serif">${prefectureName}</text>
+            <text x="${rectWidth / 2}" y="${rectHeight / 2 + 12}" text-anchor="middle" font-size="11" font-weight="500" fill="#666666" font-family="Arial, sans-serif">${count} イベント</text>
+          </svg>
+        `;
+        
+        const markerIcon = {
+          url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
+          scaledSize: new google.maps.Size(rectWidth, rectHeight + 8),
+          anchor: new google.maps.Point(rectWidth / 2, rectHeight + 8),
+          origin: new google.maps.Point(0, 0)
+        };
+        
+        const marker = new google.maps.Marker({
+          position: { lat: pos.lat, lng: pos.lng },
+          map: map,
+          title: `${prefectureName} - ${count} イベント`,
+          icon: markerIcon,
+          animation: google.maps.Animation.DROP
+        });
+        
+        // マーカークリック時の処理
+        marker.addListener('click', async () => {
+          const cities = prefectureCities[prefId];
+          const citiesList = document.getElementById('map-cities-list');
+          const citiesGrid = document.getElementById('map-cities-grid');
+          const citiesTitle = document.getElementById('map-cities-title');
+          const googleMapContainer = document.getElementById('map-google-map');
+          
+          if (cities && cities.length > 0 && citiesList && citiesGrid && citiesTitle) {
+            // 市区町村リストを表示
+            googleMapContainer.style.display = 'none';
+            citiesList.style.display = 'block';
+            citiesTitle.textContent = prefectureName;
+            
+            // 市区町村リストを生成
+            citiesGrid.innerHTML = '';
+            
+            for (const city of cities) {
+              const count = await countEventsByArea(city.area);
+              const cityItem = document.createElement('div');
+              cityItem.className = 'map-city-item';
+              cityItem.innerHTML = `
+                <span class="city-name">${city.name}</span>
+                <span class="city-count">${count} イベント</span>
+              `;
+              cityItem.addEventListener('click', () => {
+                window.location.href = `list.html?area=${encodeURIComponent(city.area)}`;
+              });
+              citiesGrid.appendChild(cityItem);
+            }
+          } else {
+            // 市区町村データがない場合は都道府県で検索
+            window.location.href = `list.html?area=${encodeURIComponent(prefectureName)}`;
+          }
+        });
+      });
     }
     
     // 近くのイベントを表示するGoogle Mapsの初期化
