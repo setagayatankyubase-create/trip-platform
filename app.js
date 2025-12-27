@@ -523,58 +523,189 @@ const SearchFilter = {
 const MapManager = {
   mapInstance: null,
   markers: [],
+  googleMapsLoaded: false,
+  initQueue: [],
+
+  // Google Maps API読み込み完了時のコールバック
+  onGoogleMapsLoaded() {
+    this.googleMapsLoaded = true;
+    // キューに溜まった初期化処理を実行
+    this.initQueue.forEach(params => {
+      this.init(params.containerId);
+      if (params.callback) params.callback();
+    });
+    this.initQueue = [];
+  },
 
   init(containerId) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    // ダミーマップ表示
-    const placeholder = document.createElement('div');
-    placeholder.className = 'map-placeholder';
-    placeholder.innerHTML = `
-      <div style="text-align: center;">
-        <div style="font-size: 3rem; margin-bottom: 10px;">🗺️</div>
-        <div>マップ表示エリア</div>
-        <div style="font-size: 0.8rem; margin-top: 8px; color: #999;">
-          (Google Maps / Mapbox を後から統合可能)
+    // Google Maps APIが読み込まれていない場合はキューに追加
+    if (!this.googleMapsLoaded || typeof google === 'undefined' || !google.maps) {
+      this.initQueue.push({ containerId, callback: null });
+      // プレースホルダーを表示
+      container.innerHTML = `
+        <div class="map-placeholder" style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #e8f5e9; color: var(--text-secondary);">
+          <div style="text-align: center;">
+            <div style="font-size: 2rem; margin-bottom: 10px;">🗺️</div>
+            <div>マップを読み込み中...</div>
+          </div>
         </div>
-      </div>
-    `;
-    container.appendChild(placeholder);
+      `;
+      return;
+    }
 
-    // 実際の実装時は以下のように置き換え可能:
-    // this.mapInstance = new google.maps.Map(container, { ... });
-    // または
-    // this.mapInstance = mapboxgl.map({ container: containerId, ... });
+    // Google Mapsを初期化
+    try {
+      const defaultCenter = { lat: 35.6812, lng: 139.7671 }; // 東京
+      
+      this.mapInstance = new google.maps.Map(container, {
+        center: defaultCenter,
+        zoom: 10,
+        styles: [
+          {
+            featureType: 'poi',
+            elementType: 'labels',
+            stylers: [{ visibility: 'off' }]
+          }
+        ],
+        mapTypeControl: true,
+        streetViewControl: false,
+        fullscreenControl: true
+      });
+    } catch (e) {
+      console.error('[MapManager] Failed to initialize Google Maps:', e);
+      container.innerHTML = `
+        <div class="map-placeholder" style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #f0f0f0; color: var(--text-secondary);">
+          <div style="text-align: center;">
+            <div style="font-size: 2rem; margin-bottom: 10px;">🗺️</div>
+            <div>マップの読み込みに失敗しました</div>
+            <div style="font-size: 0.8rem; margin-top: 8px;">Google Maps APIキーを確認してください</div>
+          </div>
+        </div>
+      `;
+    }
   },
 
   addMarker(event, onClick) {
-    if (!event.location || !event.location.lat) return;
-    
-    // マーカーオブジェクトを保存（後でフォーカスできるように）
-    const marker = {
-      eventId: event.id,
-      lat: event.location.lat,
-      lng: event.location.lng,
-      onClick: onClick
-    };
-    
-    this.markers.push(marker);
+    if (!event.location || !event.location.lat || !event.location.lng) return;
+    if (!this.mapInstance || !this.googleMapsLoaded) return;
 
-    // ダミーマーカー（実際の実装時は以下に置き換え）
-    // const marker = new google.maps.Marker({ position: { lat: event.location.lat, lng: event.location.lng }, map: this.mapInstance });
-    // marker.addListener('click', () => onClick(event.id));
+    try {
+      const position = {
+        lat: parseFloat(event.location.lat),
+        lng: parseFloat(event.location.lng)
+      };
 
-    this.markers.push({ event, onClick });
+      // マーカーを作成
+      const marker = new google.maps.Marker({
+        position: position,
+        map: this.mapInstance,
+        title: event.title || '',
+        animation: google.maps.Animation.DROP
+      });
+
+      // インフォウィンドウ
+      const infoWindow = new google.maps.InfoWindow({
+        content: `
+          <div style="padding: 8px; max-width: 200px;">
+            <h4 style="margin: 0 0 8px 0; font-size: 1rem; font-weight: 700;">${event.title || 'イベント'}</h4>
+            ${event.city ? `<p style="margin: 0; color: #666; font-size: 0.85rem;">${event.city}</p>` : ''}
+            <a href="experience.html?id=${event.id}" style="display: inline-block; margin-top: 8px; color: var(--primary); text-decoration: none; font-size: 0.85rem;">詳細を見る →</a>
+          </div>
+        `
+      });
+
+      marker.addListener('click', () => {
+        // 他のインフォウィンドウを閉じる
+        this.markers.forEach(m => {
+          if (m.infoWindow) m.infoWindow.close();
+        });
+        infoWindow.open(this.mapInstance, marker);
+        if (onClick) onClick(event.id);
+      });
+
+      // マーカーオブジェクトを保存
+      const markerData = {
+        eventId: event.id,
+        event: event,
+        marker: marker,
+        infoWindow: infoWindow,
+        lat: position.lat,
+        lng: position.lng,
+        onClick: onClick
+      };
+
+      this.markers.push(markerData);
+    } catch (e) {
+      console.error('[MapManager] Failed to add marker:', e);
+    }
   },
 
   clearMarkers() {
+    // 既存のマーカーを削除
+    this.markers.forEach(markerData => {
+      if (markerData.marker) {
+        markerData.marker.setMap(null);
+      }
+      if (markerData.infoWindow) {
+        markerData.infoWindow.close();
+      }
+    });
     this.markers = [];
+  },
+
+  focusMarker(eventId) {
+    const markerData = this.markers.find(m => m.eventId === eventId);
+    if (markerData && this.mapInstance) {
+      this.mapInstance.setCenter({
+        lat: markerData.lat,
+        lng: markerData.lng
+      });
+      this.mapInstance.setZoom(15);
+      
+      if (markerData.infoWindow) {
+        this.markers.forEach(m => {
+          if (m.infoWindow && m !== markerData) {
+            m.infoWindow.close();
+          }
+        });
+        markerData.infoWindow.open(this.mapInstance, markerData.marker);
+      }
+    }
+  },
+
+  // すべてのマーカーの境界にマップを合わせる
+  fitBounds() {
+    if (!this.mapInstance || !this.googleMapsLoaded || this.markers.length === 0) return;
+
+    try {
+      const bounds = new google.maps.LatLngBounds();
+      this.markers.forEach(markerData => {
+        bounds.extend(new google.maps.LatLng(markerData.lat, markerData.lng));
+      });
+      
+      this.mapInstance.fitBounds(bounds);
+      
+      google.maps.event.addListenerOnce(this.mapInstance, 'bounds_changed', () => {
+        if (this.mapInstance.getZoom() > 15) {
+          this.mapInstance.setZoom(15);
+        }
+      });
+    } catch (e) {
+      console.error('[MapManager] Failed to fit bounds:', e);
+    }
   },
 
   highlightEvent(eventId) {
     // カードのハイライト処理（使用しない）
   }
+};
+
+// Google Maps API読み込み完了時のグローバルコールバック
+window.initGoogleMaps = function() {
+  MapManager.onGoogleMapsLoaded();
 };
 
 // お気に入り管理（localStorage使用）

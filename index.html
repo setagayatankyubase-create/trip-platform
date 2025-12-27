@@ -158,13 +158,13 @@
     </section>
   </main>
 
-  <!-- 人気タグ・地域検索セクション -->
+  <!-- タグ・地域検索セクション -->
   <section class="section popular-search-section">
     <div class="popular-search-container">
       <div class="popular-search-tabs">
-        <button class="popular-tab active" data-tab="categories">人気カテゴリー</button>
-        <button class="popular-tab" data-tab="areas">人気の行き先</button>
-        <button class="popular-tab" data-tab="tags">人気のタグ</button>
+        <button class="popular-tab active" data-tab="categories">カテゴリー</button>
+        <button class="popular-tab" data-tab="areas">行き先</button>
+        <button class="popular-tab" data-tab="tags">タグ</button>
       </div>
       <div class="popular-search-content">
         <div class="popular-list-container" id="popular-categories-list"></div>
@@ -312,7 +312,7 @@
       }
     }
 
-    // 人気タグ・地域検索セクションのレンダリング
+    // タグ・地域検索セクションのレンダリング
     function renderPopularSearch() {
       // タブ切り替え
       document.querySelectorAll('.popular-tab').forEach(tab => {
@@ -335,12 +335,12 @@
       renderPopularTags();
     }
 
-    // 人気カテゴリ一覧
+    // カテゴリ一覧
     function renderPopularCategories() {
       const container = document.getElementById('popular-categories-list');
       if (!container || !window.eventMeta || !window.eventMeta.categories) return;
 
-      const categories = window.eventMeta.categories.slice(0, 24); // 上位24件
+      const categories = window.eventMeta.categories; // すべてのカテゴリを表示
       container.innerHTML = categories.map(cat => {
         const eventCount = countEventsByCategory(cat.id);
         return `
@@ -352,24 +352,39 @@
       }).join('');
     }
 
-    // 人気エリア一覧
+    // エリア一覧（関東＋山梨）
     function renderPopularAreas() {
       const container = document.getElementById('popular-areas-list');
       if (!container || !Array.isArray(window.eventIndex)) return;
 
-      // エリアごとにイベント数を集計
-      const areaMap = new Map();
+      // 関東地方＋山梨県の都道府県リスト
+      const kantoPrefectures = [
+        '東京都',
+        '神奈川県',
+        '千葉県',
+        '埼玉県',
+        '群馬県',
+        '栃木県',
+        '茨城県',
+        '山梨県'
+      ];
+
+      // 都道府県ごとにイベント数を集計
+      const prefectureMap = new Map();
       window.eventIndex.forEach(event => {
-        const area = event.area || event.city || event.prefecture || '';
-        if (area) {
-          areaMap.set(area, (areaMap.get(area) || 0) + 1);
+        const prefecture = event.prefecture || '';
+        if (prefecture && kantoPrefectures.includes(prefecture)) {
+          prefectureMap.set(prefecture, (prefectureMap.get(prefecture) || 0) + 1);
         }
       });
 
-      const areas = Array.from(areaMap.entries())
-        .map(([name, count]) => ({ name, count }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 24);
+      // 関東＋山梨の都道府県を順番に表示（イベント数順）
+      const areas = kantoPrefectures
+        .map(pref => ({
+          name: pref,
+          count: prefectureMap.get(pref) || 0
+        }))
+        .sort((a, b) => b.count - a.count);
 
       container.innerHTML = areas.map(area => {
         return `
@@ -381,12 +396,12 @@
       }).join('');
     }
 
-    // 人気タグ一覧（仮実装：カテゴリから生成）
+    // タグ一覧
     function renderPopularTags() {
       const container = document.getElementById('popular-tags-list');
       if (!container || !Array.isArray(window.eventIndex)) return;
 
-      // タグとして人気のキーワードを使用（簡易実装）
+      // タグとして人気のキーワードを使用
       const tags = [
         { name: '川遊び', count: countEventsByKeyword('川') },
         { name: '海・ビーチ', count: countEventsByKeyword('海') },
@@ -400,7 +415,7 @@
         { name: '星空', count: countEventsByKeyword('星空') },
         { name: 'キャンプ', count: countEventsByKeyword('キャンプ') },
         { name: '親子', count: countEventsByKeyword('親子') },
-      ].filter(tag => tag.count > 0).sort((a, b) => b.count - a.count).slice(0, 24);
+      ].filter(tag => tag.count > 0).sort((a, b) => b.count - a.count);
 
       container.innerHTML = tags.map(tag => {
         return `
