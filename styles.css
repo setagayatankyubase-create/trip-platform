@@ -2333,32 +2333,52 @@ body {
 }
 
 /* 地図から探すセクション */
+.map-search-description {
+  text-align: center;
+  margin-bottom: 20px;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.map-search-description p {
+  margin-bottom: 16px;
+}
+
 .map-nearby-button {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
+  gap: 10px;
+  padding: 14px 28px;
   background: var(--primary);
   color: #fff;
   border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 0.9rem;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 1rem;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(11, 122, 93, 0.3);
 }
 
 .map-nearby-button:hover {
   background: var(--hover);
+  box-shadow: 0 6px 16px rgba(11, 122, 93, 0.4);
+  transform: translateY(-2px);
+}
+
+.map-nearby-button:active {
+  transform: translateY(0);
 }
 
 .map-nearby-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: 0 2px 8px rgba(11, 122, 93, 0.2);
 }
 
 .map-nearby-icon {
-  font-size: 1.1rem;
+  font-size: 1.2rem;
 }
 
 .map-search-container {

@@ -55,7 +55,7 @@
                 <span></span>
               </span>
             </button>
-            <input type="text" placeholder="行きたい自然体験・場所を探す" name="q" class="header-search-input">
+            <input type="text" placeholder="場所名・体験名で探す" name="q" class="header-search-input">
             <button type="submit" class="header-search-button">検索</button>
           </form>
         </div>
@@ -83,7 +83,7 @@
               <span></span>
             </span>
           </button>
-          <input type="text" id="search-query" placeholder="行きたい自然体験・場所を探す" name="q" class="hero-search-input">
+          <input type="text" id="search-query" placeholder="場所名・体験名で探す" name="q" class="hero-search-input">
           <button type="submit" class="hero-search-button">検索</button>
         </form>
         <div class="category-menu" id="category-menu">
@@ -120,20 +120,23 @@
       </div>
     </section>
 
-    <!-- 地図から探す -->
+    <!-- 行きたいエリアを選ぶ -->
     <section class="section event-block" id="map-search-section">
       <div class="event-block-header">
-        <h2>地図から探す</h2>
-        <button class="map-nearby-button" id="map-nearby-button">
-          <span class="map-nearby-icon">📍</span>
-          <span>近くから探す</span>
-        </button>
+        <h2>行きたいエリアを選ぶ</h2>
       </div>
       <div class="map-search-container">
+        <div class="map-search-description">
+          <p>地図からエリアを選んで体験を見る</p>
+          <button class="map-nearby-button" id="map-nearby-button">
+            <span class="map-nearby-icon">📍</span>
+            <span>近くから探す</span>
+          </button>
+        </div>
         <div class="map-search-map" id="map-search-map">
           <div class="map-google-map" id="map-google-map"></div>
           <div class="map-cities-list" id="map-cities-list" style="display: none;">
-            <button class="map-back-button" id="map-back-button">← 戻る</button>
+            <button class="map-back-button" id="map-back-button">← エリア選択に戻る</button>
             <h3 class="map-cities-title" id="map-cities-title"></h3>
             <div class="map-cities-grid" id="map-cities-grid"></div>
           </div>
@@ -1433,7 +1436,8 @@
       const centerLat = 35.6762;
       const centerLng = 139.6503;
       
-      // 地図を作成（シンプルなデザイン）
+      // 地図を作成（シンプルなデザイン、ズームレベルに応じてマーカーを制御）
+      let currentMarkers = [];
       const map = new google.maps.Map(container, {
         center: { lat: centerLat, lng: centerLng },
         zoom: 8,
@@ -1442,6 +1446,8 @@
         fullscreenControl: false,
         zoomControl: true,
         disableDefaultUI: false,
+        minZoom: 7,
+        maxZoom: 12,
         styles: [
           {
             featureType: "poi",
@@ -1456,6 +1462,23 @@
         ]
       });
       
+      // ズームレベルに応じてマーカーを制御する関数
+      const updateMarkersByZoom = () => {
+        const zoom = map.getZoom();
+        // ズームアウト（7-8）: 都道府県のみ表示
+        // ズーム中（9-11）: 都道府県表示（現在のレベル）
+        // ズームイン（12+）: 市区町村表示（将来の拡張用）
+        // 現在は都道府県レベルのみなので、すべて表示
+        currentMarkers.forEach(marker => {
+          if (marker) {
+            marker.setVisible(true);
+          }
+        });
+      };
+      
+      // ズーム変更時にマーカーを更新
+      map.addListener('zoom_changed', updateMarkersByZoom);
+      
       // 都道府県の座標
       const prefecturePositions = {
         'tokyo': { lat: 35.6762, lng: 139.6503, name: '東京都' },
@@ -1468,12 +1491,17 @@
         'yamanashi': { lat: 35.6636, lng: 138.5684, name: '山梨県' }
       };
       
-      // 都道府県マーカーを追加
+      // 都道府県マーカーを追加（0イベントは非表示）
       const prefectureMarkers = [];
       const markerPromises = Object.keys(prefecturePositions).map(async (prefId) => {
         const pos = prefecturePositions[prefId];
         const prefectureName = pos.name;
         const count = await countEventsByArea(prefectureName);
+        
+        // 0イベントの場合はマーカーを表示しない（A案：潔さは信頼）
+        if (count === 0) {
+          return null;
+        }
         
         // カスタムマーカーアイコン（都道府県名とイベント数）
         const textLength = Math.max(prefectureName.length, 8);
@@ -1539,8 +1567,11 @@
       
       // すべてのマーカーが追加されたら位置を調整
       Promise.all(markerPromises).then(markers => {
-        prefectureMarkers.push(...markers);
+        const validMarkers = markers.filter(m => m !== null);
+        prefectureMarkers.push(...validMarkers);
+        currentMarkers = validMarkers;
         // マーカーの位置を調整（都道府県レベルでは距離が十分離れているので調整不要）
+        updateMarkersByZoom();
       });
     }
     
@@ -1563,20 +1594,33 @@
       
       const centerPos = prefecturePositions[prefectureId] || { lat: 35.6762, lng: 139.6503 };
       
-      // 地図を作成
+      // 地図を作成（ズームレベルに応じてマーカーを制御）
       const map = new google.maps.Map(container, {
         center: { lat: centerPos.lat, lng: centerPos.lng },
         zoom: 10,
         mapTypeControl: false,
         streetViewControl: false,
         fullscreenControl: false,
-        zoomControl: true
+        zoomControl: true,
+        minZoom: 8,
+        maxZoom: 15
       });
       
-      // 戻るボタンを追加
+      // ズームレベルに応じてマーカーを制御する関数
+      const updateMarkersByZoom = () => {
+        const zoom = map.getZoom();
+        // ズームアウト（8-9）: 都道府県のみ表示（この関数は市区町村マップなので適用しない）
+        // ズーム中（10-12）: 市区町村表示（現在のレベル）
+        // ズームイン（13+）: より詳細な表示（将来の拡張用）
+      };
+      
+      // ズーム変更時にマーカーを更新
+      map.addListener('zoom_changed', updateMarkersByZoom);
+      
+      // 戻るボタンを追加（具体的な文言で）
       const backButton = document.createElement('button');
       backButton.className = 'map-back-button';
-      backButton.textContent = '← 戻る';
+      backButton.textContent = '← エリア選択に戻る';
       backButton.style.position = 'absolute';
       backButton.style.top = '10px';
       backButton.style.left = '10px';
@@ -1609,6 +1653,12 @@
       
       const cityMarkerPromises = cities.map(async (city) => {
         const count = await countEventsByArea(city.area);
+        
+        // 0イベントの場合はマーカーを表示しない（A案：潔さは信頼）
+        if (count === 0) {
+          return null;
+        }
+        
         let lat = city.lat || centerPos.lat;
         let lng = city.lng || centerPos.lng;
         
@@ -1676,17 +1726,18 @@
       
       // すべてのマーカーが追加されたら位置を調整
       Promise.all(cityMarkerPromises).then(markerData => {
-        markerData.forEach(({ marker }) => {
+        const validMarkerData = markerData.filter(m => m !== null);
+        validMarkerData.forEach(({ marker }) => {
           cityMarkers.push(marker);
         });
         
         // マーカーの位置を調整して重複を防ぐ
-        setTimeout(() => {
-          adjustMarkerPositions(cityMarkers, 0.008); // 市区町村レベルでは0.008度（約800m）以上離す
-        }, 100);
-        
-        // すべてのマーカーが表示されるように地図を調整
-        if (cities.length > 0) {
+        if (cityMarkers.length > 0) {
+          setTimeout(() => {
+            adjustMarkerPositions(cityMarkers, 0.008); // 市区町村レベルでは0.008度（約800m）以上離す
+          }, 100);
+          
+          // すべてのマーカーが表示されるように地図を調整
           map.fitBounds(bounds);
         }
       });
