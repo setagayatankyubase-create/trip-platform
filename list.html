@@ -197,15 +197,42 @@
 
     // マップマーカーの表示
     function renderMapMarkers() {
+      console.log('[renderMapMarkers] Rendering markers for', currentEvents.length, 'events');
       MapManager.clearMarkers();
+      
+      if (!MapManager.mapInstance || !MapManager.googleMapsLoaded) {
+        console.warn('[renderMapMarkers] Map not initialized yet, retrying in 500ms');
+        setTimeout(() => renderMapMarkers(), 500);
+        return;
+      }
+      
+      let markerCount = 0;
       currentEvents.forEach(event => {
-        if (event.location && event.location.lat) {
-          MapManager.addMarker(event, (eventId) => {
-            // マーカークリック時にリストの該当イベントをハイライト
-            selectEvent(eventId);
-          });
+        const lat = event.location?.lat;
+        const lng = event.location?.lng;
+        if (lat && lng && !isNaN(parseFloat(lat)) && !isNaN(parseFloat(lng))) {
+          try {
+            MapManager.addMarker(event, (eventId) => {
+              // マーカークリック時にリストの該当イベントをハイライト
+              selectEvent(eventId);
+            });
+            markerCount++;
+          } catch (e) {
+            console.error('[renderMapMarkers] Failed to add marker for event', event.id, e);
+          }
+        } else {
+          console.log('[renderMapMarkers] Event', event.id, 'has no valid location data');
         }
       });
+      
+      console.log('[renderMapMarkers] Added', markerCount, 'markers to map');
+      
+      // マーカーが追加されたら、すべてのマーカーが表示されるようにマップを調整
+      if (markerCount > 0 && MapManager.fitBounds) {
+        setTimeout(() => {
+          MapManager.fitBounds();
+        }, 100);
+      }
     }
 
     // イベント選択（マーカー or リストクリック時）
@@ -654,6 +681,37 @@
 
       // 検索・フィルタ適用
       currentEvents = filterIndexEvents(index, params, urlParams);
+
+      // 位置情報がないイベントの詳細を読み込んで位置情報を補完
+      const eventsWithoutLocation = currentEvents.filter(e => !e.location || !e.location.lat || !e.location.lng);
+      if (eventsWithoutLocation.length > 0) {
+        console.log('[loadEvents] Loading location data for', eventsWithoutLocation.length, 'events');
+        try {
+          const detailPromises = eventsWithoutLocation.slice(0, 20).map(e => 
+            loadEventDetail(e.id).catch(() => null)
+          );
+          const details = await Promise.all(detailPromises);
+          const detailMap = {};
+          details.forEach(d => {
+            if (d && d.id && d.location && d.location.lat && d.location.lng) {
+              detailMap[d.id] = d;
+            }
+          });
+          
+          // currentEventsに位置情報を補完
+          currentEvents = currentEvents.map(item => {
+            const detail = detailMap[item.id];
+            if (detail && detail.location) {
+              return { ...item, location: detail.location };
+            }
+            return item;
+          });
+          
+          console.log('[loadEvents] Enriched location data for', Object.keys(detailMap).length, 'events');
+        } catch (e) {
+          console.warn('[loadEvents] Failed to enrich location data:', e);
+        }
+      }
 
       // 結果表示
       CardRenderer.renderList(currentEvents, 'event-list');

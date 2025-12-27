@@ -323,7 +323,7 @@
     }
 
     // タグ・地域検索セクションのレンダリング
-    function renderPopularSearch() {
+    async function renderPopularSearch() {
       // タブ切り替え
       document.querySelectorAll('.popular-tab').forEach(tab => {
         tab.addEventListener('click', () => {
@@ -339,14 +339,14 @@
         });
       });
 
-      // カテゴリ一覧をレンダリング
-      renderPopularCategories();
+      // カテゴリ一覧をレンダリング（非同期）
+      await renderPopularCategories();
       renderPopularAreas();
       renderPopularTags();
     }
 
     // カテゴリ一覧
-    function renderPopularCategories() {
+    async function renderPopularCategories() {
       const container = document.getElementById('popular-categories-list');
       if (!container || !window.eventMeta || !window.eventMeta.categories) {
         console.log('[renderPopularCategories] Container or categories not found');
@@ -362,17 +362,46 @@
       
       if (eventDataCount === 0) {
         console.warn('[renderPopularCategories] eventData.events is empty, categories will show 0 events');
-      }
-      
-      container.innerHTML = categories.map(cat => {
-        const eventCount = countEventsByCategory(cat.id);
-        return `
+        container.innerHTML = categories.map(cat => `
           <a href="list.html?category=${cat.id}" class="popular-item" data-item-id="${cat.id}">
             <span class="popular-item-name">${cat.name}</span>
-            <span class="popular-item-count">${eventCount} イベント</span>
+            <span class="popular-item-count">0 イベント</span>
           </a>
-        `;
-      }).join('');
+        `).join('');
+        return;
+      }
+      
+      // まず同期版でカウント（categoryIdが既にある場合）
+      let html = categories.map(cat => {
+        const eventCount = countEventsByCategorySync(cat.id);
+        return { cat, count: eventCount };
+      }).map(({ cat, count }) => `
+        <a href="list.html?category=${cat.id}" class="popular-item" data-item-id="${cat.id}">
+          <span class="popular-item-name">${cat.name}</span>
+          <span class="popular-item-count">${count} イベント</span>
+        </a>
+      `).join('');
+      
+      container.innerHTML = html;
+      
+      // 非同期でcategoryIdを補完して再カウント
+      const categoryCounts = await Promise.all(
+        categories.map(async cat => {
+          const count = await countEventsByCategory(cat.id);
+          return { cat, count };
+        })
+      );
+      
+      // 更新されたカウントで再レンダリング
+      html = categoryCounts.map(({ cat, count }) => `
+        <a href="list.html?category=${cat.id}" class="popular-item" data-item-id="${cat.id}">
+          <span class="popular-item-name">${cat.name}</span>
+          <span class="popular-item-count">${count} イベント</span>
+        </a>
+      `).join('');
+      
+      container.innerHTML = html;
+      console.log('[renderPopularCategories] Updated category counts:', categoryCounts.map(({ cat, count }) => `${cat.name}: ${count}`).join(', '));
     }
 
     // エリア一覧（関東＋山梨）
@@ -450,8 +479,8 @@
       }).join('');
     }
 
-    // カテゴリ別イベント数をカウント（eventData.eventsから直接計測）
-    function countEventsByCategory(categoryId) {
+    // カテゴリ別イベント数をカウント（詳細JSONからcategoryIdを取得して計測）
+    async function countEventsByCategory(categoryId) {
       // eventData.eventsを優先して使用
       const source = Array.isArray(window.eventData?.events) ? window.eventData.events : [];
       
@@ -460,14 +489,52 @@
         return 0;
       }
       
+      // categoryIdが空のイベントの詳細を読み込んで補完
+      const eventsWithoutCategory = source.filter(e => !e.categoryId && !e.category_id && !e.category);
+      if (eventsWithoutCategory.length > 0) {
+        console.log('[countEventsByCategory] Loading categoryId for', eventsWithoutCategory.length, 'events');
+        try {
+          const detailPromises = eventsWithoutCategory.slice(0, 20).map(e => 
+            loadEventDetail(e.id).catch(() => null)
+          );
+          const details = await Promise.all(detailPromises);
+          const detailMap = {};
+          details.forEach(d => {
+            if (d && d.id && d.categoryId) {
+              detailMap[d.id] = d.categoryId;
+            }
+          });
+          
+          // sourceにcategoryIdを補完
+          source.forEach(item => {
+            if (detailMap[item.id]) {
+              item.categoryId = detailMap[item.id];
+            }
+          });
+          
+          console.log('[countEventsByCategory] Enriched categoryId for', Object.keys(detailMap).length, 'events');
+        } catch (e) {
+          console.warn('[countEventsByCategory] Failed to enrich categoryId:', e);
+        }
+      }
+      
       const matches = source.filter(e => {
         const catId = e.categoryId || e.category_id || e.category;
         return String(catId) === String(categoryId);
       });
       
-      if (matches.length > 0) {
-        console.log('[countEventsByCategory] Category', categoryId, 'matched', matches.length, 'events from eventData.events');
-      }
+      return matches.length;
+    }
+    
+    // 同期版（キャッシュされたデータを使用）
+    function countEventsByCategorySync(categoryId) {
+      const source = Array.isArray(window.eventData?.events) ? window.eventData.events : [];
+      if (source.length === 0) return 0;
+      
+      const matches = source.filter(e => {
+        const catId = e.categoryId || e.category_id || e.category;
+        return String(catId) === String(categoryId);
+      });
       
       return matches.length;
     }
@@ -1270,6 +1337,12 @@
         renderWeekCalendar();
         await renderEventBlocks();
         // データ読み込み後にカテゴリカウントを更新
+        console.log('[index.html] After loadEventData - eventData:', window.eventData);
+        console.log('[index.html] After loadEventData - eventData.events:', Array.isArray(window.eventData?.events) ? window.eventData.events.length : 'not array');
+        if (window.eventData?.events && window.eventData.events.length > 0) {
+          console.log('[index.html] Sample event:', window.eventData.events[0]);
+          console.log('[index.html] Sample event categoryId:', window.eventData.events[0].categoryId);
+        }
         renderPopularSearch(); // 人気タグ・地域検索セクションを描画
         await renderLocationBasedEvents(); // 位置情報ベースのイベントを表示
 

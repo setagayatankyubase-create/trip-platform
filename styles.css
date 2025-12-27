@@ -933,6 +933,8 @@ body {
   overflow-y: auto;
   max-height: calc(100vh - 250px);
   padding-right: 10px;
+  /* スクロールをスムーズに */
+  scroll-behavior: smooth;
 }
 
 /* イベント一覧ページのグリッドを3カラムに固定（3つずつ横並び） */
