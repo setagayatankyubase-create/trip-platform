@@ -1412,8 +1412,31 @@
       }
     }
     
+    // TopoJSONデータの自動フォールバック関数（createKantoSVGMapより前に定義）
+    async function loadTopoJson(primaryUrl, fallbackUrl) {
+      try {
+        const r = await fetch(primaryUrl, { cache: "no-store" });
+        if (!r.ok) throw new Error(`primary fetch failed: ${r.status}`);
+        return await r.json();
+      } catch (e) {
+        console.warn("[Topo] primary failed -> fallback", e);
+        const r2 = await fetch(fallbackUrl, { cache: "no-store" });
+        if (!r2.ok) throw new Error(`fallback fetch failed: ${r2.status}`);
+        return await r2.json();
+      }
+    }
+    
+    // 二重実行防止のガード
+    let kantoMapRendered = false;
+    
     // 関東地方のSVG地図を作成（TopoJSON使用）
     async function createKantoSVGMap() {
+      // 二重実行防止
+      if (kantoMapRendered) {
+        console.log('[createKantoSVGMap] Already rendered, skipping...');
+        return;
+      }
+      
       // デバッグ：SVG要素の存在確認
       const svgElement = document.getElementById("kantoMap");
       console.log('[createKantoSVGMap] SVG element:', svgElement);
@@ -1445,7 +1468,14 @@
       const topojsonClient = window.topojson;
       if (!topojsonClient) {
         console.warn('[createKantoSVGMap] topojson is not defined, retrying...');
+        console.warn('[createKantoSVGMap] Make sure this script is loaded: <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>');
         setTimeout(() => createKantoSVGMap(), 100);
+        return;
+      }
+      
+      if (!topojsonClient.feature) {
+        console.error('[createKantoSVGMap] topojson.feature is not available');
+        console.error('[createKantoSVGMap] topojson object:', topojsonClient);
         return;
       }
       
@@ -1629,6 +1659,10 @@
                 .attr("fill", "#fff")
                 .text(c);
             });
+        
+        // 描画完了フラグを設定
+        kantoMapRendered = true;
+        console.log('[createKantoSVGMap] Map rendered successfully');
       } catch (error) {
         console.error('[createKantoSVGMap] Error loading map:', error);
         console.error('[createKantoSVGMap] Error stack:', error.stack);
