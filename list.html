@@ -184,10 +184,15 @@
 
     // マップ初期化（常時表示）
     function initMap() {
+      console.log('[list.html] initMap called');
       if (!MapManager.mapInstance) {
+        console.log('[list.html] Initializing map...');
         MapManager.init('map');
       }
-      renderMapMarkers();
+      // 少し遅延してマーカーを表示（マップの初期化を待つ）
+      setTimeout(() => {
+        renderMapMarkers();
+      }, 500);
     }
 
     // マップマーカーの表示
