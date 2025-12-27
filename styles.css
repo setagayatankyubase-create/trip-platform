@@ -935,18 +935,19 @@ body {
   padding-right: 10px;
 }
 
-/* イベント一覧ページのグリッドを1カラムに固定（縦にどんどん並べる） */
+/* イベント一覧ページのグリッドを3カラムに固定（3つずつ横並び） */
 .event-list-column .grid {
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 20px;
 }
 
 .map-column {
   position: sticky;
-  top: 100px;
-  height: calc(100vh - 120px);
+  top: 20px;
+  align-self: start;
+  height: calc(100vh - 40px);
   min-height: 400px;
-  max-height: 600px;
+  max-height: 800px;
 }
 
 .map-container {
@@ -1880,6 +1881,13 @@ body {
 
   .map-container {
     height: 400px;
+  }
+}
+
+/* タブレットサイズ（1024px以下）では2カラム */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .event-list-column .grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .event-block-header {
