@@ -1429,6 +1429,9 @@
     // 二重実行防止のガード
     let kantoMapRendered = false;
     
+    // 地図以外のSVG生成を一時停止するフラグ（地図だけに集中するため）
+    const DISABLE_OTHER_SVG_GENERATION = true;
+    
     // 関東地方のSVG地図を作成（TopoJSON使用）
     async function createKantoSVGMap() {
       // 二重実行防止
@@ -1468,7 +1471,7 @@
       const topojsonClient = window.topojson;
       if (!topojsonClient) {
         console.warn('[createKantoSVGMap] topojson is not defined, retrying...');
-        console.warn('[createKantoSVGMap] Make sure this script is loaded: script src="https://cdn.jsdelivr.net/npm/topojson-client@3"');
+        console.warn('[createKantoSVGMap] Make sure topojson-client@3 is loaded from jsdelivr');
         setTimeout(() => createKantoSVGMap(), 100);
         return;
       }
@@ -1783,6 +1786,12 @@
       };
       
       // 都道府県マーカーを追加（0イベントは非表示）
+      // 地図だけに集中するため、マーカー生成を一時停止
+      if (DISABLE_OTHER_SVG_GENERATION) {
+        console.log('[createKantoMap] Marker generation disabled for debugging');
+        return;
+      }
+      
       const prefectureMarkers = [];
       const markerPromises = Object.keys(prefecturePositions).map(async (prefId) => {
         const pos = prefecturePositions[prefId];
@@ -1939,6 +1948,12 @@
       container.appendChild(titleDiv);
       
       // 市区町村マーカーを追加
+      // 地図だけに集中するため、マーカー生成を一時停止
+      if (DISABLE_OTHER_SVG_GENERATION) {
+        console.log('[initCityMap] Marker generation disabled for debugging');
+        return;
+      }
+      
       const bounds = new google.maps.LatLngBounds();
       const cityMarkers = [];
       
