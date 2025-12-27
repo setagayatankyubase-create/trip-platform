@@ -2385,7 +2385,7 @@ body {
 }
 
 .map-search-map {
-  background: #f5f5f5;
+  background: linear-gradient(135deg, #e8f4f0 0%, #d4ede4 100%);
   border-radius: 12px;
   padding: 40px;
   position: relative;
@@ -2393,6 +2393,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 2px solid var(--border);
 }
 
 .map-area {
@@ -2400,20 +2401,37 @@ body {
   width: 100%;
   height: 100%;
   min-height: 420px;
+  background-image: 
+    radial-gradient(circle at 50% 50%, rgba(11, 122, 93, 0.1) 0%, transparent 50%);
 }
 
 .map-prefecture {
   position: absolute;
-  padding: 8px 16px;
+  padding: 12px 20px;
   background: #fff;
   border: 2px solid var(--primary);
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: var(--primary);
   transition: all 0.2s;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 140px;
+  text-align: center;
+  align-items: center;
+}
+
+.prefecture-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--primary);
+}
+
+.prefecture-count {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-secondary);
 }
 
 .map-prefecture:hover {
@@ -2430,44 +2448,126 @@ body {
 
 /* 関東地方の地図レイアウト */
 #kanto-map .map-prefecture[data-prefecture="tokyo"] {
-  top: 50%;
-  left: 50%;
+  top: 52%;
+  left: 48%;
   transform: translate(-50%, -50%);
+  z-index: 10;
 }
 
 #kanto-map .map-prefecture[data-prefecture="kanagawa"] {
-  top: 60%;
+  top: 65%;
   left: 45%;
+  z-index: 9;
 }
 
 #kanto-map .map-prefecture[data-prefecture="saitama"] {
-  top: 35%;
-  left: 50%;
+  top: 38%;
+  left: 48%;
+  z-index: 8;
 }
 
 #kanto-map .map-prefecture[data-prefecture="chiba"] {
-  top: 55%;
-  left: 60%;
+  top: 58%;
+  left: 62%;
+  z-index: 9;
 }
 
 #kanto-map .map-prefecture[data-prefecture="ibaraki"] {
-  top: 30%;
-  left: 60%;
+  top: 32%;
+  left: 62%;
+  z-index: 7;
 }
 
 #kanto-map .map-prefecture[data-prefecture="tochigi"] {
-  top: 25%;
-  left: 50%;
+  top: 28%;
+  left: 48%;
+  z-index: 6;
 }
 
 #kanto-map .map-prefecture[data-prefecture="gunma"] {
-  top: 30%;
-  left: 40%;
+  top: 32%;
+  left: 38%;
+  z-index: 5;
 }
 
 #kanto-map .map-prefecture[data-prefecture="yamanashi"] {
-  top: 50%;
-  left: 35%;
+  top: 52%;
+  left: 32%;
+  z-index: 4;
+}
+
+.map-cities-list {
+  width: 100%;
+  height: 100%;
+  min-height: 500px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.map-back-button {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 20px;
+  transition: background 0.2s;
+}
+
+.map-back-button:hover {
+  background: var(--hover);
+}
+
+.map-cities-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 24px;
+  color: var(--text);
+}
+
+.map-cities-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.map-city-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: #fff;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.map-city-item:hover {
+  border-color: var(--primary);
+  background: #f0f5f1;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.city-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+.city-count {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.map-city-item:hover .city-count {
+  color: var(--primary);
 }
 
 @media (max-width: 768px) {
@@ -2482,6 +2582,10 @@ body {
   .map-search-map {
     order: 1;
     min-height: 300px;
+  }
+  
+  .map-cities-grid {
+    grid-template-columns: 1fr;
   }
 }
 

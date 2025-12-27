@@ -172,14 +172,43 @@
         </div>
         <div class="map-search-map" id="map-search-map">
           <div class="map-area" id="kanto-map">
-            <div class="map-prefecture" data-prefecture="tokyo" data-area="東京">▶ 東京</div>
-            <div class="map-prefecture" data-prefecture="kanagawa" data-area="神奈川">▶ 神奈川</div>
-            <div class="map-prefecture" data-prefecture="saitama" data-area="埼玉">▶ 埼玉</div>
-            <div class="map-prefecture" data-prefecture="chiba" data-area="千葉">▶ 千葉</div>
-            <div class="map-prefecture" data-prefecture="ibaraki" data-area="茨城">▶ 茨城</div>
-            <div class="map-prefecture" data-prefecture="tochigi" data-area="栃木">栃木</div>
-            <div class="map-prefecture" data-prefecture="gunma" data-area="群馬">群馬</div>
-            <div class="map-prefecture" data-prefecture="yamanashi" data-area="山梨">山梨</div>
+            <div class="map-prefecture" data-prefecture="tokyo" data-area="東京都">
+              <span class="prefecture-name">▶ 東京都</span>
+              <span class="prefecture-count">0 イベント</span>
+            </div>
+            <div class="map-prefecture" data-prefecture="kanagawa" data-area="神奈川県">
+              <span class="prefecture-name">▶ 神奈川県</span>
+              <span class="prefecture-count">0 イベント</span>
+            </div>
+            <div class="map-prefecture" data-prefecture="saitama" data-area="埼玉県">
+              <span class="prefecture-name">▶ 埼玉県</span>
+              <span class="prefecture-count">0 イベント</span>
+            </div>
+            <div class="map-prefecture" data-prefecture="chiba" data-area="千葉県">
+              <span class="prefecture-name">▶ 千葉県</span>
+              <span class="prefecture-count">0 イベント</span>
+            </div>
+            <div class="map-prefecture" data-prefecture="ibaraki" data-area="茨城県">
+              <span class="prefecture-name">▶ 茨城県</span>
+              <span class="prefecture-count">0 イベント</span>
+            </div>
+            <div class="map-prefecture" data-prefecture="tochigi" data-area="栃木県">
+              <span class="prefecture-name">栃木県</span>
+              <span class="prefecture-count">0 イベント</span>
+            </div>
+            <div class="map-prefecture" data-prefecture="gunma" data-area="群馬県">
+              <span class="prefecture-name">群馬県</span>
+              <span class="prefecture-count">0 イベント</span>
+            </div>
+            <div class="map-prefecture" data-prefecture="yamanashi" data-area="山梨県">
+              <span class="prefecture-name">山梨県</span>
+              <span class="prefecture-count">0 イベント</span>
+            </div>
+          </div>
+          <div class="map-cities-list" id="map-cities-list" style="display: none;">
+            <button class="map-back-button" id="map-back-button">← 戻る</button>
+            <h3 class="map-cities-title" id="map-cities-title"></h3>
+            <div class="map-cities-grid" id="map-cities-grid"></div>
           </div>
         </div>
       </div>
@@ -1197,10 +1226,176 @@
       return R * c; // 距離（km）
     }
 
+    // 都道府県の市区町村データ
+    const prefectureCities = {
+      'tokyo': [
+        { name: '世田谷区', area: '世田谷区' },
+        { name: '渋谷区', area: '渋谷区' },
+        { name: '新宿区', area: '新宿区' },
+        { name: '港区', area: '港区' },
+        { name: '目黒区', area: '目黒区' },
+        { name: '品川区', area: '品川区' },
+        { name: '大田区', area: '大田区' },
+        { name: '杉並区', area: '杉並区' },
+        { name: '中野区', area: '中野区' },
+        { name: '練馬区', area: '練馬区' },
+        { name: '板橋区', area: '板橋区' },
+        { name: '北区', area: '北区' },
+        { name: '足立区', area: '足立区' },
+        { name: '葛飾区', area: '葛飾区' },
+        { name: '江戸川区', area: '江戸川区' },
+        { name: '墨田区', area: '墨田区' },
+        { name: '台東区', area: '台東区' },
+        { name: '中央区', area: '中央区' },
+        { name: '千代田区', area: '千代田区' },
+        { name: '文京区', area: '文京区' },
+        { name: '豊島区', area: '豊島区' },
+        { name: '荒川区', area: '荒川区' },
+        { name: '八王子市', area: '八王子市' },
+        { name: '立川市', area: '立川市' },
+        { name: '武蔵野市', area: '武蔵野市' },
+        { name: '三鷹市', area: '三鷹市' },
+        { name: '青梅市', area: '青梅市' },
+        { name: '奥多摩町', area: '奥多摩町' }
+      ],
+      'kanagawa': [
+        { name: '横浜市', area: '横浜市' },
+        { name: '川崎市', area: '川崎市' },
+        { name: '相模原市', area: '相模原市' },
+        { name: '鎌倉市', area: '鎌倉市' },
+        { name: '藤沢市', area: '藤沢市' },
+        { name: '茅ヶ崎市', area: '茅ヶ崎市' },
+        { name: '厚木市', area: '厚木市' },
+        { name: '小田原市', area: '小田原市' }
+      ],
+      'saitama': [
+        { name: 'さいたま市', area: 'さいたま市' },
+        { name: '川越市', area: '川越市' },
+        { name: '所沢市', area: '所沢市' },
+        { name: '越谷市', area: '越谷市' },
+        { name: '川口市', area: '川口市' }
+      ],
+      'chiba': [
+        { name: '千葉市', area: '千葉市' },
+        { name: '船橋市', area: '船橋市' },
+        { name: '松戸市', area: '松戸市' },
+        { name: '市川市', area: '市川市' },
+        { name: '柏市', area: '柏市' }
+      ],
+      'ibaraki': [
+        { name: '水戸市', area: '水戸市' },
+        { name: 'つくば市', area: 'つくば市' },
+        { name: '日立市', area: '日立市' }
+      ],
+      'tochigi': [
+        { name: '宇都宮市', area: '宇都宮市' },
+        { name: '足利市', area: '足利市' },
+        { name: '栃木市', area: '栃木市' }
+      ],
+      'gunma': [
+        { name: '前橋市', area: '前橋市' },
+        { name: '高崎市', area: '高崎市' },
+        { name: '太田市', area: '太田市' }
+      ],
+      'yamanashi': [
+        { name: '甲府市', area: '甲府市' },
+        { name: '富士吉田市', area: '富士吉田市' }
+      ]
+    };
+
+    // イベント数をカウントする関数
+    async function countEventsByArea(area) {
+      let source = Array.isArray(window.eventIndex) && window.eventIndex.length > 0
+        ? window.eventIndex
+        : (Array.isArray(window.eventData?.events) ? window.eventData.events : []);
+      
+      if (source.length === 0) return 0;
+      
+      const count = source.filter(event => {
+        const eventArea = event.area || event.city || event.prefecture || '';
+        return eventArea.includes(area);
+      }).length;
+      
+      return count;
+    }
+
     // 地図から探す機能の初期化
     function initMapSearch() {
       const regionItems = document.querySelectorAll('.map-region-item');
       const mapArea = document.getElementById('map-search-map');
+      const citiesList = document.getElementById('map-cities-list');
+      const citiesGrid = document.getElementById('map-cities-grid');
+      const citiesTitle = document.getElementById('map-cities-title');
+      const backButton = document.getElementById('map-back-button');
+      const kantoMap = document.getElementById('kanto-map');
+      
+      // 戻るボタンの処理
+      if (backButton) {
+        backButton.addEventListener('click', () => {
+          citiesList.style.display = 'none';
+          kantoMap.style.display = 'block';
+        });
+      }
+      
+      // 都道府県クリック時の処理
+      function setupPrefectureClick() {
+        const prefectures = mapArea.querySelectorAll('.map-prefecture');
+        prefectures.forEach(pref => {
+          pref.addEventListener('click', async () => {
+            const prefectureId = pref.dataset.prefecture;
+            const prefectureName = pref.dataset.area;
+            const cities = prefectureCities[prefectureId];
+            
+            if (cities && cities.length > 0) {
+              // 市区町村リストを表示
+              kantoMap.style.display = 'none';
+              citiesList.style.display = 'block';
+              citiesTitle.textContent = prefectureName;
+              
+              // 市区町村リストを生成
+              citiesGrid.innerHTML = '';
+              
+              for (const city of cities) {
+                const count = await countEventsByArea(city.area);
+                const cityItem = document.createElement('div');
+                cityItem.className = 'map-city-item';
+                cityItem.innerHTML = `
+                  <span class="city-name">${city.name}</span>
+                  <span class="city-count">${count} イベント</span>
+                `;
+                cityItem.addEventListener('click', () => {
+                  window.location.href = `list.html?area=${encodeURIComponent(city.area)}`;
+                });
+                citiesGrid.appendChild(cityItem);
+              }
+            } else {
+              // 市区町村データがない場合は都道府県で検索
+              window.location.href = `list.html?area=${encodeURIComponent(prefectureName)}`;
+            }
+          });
+        });
+      }
+      
+      // 都道府県のイベント数を表示
+      async function updatePrefectureCounts() {
+        const prefectures = mapArea.querySelectorAll('.map-prefecture');
+        for (const pref of prefectures) {
+          const prefectureName = pref.dataset.area;
+          const count = await countEventsByArea(prefectureName);
+          const countElement = pref.querySelector('.prefecture-count');
+          if (countElement) {
+            countElement.textContent = `${count} イベント`;
+          }
+        }
+      }
+      
+      // 初期状態で都道府県クリックイベントを設定
+      setupPrefectureClick();
+      
+      // イベント数を更新
+      setTimeout(() => {
+        updatePrefectureCounts();
+      }, 500);
       
       // 地域選択時の処理
       regionItems.forEach(item => {
@@ -1212,40 +1407,9 @@
           const region = item.dataset.region;
           // 地域に応じた地図を表示（現在は関東のみ実装）
           if (region === 'kanto') {
-            mapArea.innerHTML = `
-              <div class="map-area" id="kanto-map">
-                <div class="map-prefecture active" data-prefecture="tokyo" data-area="東京">▶ 東京</div>
-                <div class="map-prefecture" data-prefecture="kanagawa" data-area="神奈川">▶ 神奈川</div>
-                <div class="map-prefecture" data-prefecture="saitama" data-area="埼玉">▶ 埼玉</div>
-                <div class="map-prefecture" data-prefecture="chiba" data-area="千葉">▶ 千葉</div>
-                <div class="map-prefecture" data-prefecture="ibaraki" data-area="茨城">▶ 茨城</div>
-                <div class="map-prefecture" data-prefecture="tochigi" data-area="栃木">栃木</div>
-                <div class="map-prefecture" data-prefecture="gunma" data-area="群馬">群馬</div>
-                <div class="map-prefecture" data-prefecture="yamanashi" data-area="山梨">山梨</div>
-              </div>
-            `;
-            
-            // 都道府県クリック時の処理
-            const prefectures = mapArea.querySelectorAll('.map-prefecture');
-            prefectures.forEach(pref => {
-              pref.addEventListener('click', () => {
-                const area = pref.dataset.area;
-                if (area) {
-                  window.location.href = `list.html?area=${encodeURIComponent(area)}`;
-                }
-              });
-            });
-          }
-        });
-      });
-      
-      // 初期状態で関東の都道府県クリックイベントを設定
-      const prefectures = mapArea.querySelectorAll('.map-prefecture');
-      prefectures.forEach(pref => {
-        pref.addEventListener('click', () => {
-          const area = pref.dataset.area;
-          if (area) {
-            window.location.href = `list.html?area=${encodeURIComponent(area)}`;
+            citiesList.style.display = 'none';
+            kantoMap.style.display = 'block';
+            setupPrefectureClick();
           }
         });
       });
