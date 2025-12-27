@@ -147,13 +147,20 @@ const EventPageRenderer = {
     }
     
     // メイン画像（image）とサブ画像が重複しないように、メイン画像と同じIDをサブ画像から除外
+    // また、空の値や無効な値も除外
     if (event.image && subImageIds.length > 0) {
       const mainImageId = String(event.image).trim();
       subImageIds = subImageIds.filter(imgId => {
         const imgIdStr = String(imgId).trim();
-        return imgIdStr !== mainImageId;
+        return imgIdStr !== '' && imgIdStr !== 'undefined' && imgIdStr !== mainImageId;
       });
     }
+    
+    // 空の値や無効な値をさらにフィルタリング
+    subImageIds = subImageIds.filter(imgId => {
+      const imgIdStr = String(imgId).trim();
+      return imgIdStr !== '' && imgIdStr !== 'undefined' && !imgIdStr.includes(' ');
+    });
     
     // デモイベントの場合、imagesがundefinedの場合は空配列として扱う（GASからのレスポンスでundefinedが返される可能性がある）
     if (event.id && event.id.startsWith('demo') && event.images === undefined && subImageIds.length === 0) {
@@ -168,8 +175,8 @@ const EventPageRenderer = {
       
       const publicId = subImageIds[index];
       
-      // サブ画像がある場合
-      if (publicId) {
+      // サブ画像がある場合（空文字や無効な値は除外）
+      if (publicId && String(publicId).trim() !== '' && String(publicId).trim() !== 'undefined') {
         // サブ画像もフォールバック処理を含む画像読み込み
         if (!publicId.startsWith('http')) {
           // Cloudinaryから取得する場合
@@ -571,15 +578,27 @@ const EventPageRenderer = {
         originalLogoUrl = `${organizerId}_camppk`;
       }
       
+      // originalLogoUrlが組織名や無効な値の場合をチェック（空白や特殊文字を含む場合はスキップ）
+      if (originalLogoUrl && (originalLogoUrl.trim() === '' || originalLogoUrl.includes(' ') || originalLogoUrl === organizer.name)) {
+        // 無効な値の場合は、organizer.idに基づいて生成
+        if (organizerId) {
+          originalLogoUrl = `${organizerId}_camppk`;
+        } else {
+          originalLogoUrl = '';
+        }
+      }
+      
       let logoUrl = '';
       
-      // Cloudinaryを使用してロゴURLを生成
-      if (typeof window.getOrganizerImageUrl === 'function') {
-        logoUrl = window.getOrganizerImageUrl(originalLogoUrl, organizerId, { w: 400 });
-      } else if (typeof window.cloudinaryUrl === 'function') {
-        logoUrl = window.cloudinaryUrl(originalLogoUrl, { w: 400 });
-      } else {
-        logoUrl = originalLogoUrl;
+      // Cloudinaryを使用してロゴURLを生成（originalLogoUrlが有効な場合のみ）
+      if (originalLogoUrl && originalLogoUrl.trim() !== '' && originalLogoUrl !== organizer.name) {
+        if (typeof window.getOrganizerImageUrl === 'function') {
+          logoUrl = window.getOrganizerImageUrl(originalLogoUrl, organizerId, { w: 400 });
+        } else if (typeof window.cloudinaryUrl === 'function') {
+          logoUrl = window.cloudinaryUrl(originalLogoUrl, { w: 400 });
+        } else {
+          logoUrl = originalLogoUrl;
+        }
       }
       
       // 画像読み込みエラー時のフォールバック処理（1回だけ試行してダメなら非表示）
