@@ -692,7 +692,22 @@ const EventPageRenderer = {
     }
 
     const encodedQuery = encodeURIComponent(mapQuery.trim());
-    const src = `https://www.google.com/maps?q=${encodedQuery}&hl=ja&z=13&output=embed`;
+    
+    // Google Maps APIキーが設定されている場合はEmbed APIを使用
+    const apiKey = window.GOOGLE_MAPS_API_KEY || '';
+    let src = '';
+    
+    if (apiKey && apiKey !== 'YOUR_API_KEY_HERE' && apiKey !== '') {
+      // Google Maps Embed APIを使用（APIキー付き）
+      if (event.location && event.location.lat && event.location.lng) {
+        src = `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=${event.location.lat},${event.location.lng}&zoom=13&language=ja`;
+      } else {
+        src = `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=${encodedQuery}&zoom=13&language=ja`;
+      }
+    } else {
+      // APIキーがない場合は従来の埋め込みURLを使用
+      src = `https://www.google.com/maps?q=${encodedQuery}&hl=ja&z=13&output=embed`;
+    }
 
     mapIframe.src = src;
   },
