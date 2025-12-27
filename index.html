@@ -1070,6 +1070,36 @@
         return;
       }
 
+      // 位置情報から都道府県を取得する関数
+      const getPrefecture = async (lat, lng) => {
+        const apiKey = window.GOOGLE_MAPS_API_KEY || 'AIzaSyDNV6H5ImWmE2DhWdRYupUER85Rb8ZqmQM';
+        if (!apiKey || apiKey === 'YOUR_API_KEY_HERE') {
+          return null;
+        }
+
+        try {
+          const response = await fetch(
+            `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}&language=ja&region=jp`
+          );
+          const data = await response.json();
+          
+          if (data.status === 'OK' && data.results && data.results.length > 0) {
+            // 結果から都道府県を取得
+            for (const result of data.results) {
+              const addressComponents = result.address_components || [];
+              for (const component of addressComponents) {
+                if (component.types.includes('administrative_area_level_1')) {
+                  return component.long_name;
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.warn('[renderLocationBasedEvents] Failed to get prefecture:', error);
+        }
+        return null;
+      };
+
       // 位置情報から地名を取得する関数
       const getLocationName = async (lat, lng) => {
         const apiKey = window.GOOGLE_MAPS_API_KEY || 'AIzaSyDNV6H5ImWmE2DhWdRYupUER85Rb8ZqmQM';
@@ -1254,7 +1284,22 @@
         async (position) => {
           const userLat = position.coords.latitude;
           const userLng = position.coords.longitude;
-          await processNearbyEvents(userLat, userLng, false);
+          
+          // 都道府県を取得して関東かどうか判定
+          const prefecture = await getPrefecture(userLat, userLng);
+          const kantoPrefectures = ['東京都', '神奈川県', '千葉県', '埼玉県', '群馬県', '栃木県', '茨城県'];
+          const isKanto = prefecture && kantoPrefectures.includes(prefecture);
+          
+          if (isKanto) {
+            // 関東の場合は取得した位置情報を使用
+            await processNearbyEvents(userLat, userLng, false);
+          } else {
+            // 関東以外の場合は世田谷区を使用
+            console.log('[renderLocationBasedEvents] Not in Kanto region, using Setagaya as default');
+            const defaultLat = 35.6466; // 世田谷区の緯度
+            const defaultLng = 139.6533; // 世田谷区の経度
+            await processNearbyEvents(defaultLat, defaultLng, true);
+          }
         },
         async (error) => {
           console.log('[renderLocationBasedEvents] Geolocation error:', error.code, error.message);

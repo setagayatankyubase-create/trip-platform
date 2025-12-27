@@ -948,7 +948,7 @@ body {
 
 .map-column {
   position: sticky;
-  top: 50%;
+  top: 60%;
   transform: translateY(-50%);
   align-self: start;
   height: calc(100vh - 40px);
