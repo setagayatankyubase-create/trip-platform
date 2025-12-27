@@ -356,16 +356,16 @@
       const categories = window.eventMeta.categories; // すべてのカテゴリを表示
       console.log('[renderPopularCategories] Rendering', categories.length, 'categories');
       
-      // イベントデータの確認
-      const eventIndexCount = Array.isArray(window.eventIndex) ? window.eventIndex.length : 0;
+      // eventData.eventsの確認
       const eventDataCount = Array.isArray(window.eventData?.events) ? window.eventData.events.length : 0;
-      console.log('[renderPopularCategories] eventIndex:', eventIndexCount, 'events, eventData:', eventDataCount, 'events');
+      console.log('[renderPopularCategories] eventData.events:', eventDataCount, 'events');
+      
+      if (eventDataCount === 0) {
+        console.warn('[renderPopularCategories] eventData.events is empty, categories will show 0 events');
+      }
       
       container.innerHTML = categories.map(cat => {
         const eventCount = countEventsByCategory(cat.id);
-        if (eventCount > 0) {
-          console.log('[renderPopularCategories] Category', cat.id, cat.name, 'has', eventCount, 'events');
-        }
         return `
           <a href="list.html?category=${cat.id}" class="popular-item" data-item-id="${cat.id}">
             <span class="popular-item-name">${cat.name}</span>
@@ -450,29 +450,23 @@
       }).join('');
     }
 
-    // カテゴリ別イベント数をカウント
+    // カテゴリ別イベント数をカウント（eventData.eventsから直接計測）
     function countEventsByCategory(categoryId) {
-      // eventIndexを優先、なければeventData.eventsを使用
-      let source = Array.isArray(window.eventIndex) && window.eventIndex.length > 0
-        ? window.eventIndex
-        : (Array.isArray(window.eventData?.events) ? window.eventData.events : []);
+      // eventData.eventsを優先して使用
+      const source = Array.isArray(window.eventData?.events) ? window.eventData.events : [];
       
       if (source.length === 0) {
-        console.log('[countEventsByCategory] No event data available for category:', categoryId);
+        console.log('[countEventsByCategory] No eventData.events available for category:', categoryId);
         return 0;
       }
       
       const matches = source.filter(e => {
         const catId = e.categoryId || e.category_id || e.category;
-        const matches = String(catId) === String(categoryId);
-        if (matches && !e.categoryId && !e.category_id && !e.category) {
-          console.warn('[countEventsByCategory] Event', e.id, 'has no category field');
-        }
-        return matches;
+        return String(catId) === String(categoryId);
       });
       
       if (matches.length > 0) {
-        console.log('[countEventsByCategory] Category', categoryId, 'matched', matches.length, 'events:', matches.map(e => e.id || e.title).join(', '));
+        console.log('[countEventsByCategory] Category', categoryId, 'matched', matches.length, 'events from eventData.events');
       }
       
       return matches.length;
