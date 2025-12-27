@@ -2462,8 +2462,10 @@ body {
 }
 
 #kantoMap {
+  display: block;
+  width: 100%;
+  height: 520px;
   max-width: 100%;
-  height: auto;
 }
 
 .map-area {

@@ -138,7 +138,7 @@
         </div>
         <div class="map-search-map" id="map-search-map">
           <div class="map-svg-container" id="map-svg-container">
-            <svg id="kantoMap" viewBox="0 0 900 700" style="width:100%;height:auto"></svg>
+            <svg id="kantoMap" viewBox="0 0 900 700"></svg>
           </div>
           <div class="map-cities-list" id="map-cities-list" style="display: none;">
             <button class="map-back-button" id="map-back-button">← エリア選択に戻る</button>
@@ -1407,14 +1407,46 @@
     
     // 関東地方のSVG地図を作成（TopoJSON使用）
     async function createKantoSVGMap() {
-      // d3とtopojson-clientが読み込まれるまで待機
-      if (typeof d3 === 'undefined' || typeof topojson === 'undefined') {
+      // デバッグ：SVG要素の存在確認
+      const svgElement = document.getElementById("kantoMap");
+      console.log('[createKantoSVGMap] SVG element:', svgElement);
+      
+      if (!svgElement) {
+        console.error('[createKantoSVGMap] SVG element not found!');
         setTimeout(() => createKantoSVGMap(), 100);
         return;
       }
       
+      // デバッグ：SVGが描画できるか確認（開発時のみ有効）
+      // 本番ではコメントアウトしてください
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        svgElement.innerHTML = `<rect x="0" y="0" width="900" height="700" fill="#cfeee6"></rect>
+                                 <text x="40" y="80" font-size="48" font-weight="800" fill="#143a33">
+                                   SVG OK
+                                 </text>`;
+        console.log('[createKantoSVGMap] SVG OK test rendered');
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      
+      // d3とtopojson-clientが読み込まれるまで待機
+      if (typeof d3 === 'undefined') {
+        console.warn('[createKantoSVGMap] d3 is not defined, retrying...');
+        setTimeout(() => createKantoSVGMap(), 100);
+        return;
+      }
+      
+      const topojsonClient = window.topojson;
+      if (!topojsonClient) {
+        console.warn('[createKantoSVGMap] topojson is not defined, retrying...');
+        setTimeout(() => createKantoSVGMap(), 100);
+        return;
+      }
+      
+      console.log('[createKantoSVGMap] d3 and topojson loaded');
+      
       const svg = d3.select("#kantoMap");
       if (svg.empty()) {
+        console.error('[createKantoSVGMap] d3.select failed!');
         setTimeout(() => createKantoSVGMap(), 100);
         return;
       }
@@ -1424,8 +1456,10 @@
       
       const width = 900, height = 700;
       
-      // TopoJSONデータのパス（GitHub raw URLまたはCDN）
+      // TopoJSONデータのパス（まず外部URLを試す、失敗したらローカルにフォールバック）
+      // 注意：外部URLがCORSでブロックされる場合は、/assets/maps/japan.topojson に配置してください
       const TOPO_PATH = "https://raw.githubusercontent.com/dataofjapan/land/master/japan.topojson";
+      // フォールバック: const TOPO_PATH = "/assets/maps/japan.topojson";
       
       // 関東地方の都道府県
       const KANTO = new Set([
@@ -1444,14 +1478,27 @@
       };
       
       try {
+        console.log('[createKantoSVGMap] Fetching TopoJSON from:', TOPO_PATH);
         // TopoJSONデータを取得
         const topo = await d3.json(TOPO_PATH);
+        console.log('[createKantoSVGMap] TopoJSON loaded:', topo);
+        
+        if (!topo || !topo.objects) {
+          throw new Error('Invalid TopoJSON data');
+        }
         
         // topojsonのobjects名を取得
         const objKey = Object.keys(topo.objects)[0];
+        console.log('[createKantoSVGMap] Using object key:', objKey);
+        
         // topojson-clientのfeature関数を使用
-        const topojsonClient = window.topojson || topojson;
+        const topojsonClient = window.topojson;
+        if (!topojsonClient || !topojsonClient.feature) {
+          throw new Error('topojson.feature is not available');
+        }
+        
         const geo = topojsonClient.feature(topo, topo.objects[objKey]);
+        console.log('[createKantoSVGMap] GeoJSON converted:', geo);
         
         // 県名のプロパティ名を取得（データにより異なる可能性がある）
         const getName = (p) => p?.name || p?.name_ja || p?.nam || p?.pref || p?.prefecture || p?.NAME_1 || "";
@@ -1579,13 +1626,25 @@
             });
       } catch (error) {
         console.error('[createKantoSVGMap] Error loading map:', error);
-        // フォールバック：エラーメッセージを表示
-        svg.append("text")
-          .attr("x", width / 2)
-          .attr("y", height / 2)
-          .attr("text-anchor", "middle")
-          .attr("fill", "#666")
-          .text("地図の読み込みに失敗しました");
+        console.error('[createKantoSVGMap] Error stack:', error.stack);
+        
+        // フォールバック：エラーメッセージを表示（直接DOM操作）
+        const svgElement = document.getElementById("kantoMap");
+        if (svgElement) {
+          const width = 900, height = 700;
+          svgElement.innerHTML = `
+            <rect x="0" y="0" width="${width}" height="${height}" fill="#f0f0f0"></rect>
+            <text x="${width / 2}" y="${height / 2 - 20}" text-anchor="middle" font-size="20" fill="#666">
+              地図の読み込みに失敗しました
+            </text>
+            <text x="${width / 2}" y="${height / 2 + 10}" text-anchor="middle" font-size="14" fill="#999">
+              ${error.message || 'Unknown error'}
+            </text>
+            <text x="${width / 2}" y="${height / 2 + 40}" text-anchor="middle" font-size="12" fill="#999">
+              コンソールを確認してください
+            </text>
+          `;
+        }
       }
     }
     
