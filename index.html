@@ -1538,22 +1538,31 @@
         const geo = topojsonClient.feature(topo, topo.objects[objKey]);
         console.log('[createKantoSVGMap] GeoJSON converted:', geo);
         
-        // 県名のプロパティ名を取得（データにより異なる可能性がある、強いバージョン）
-        const getName = (p) => p?.name || p?.nam || p?.name_ja || p?.pref || p?.prefecture || p?.NAME_1 || p?.NAME || "";
+        // 日本語名を取得（関東判定と表示に使用）
+        const getNameJa = (p) => p?.nam_ja || p?.name_ja || p?.NAME_JA || "";
+        
+        // 英語名を取得（必要に応じて使用）
+        const getNameEn = (p) => p?.nam || p?.name || "";
         
         // デバッグ：実際のプロパティを確認
         if (geo.features && geo.features.length > 0) {
           console.log('[createKantoSVGMap] Sample props:', geo.features[0]?.properties);
-          console.log('[createKantoSVGMap] First 10 names:', geo.features.slice(0, 10).map(f => getName(f.properties)));
+          console.log('[createKantoSVGMap] First 10 ja names:', geo.features.slice(0, 10).map(f => getNameJa(f.properties)));
         }
         
-        // 関東だけ抽出
-        const kantoFeatures = geo.features.filter(f => KANTO.has(getName(f.properties)));
+        // 関東だけ抽出（日本語名で判定）
+        const kantoFeatures = geo.features.filter(f => KANTO.has(getNameJa(f.properties)));
         
         // デバッグ：関東抽出の結果を確認
         console.log('[createKantoSVGMap] Total features:', geo.features.length);
         console.log('[createKantoSVGMap] Kanto features found:', kantoFeatures.length);
-        console.log('[createKantoSVGMap] Kanto names:', kantoFeatures.map(f => getName(f.properties)));
+        console.log('[createKantoSVGMap] Kanto names:', kantoFeatures.map(f => getNameJa(f.properties)));
+        
+        // 0件の場合は警告を出して終了
+        if (kantoFeatures.length === 0) {
+          console.warn('[createKantoSVGMap] No Kanto features matched. Check name mapping.');
+          return;
+        }
         
         // イベント数を取得
         const eventCountByAreaKey = {};
@@ -1588,28 +1597,32 @@
             .style("stroke-width", "2px")
             .style("opacity", "1")
             .style("cursor", d => {
-              const name = getName(d.properties);
+              const name = getNameJa(d.properties);
               const key = areaKeyByName[name];
               const c = eventCountByAreaKey[key] ?? 0;
               return (!SHOW_ZERO && c === 0) ? "not-allowed" : "pointer";
             })
             .on("mouseenter", function(e, d) {
-              const name = getName(d.properties);
+              const name = getNameJa(d.properties);
               const key = areaKeyByName[name];
               const c = eventCountByAreaKey[key] ?? 0;
               if (SHOW_ZERO || c > 0) {
                 d3.select(this)
                   .attr("fill", "#c8e8dc")
-                  .attr("stroke-width", 3);
+                  .attr("stroke-width", 3)
+                  .style("fill", "#c8e8dc")
+                  .style("stroke-width", "3px");
               }
             })
             .on("mouseleave", function(e, d) {
               d3.select(this)
                 .attr("fill", "#e2f2ee")
-                .attr("stroke-width", 2);
+                .attr("stroke-width", 2)
+                .style("fill", "#e2f2ee")
+                .style("stroke-width", "2px");
             })
             .on("click", async (e, d) => {
-              const name = getName(d.properties);
+              const name = getNameJa(d.properties);
               const key = areaKeyByName[name];
               const c = eventCountByAreaKey[key] ?? 0;
               if (!SHOW_ZERO && c === 0) return;
@@ -1642,7 +1655,7 @@
           .data(kantoFeatures)
           .join("g")
             .each(function(d) {
-              const name = getName(d.properties);
+              const name = getNameJa(d.properties);
               const key = areaKeyByName[name];
               const c = eventCountByAreaKey[key] ?? 0;
               if (!SHOW_ZERO && c === 0) return;
@@ -1650,7 +1663,8 @@
               const [x, y] = path.centroid(d);
               const g = d3.select(this);
               
-              // 県名（都・県を削除）
+              // 県名（都・県・府・道を削除）
+              const label = name.replace("都", "").replace("県", "").replace("府", "").replace("道", "");
               g.append("text")
                 .attr("x", x)
                 .attr("y", y - 8)
@@ -1659,7 +1673,7 @@
                 .attr("font-weight", 800)
                 .attr("font-size", 18)
                 .attr("fill", "#143a33")
-                .text(name.replace("県", "").replace("都", ""));
+                .text(label);
               
               // 件数バッジ
               g.append("circle")
