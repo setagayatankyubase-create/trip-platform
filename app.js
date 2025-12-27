@@ -598,9 +598,9 @@ const MapManager = {
         lng: parseFloat(event.location.lng)
       };
 
-      // 価格ラベルを作成（日本円表示）
+      // 価格ラベルを作成（日本円表示：¥と数字の間にスペース）
       const eventPrice = event.price ? event.price : 0;
-      const priceLabel = eventPrice > 0 ? `¥${eventPrice.toLocaleString()}` : '';
+      const priceLabel = eventPrice > 0 ? `¥ ${eventPrice.toLocaleString()}` : '';
       
       // カスタムマーカーアイコンを作成（価格ラベルを統合）
       let markerIcon = null;
