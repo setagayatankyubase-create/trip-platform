@@ -491,12 +491,13 @@
         return 0;
       }
       
-      // categoryIdが空のイベントの詳細を読み込んで補完
+      // categoryIdが空のイベントの詳細を読み込んで補完（すべてのイベントを対象）
       const eventsWithoutCategory = source.filter(e => !e.categoryId && !e.category_id && !e.category);
       if (eventsWithoutCategory.length > 0) {
         console.log('[countEventsByCategory] Loading categoryId for', eventsWithoutCategory.length, 'events');
         try {
-          const detailPromises = eventsWithoutCategory.slice(0, 20).map(e => 
+          // すべてのイベントの詳細を読み込んで categoryId を補完
+          const detailPromises = eventsWithoutCategory.map(e => 
             loadEventDetail(e.id).catch(() => null)
           );
           const details = await Promise.all(detailPromises);

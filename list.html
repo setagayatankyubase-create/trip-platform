@@ -587,33 +587,47 @@
         }
       }
 
-      // events_index が前提
-      let index = Array.isArray(window.eventIndex) ? window.eventIndex : [];
+      // eventData.eventsを優先、なければeventIndexを使用
+      let index = [];
+      if (Array.isArray(window.eventData?.events) && window.eventData.events.length > 0) {
+        index = window.eventData.events;
+        console.log('[loadEvents] Using eventData.events:', index.length, 'events');
+      } else if (Array.isArray(window.eventIndex) && window.eventIndex.length > 0) {
+        index = window.eventIndex;
+        console.log('[loadEvents] Using eventIndex:', index.length, 'events');
+      }
 
-      // カテゴリ検索で categoryId が無い場合、詳細JSONから補完
-      if (params.category && index.length > 0 && !index[0].categoryId && !index[0].category_id) {
-        try {
-          // 最初の数件だけ詳細を読み込んで categoryId を補完
-          const sampleIds = index.slice(0, 10).map(e => e.id).filter(Boolean);
-          const detailPromises = sampleIds.map(id => 
-            loadEventDetail(id).catch(() => null)
-          );
-          const details = await Promise.all(detailPromises);
-          const detailMap = {};
-          details.forEach(d => {
-            if (d && d.id) detailMap[d.id] = d;
-          });
-          
-          // index に categoryId を補完
-          index = index.map(item => {
-            const detail = detailMap[item.id];
-            if (detail && detail.categoryId) {
-              return { ...item, categoryId: detail.categoryId };
-            }
-            return item;
-          });
-        } catch (e) {
-          console.warn('Failed to enrich categoryId:', e);
+      // カテゴリ検索で categoryId が無い場合、詳細JSONから補完（すべてのイベントを対象）
+      if (params.category && index.length > 0) {
+        const eventsWithoutCategory = index.filter(e => !e.categoryId && !e.category_id && !e.category);
+        if (eventsWithoutCategory.length > 0) {
+          console.log('[loadEvents] Loading categoryId for', eventsWithoutCategory.length, 'events');
+          try {
+            // すべてのイベントの詳細を読み込んで categoryId を補完
+            const detailPromises = eventsWithoutCategory.map(e => 
+              loadEventDetail(e.id).catch(() => null)
+            );
+            const details = await Promise.all(detailPromises);
+            const detailMap = {};
+            details.forEach(d => {
+              if (d && d.id && d.categoryId) {
+                detailMap[d.id] = d.categoryId;
+              }
+            });
+            
+            // index に categoryId を補完
+            index = index.map(item => {
+              const categoryId = detailMap[item.id];
+              if (categoryId) {
+                return { ...item, categoryId: categoryId };
+              }
+              return item;
+            });
+            
+            console.log('[loadEvents] Enriched categoryId for', Object.keys(detailMap).length, 'events');
+          } catch (e) {
+            console.warn('[loadEvents] Failed to enrich categoryId:', e);
+          }
         }
       }
 
