@@ -8,6 +8,9 @@
   <link rel="icon" type="image/png" href="https://res.cloudinary.com/ddrxsy9jw/image/upload/f_auto,q_auto,w_32/logo_tfqqd0">
   <link rel="apple-touch-icon" href="https://res.cloudinary.com/ddrxsy9jw/image/upload/f_auto,q_auto,w_180/logo_tfqqd0">
   <link rel="stylesheet" href="styles.css">
+  <!-- d3.js and topojson-client for SVG map -->
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -134,7 +137,9 @@
           </button>
         </div>
         <div class="map-search-map" id="map-search-map">
-          <div class="map-google-map" id="map-google-map"></div>
+          <div class="map-svg-container" id="map-svg-container">
+            <svg id="kantoMap" viewBox="0 0 900 700" style="width:100%;height:auto"></svg>
+          </div>
           <div class="map-cities-list" id="map-cities-list" style="display: none;">
             <button class="map-back-button" id="map-back-button">← エリア選択に戻る</button>
             <h3 class="map-cities-title" id="map-cities-title"></h3>
@@ -1340,22 +1345,20 @@
       const citiesGrid = document.getElementById('map-cities-grid');
       const citiesTitle = document.getElementById('map-cities-title');
       const backButton = document.getElementById('map-back-button');
-      const googleMapContainer = document.getElementById('map-google-map');
+      const svgContainer = document.getElementById('map-svg-container');
       
       // 戻るボタンの処理（市区町村リストから都道府県地図に戻る）
       if (backButton) {
         backButton.addEventListener('click', () => {
           citiesList.style.display = 'none';
-          googleMapContainer.style.display = 'block';
+          if (svgContainer) svgContainer.style.display = 'block';
           // 関東地方の地図を再表示
-          initKantoMap(googleMapContainer);
+          createKantoSVGMap();
         });
       }
       
-      // 関東地方のGoogle Mapsを初期化
-      if (googleMapContainer) {
-        initKantoMap(googleMapContainer);
-      }
+      // 関東地方のSVG地図を初期化
+      createKantoSVGMap();
       
       // 「近くから探す」ボタンの処理
       const nearbyButton = document.getElementById('map-nearby-button');
@@ -1402,32 +1405,191 @@
       }
     }
     
-    // 関東地方のGoogle Mapsを初期化
-    function initKantoMap(container) {
-      // Google Maps APIが読み込まれているか確認
-      if (typeof google === 'undefined' || typeof google.maps === 'undefined') {
-        // Google Maps APIを読み込む
-        if (!document.querySelector('script[src*="maps.googleapis.com"]')) {
-          const script = document.createElement('script');
-          script.src = `https://maps.googleapis.com/maps/api/js?key=${window.GOOGLE_MAPS_API_KEY}&callback=initKantoMapCallback&language=ja&region=JP&loading=async`;
-          script.async = true;
-          script.defer = true;
-          window.initKantoMapCallback = () => {
-            createKantoMap(container);
-          };
-          document.head.appendChild(script);
-        } else {
-          // 既に読み込まれている場合は直接作成
-          setTimeout(() => {
-            createKantoMap(container);
-          }, 500);
+    // 関東地方のSVG地図を作成（TopoJSON使用）
+    async function createKantoSVGMap() {
+      // d3とtopojson-clientが読み込まれるまで待機
+      if (typeof d3 === 'undefined' || typeof topojson === 'undefined') {
+        setTimeout(() => createKantoSVGMap(), 100);
+        return;
+      }
+      
+      const svg = d3.select("#kantoMap");
+      if (svg.empty()) {
+        setTimeout(() => createKantoSVGMap(), 100);
+        return;
+      }
+      
+      // SVGをクリア
+      svg.selectAll("*").remove();
+      
+      const width = 900, height = 700;
+      
+      // TopoJSONデータのパス（GitHub raw URLまたはCDN）
+      const TOPO_PATH = "https://raw.githubusercontent.com/dataofjapan/land/master/japan.topojson";
+      
+      // 関東地方の都道府県
+      const KANTO = new Set([
+        "東京都", "神奈川県", "千葉県", "埼玉県", "茨城県", "栃木県", "群馬県"
+      ]);
+      
+      // エリアkey対応
+      const areaKeyByName = {
+        "東京都": "tokyo",
+        "神奈川県": "kanagawa",
+        "千葉県": "chiba",
+        "埼玉県": "saitama",
+        "茨城県": "ibaraki",
+        "栃木県": "tochigi",
+        "群馬県": "gunma"
+      };
+      
+      try {
+        // TopoJSONデータを取得
+        const topo = await d3.json(TOPO_PATH);
+        
+        // topojsonのobjects名を取得
+        const objKey = Object.keys(topo.objects)[0];
+        // topojson-clientのfeature関数を使用
+        const topojsonClient = window.topojson || topojson;
+        const geo = topojsonClient.feature(topo, topo.objects[objKey]);
+        
+        // 県名のプロパティ名を取得（データにより異なる可能性がある）
+        const getName = (p) => p?.name || p?.name_ja || p?.nam || p?.pref || p?.prefecture || p?.NAME_1 || "";
+        
+        // 関東だけ抽出
+        const kantoFeatures = geo.features.filter(f => KANTO.has(getName(f.properties)));
+        
+        // イベント数を取得
+        const eventCountByAreaKey = {};
+        for (const [name, key] of Object.entries(areaKeyByName)) {
+          eventCountByAreaKey[key] = await countEventsByArea(name);
         }
-      } else {
-        createKantoMap(container);
+        
+        const SHOW_ZERO = false;
+        
+        // SVGにフィット
+        const projection = d3.geoMercator().fitSize([width, height], { type: "FeatureCollection", features: kantoFeatures });
+        const path = d3.geoPath(projection);
+        
+        // 背景
+        svg.append("rect")
+          .attr("width", width)
+          .attr("height", height)
+          .attr("fill", "#eaf6f2");
+        
+        // 県ポリゴン
+        svg.append("g")
+          .selectAll("path")
+          .data(kantoFeatures)
+          .join("path")
+            .attr("d", path)
+            .attr("fill", "#e2f2ee")
+            .attr("stroke", "#2aa58d")
+            .attr("stroke-width", 2)
+            .style("cursor", d => {
+              const name = getName(d.properties);
+              const key = areaKeyByName[name];
+              const c = eventCountByAreaKey[key] ?? 0;
+              return (!SHOW_ZERO && c === 0) ? "not-allowed" : "pointer";
+            })
+            .on("mouseenter", function(e, d) {
+              const name = getName(d.properties);
+              const key = areaKeyByName[name];
+              const c = eventCountByAreaKey[key] ?? 0;
+              if (SHOW_ZERO || c > 0) {
+                d3.select(this)
+                  .attr("fill", "#c8e8dc")
+                  .attr("stroke-width", 3);
+              }
+            })
+            .on("mouseleave", function(e, d) {
+              d3.select(this)
+                .attr("fill", "#e2f2ee")
+                .attr("stroke-width", 2);
+            })
+            .on("click", async (e, d) => {
+              const name = getName(d.properties);
+              const key = areaKeyByName[name];
+              const c = eventCountByAreaKey[key] ?? 0;
+              if (!SHOW_ZERO && c === 0) return;
+              
+              // 市区町村データがある場合は市区町村マップを表示
+              const cities = prefectureCities[key];
+              const citiesList = document.getElementById('map-cities-list');
+              const svgContainer = document.getElementById('map-svg-container');
+              
+              if (cities && cities.length > 0 && citiesList && svgContainer) {
+                // 二段階目：市区町村のGoogle Mapsを表示
+                // Google Maps用のコンテナを作成
+                const googleMapContainer = document.createElement('div');
+                googleMapContainer.className = 'map-google-map';
+                googleMapContainer.style.width = '100%';
+                googleMapContainer.style.height = '500px';
+                svgContainer.style.display = 'none';
+                svgContainer.parentElement.appendChild(googleMapContainer);
+                initCityMap(key, name, cities, googleMapContainer);
+              } else {
+                // イベント一覧ページに遷移
+                window.location.href = `list.html?area=${encodeURIComponent(name)}`;
+              }
+            });
+        
+        // ラベル＆バッジ（重心に置く）
+        const labelG = svg.append("g");
+        
+        labelG.selectAll("g")
+          .data(kantoFeatures)
+          .join("g")
+            .each(function(d) {
+              const name = getName(d.properties);
+              const key = areaKeyByName[name];
+              const c = eventCountByAreaKey[key] ?? 0;
+              if (!SHOW_ZERO && c === 0) return;
+              
+              const [x, y] = path.centroid(d);
+              const g = d3.select(this);
+              
+              // 県名（都・県を削除）
+              g.append("text")
+                .attr("x", x)
+                .attr("y", y - 8)
+                .attr("text-anchor", "middle")
+                .attr("dominant-baseline", "central")
+                .attr("font-weight", 800)
+                .attr("font-size", 18)
+                .attr("fill", "#143a33")
+                .text(name.replace("県", "").replace("都", ""));
+              
+              // 件数バッジ
+              g.append("circle")
+                .attr("cx", x)
+                .attr("cy", y + 12)
+                .attr("r", 16)
+                .attr("fill", "#0f7a63");
+              
+              g.append("text")
+                .attr("x", x)
+                .attr("y", y + 12)
+                .attr("text-anchor", "middle")
+                .attr("dominant-baseline", "central")
+                .attr("font-weight", 900)
+                .attr("font-size", 13)
+                .attr("fill", "#fff")
+                .text(c);
+            });
+      } catch (error) {
+        console.error('[createKantoSVGMap] Error loading map:', error);
+        // フォールバック：エラーメッセージを表示
+        svg.append("text")
+          .attr("x", width / 2)
+          .attr("y", height / 2)
+          .attr("text-anchor", "middle")
+          .attr("fill", "#666")
+          .text("地図の読み込みに失敗しました");
       }
     }
     
-    // 関東地方のGoogle Mapsを作成
+    // 旧Google Maps実装（削除予定、互換性のため残す）
     function createKantoMap(container) {
       // コンテナをクリア
       container.innerHTML = '';

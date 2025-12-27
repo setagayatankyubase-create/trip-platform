@@ -2450,6 +2450,22 @@ body {
   overflow: hidden;
 }
 
+.map-svg-container {
+  width: 100%;
+  min-height: 500px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #eaf6f2;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+#kantoMap {
+  max-width: 100%;
+  height: auto;
+}
+
 .map-area {
   position: relative;
   width: 100%;
