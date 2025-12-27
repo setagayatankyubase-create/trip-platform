@@ -256,26 +256,46 @@
         
         const demoOrganizerContainer = document.getElementById('demo-organizer-container');
         if (demoOrganizerContainer && organizer) {
-          const organizerId = organizer.id || '';
-          let originalLogoUrl = organizer.logo || organizer.image || '';
-          
-          const websiteValue = organizer.website || '';
-          if (websiteValue && !websiteValue.includes('http') && !websiteValue.includes('.com') && (!websiteValue.includes('.') || websiteValue.includes('_'))) {
-            originalLogoUrl = websiteValue;
+          // 提供元ロゴURLを取得：organizer.logoを信頼する（idから生成しない）
+          function getOrganizerLogoPublicId(organizer) {
+            // logoフィールドを優先
+            if (organizer?.logo) {
+              const logo = organizer.logo;
+              if (typeof logo === 'string' && logo.trim() !== '') {
+                return logo.trim();
+              }
+            }
+            // imageフィールドをチェック（logoがない場合）
+            if (organizer?.image) {
+              const image = organizer.image;
+              if (typeof image === 'string' && image.trim() !== '') {
+                return image.trim();
+              }
+            }
+            // websiteフィールドに画像名が入っている場合
+            const websiteValue = organizer?.website || '';
+            if (websiteValue && typeof websiteValue === 'string') {
+              const ws = websiteValue.trim();
+              if (ws && !ws.includes('http') && !ws.includes('.com') && (!ws.includes('.') || ws.includes('_'))) {
+                return ws;
+              }
+            }
+            // ロゴIDがない場合はnullを返す（idから生成しない）
+            return null;
           }
           
-          if ((!originalLogoUrl || originalLogoUrl.includes('picsum.photos') || originalLogoUrl.includes('placeholder')) && organizerId) {
-            originalLogoUrl = `${organizerId}_camppk`;
-          }
-          
+          const logoPublicId = getOrganizerLogoPublicId(organizer);
           let logoUrl = '';
           
-          if (typeof window.getOrganizerImageUrl === 'function') {
-            logoUrl = window.getOrganizerImageUrl(originalLogoUrl, organizerId, { w: 400 });
-          } else if (typeof window.cloudinaryUrl === 'function') {
-            logoUrl = window.cloudinaryUrl(originalLogoUrl, { w: 400, type: 'organizer' });
-          } else {
-            logoUrl = originalLogoUrl;
+          // Cloudinaryを使用してロゴURLを生成（logoPublicIdがある場合のみ）
+          if (logoPublicId) {
+            if (typeof window.getOrganizerImageUrl === 'function') {
+              logoUrl = window.getOrganizerImageUrl(logoPublicId, organizer.id, { w: 400 });
+            } else if (typeof window.cloudinaryUrl === 'function') {
+              logoUrl = window.cloudinaryUrl(logoPublicId, { w: 400 });
+            } else {
+              logoUrl = `https://res.cloudinary.com/ddrxsy9jw/image/upload/f_auto,q_auto,w_400/${logoPublicId}`;
+            }
           }
           
           const imageErrorHandler = `

@@ -97,26 +97,38 @@
       container.innerHTML = eventData.organizers.map(org => {
         const events = eventData.events.filter(e => (e.organizerId || e.organizer_id) === org.id);
         
-        // 提供元ロゴURLを取得（public_idをそのまま使用）
-        const organizerId = org.id || '';
-        let originalLogoUrl = org.logo || org.image || '';
-        
-        // websiteフィールドに画像名が入っている場合を優先チェック（例：org-001_camppk）
-        const websiteValue = org.website || '';
-        if (websiteValue && !websiteValue.includes('http') && !websiteValue.includes('.com') && (!websiteValue.includes('.') || websiteValue.includes('_'))) {
-          // public_idをそのまま使用（フォルダ補完しない：Cloudinaryの実体に合わせる）
-          originalLogoUrl = websiteValue;
+        // 提供元ロゴURLを取得：organizer.logoを信頼する（idから生成しない）
+        function getOrganizerLogoPublicId(org) {
+          // logoフィールドを優先
+          if (org?.logo) {
+            const logo = org.logo;
+            if (typeof logo === 'string' && logo.trim() !== '') {
+              return logo.trim();
+            }
+          }
+          // imageフィールドをチェック（logoがない場合）
+          if (org?.image) {
+            const image = org.image;
+            if (typeof image === 'string' && image.trim() !== '') {
+              return image.trim();
+            }
+          }
+          // websiteフィールドに画像名が入っている場合（例：org-001_camppk）
+          const websiteValue = org?.website || '';
+          if (websiteValue && typeof websiteValue === 'string') {
+            const ws = websiteValue.trim();
+            if (ws && !ws.includes('http') && !ws.includes('.com') && (!ws.includes('.') || ws.includes('_'))) {
+              return ws;
+            }
+          }
+          // ロゴIDがない場合はnullを返す（idから生成しない）
+          return null;
         }
         
-        // logo/image/websiteが空の場合やプレースホルダーの場合、organizer.idに基づいて生成
-        if ((!originalLogoUrl || originalLogoUrl.includes('picsum.photos') || originalLogoUrl.includes('placeholder')) && organizerId) {
-          // public_idをそのまま使用（フォルダ補完しない：Cloudinaryの実体に合わせる）
-          originalLogoUrl = `${organizerId}_camppk`;
-        }
-        
+        const logoPublicId = getOrganizerLogoPublicId(org);
         let logoUrl = '';
         
-        // Cloudinaryを使用してロゴURLを生成（organizersフォルダを使用）
+        // Cloudinaryを使用してロゴURLを生成（logoPublicIdがある場合のみ）
         if (typeof window.getOrganizerImageUrl === 'function') {
           logoUrl = window.getOrganizerImageUrl(originalLogoUrl, organizerId, { w: 400 });
         } else if (typeof window.cloudinaryUrl === 'function') {

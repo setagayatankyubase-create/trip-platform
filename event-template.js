@@ -558,46 +558,61 @@ const EventPageRenderer = {
     if (!organizer) return;
 
     if (organizerInfo) {
-      // 提供元ロゴURLを取得（GitHubを優先、なければ既存URLを使用）
-      let originalLogoUrl = organizer.logo || organizer.image || '';
+      // 提供元ロゴURLを取得：organizer.logoを信頼する（idから生成しない）
+      // デバッグログ
+      console.log("[ORG FINAL]", {
+        id: organizer?.id,
+        logo: organizer?.logo,
+        image: organizer?.image,
+        website: organizer?.website,
+        name: organizer?.name,
+        keys: organizer ? Object.keys(organizer) : null
+      });
       
-      // フォールバック：logoが空の場合やプレースホルダーの場合、organizer.idに基づいてCloudinary画像を生成
-      const organizerId = organizer.id || '';
-      let fallbackPaths = [];
-      
-      // websiteフィールドに画像名が入っている場合を優先チェック（例：org-001_camppk）
-      const websiteValue = organizer.website || '';
-      if (websiteValue && !websiteValue.includes('http') && !websiteValue.includes('.com') && (!websiteValue.includes('.') || websiteValue.includes('_'))) {
-        // public_idをそのまま使用（フォルダ補完しない：Cloudinaryの実体に合わせる）
-        originalLogoUrl = websiteValue;
-      }
-      
-      // logo/image/websiteが空の場合やプレースホルダーの場合、organizer.idに基づいて生成
-      if ((!originalLogoUrl || originalLogoUrl.includes('picsum.photos') || originalLogoUrl.includes('placeholder')) && organizerId) {
-        // public_idをそのまま使用（フォルダ補完しない：Cloudinaryの実体に合わせる）
-        originalLogoUrl = `${organizerId}_camppk`;
-      }
-      
-      // originalLogoUrlが組織名や無効な値の場合をチェック（空白や特殊文字を含む場合はスキップ）
-      if (originalLogoUrl && (originalLogoUrl.trim() === '' || originalLogoUrl.includes(' ') || originalLogoUrl === organizer.name)) {
-        // 無効な値の場合は、organizer.idに基づいて生成
-        if (organizerId) {
-          originalLogoUrl = `${organizerId}_camppk`;
-        } else {
-          originalLogoUrl = '';
+      // organizer.logoからロゴIDを取得（型チェック付き）
+      function getOrganizerLogoPublicId(organizer) {
+        // logoフィールドを優先
+        if (organizer?.logo) {
+          const logo = organizer.logo;
+          if (typeof logo === 'string' && logo.trim() !== '') {
+            return logo.trim();
+          }
         }
+        // imageフィールドをチェック（logoがない場合）
+        if (organizer?.image) {
+          const image = organizer.image;
+          if (typeof image === 'string' && image.trim() !== '') {
+            return image.trim();
+          }
+        }
+        // websiteフィールドに画像名が入っている場合（例：org-001_camppk）
+        // ただし、URL形式（httpを含む、.comを含む）は除外
+        const websiteValue = organizer?.website || '';
+        if (websiteValue && typeof websiteValue === 'string') {
+          const ws = websiteValue.trim();
+          if (ws && !ws.includes('http') && !ws.includes('.com') && (!ws.includes('.') || ws.includes('_'))) {
+            return ws;
+          }
+        }
+        // ロゴIDがない場合はnullを返す（idから生成しない）
+        return null;
       }
+      
+      const logoPublicId = getOrganizerLogoPublicId(organizer);
+      console.log("[LOGO BUILD] input =", logoPublicId);
       
       let logoUrl = '';
       
-      // Cloudinaryを使用してロゴURLを生成（originalLogoUrlが有効な場合のみ）
-      if (originalLogoUrl && originalLogoUrl.trim() !== '' && originalLogoUrl !== organizer.name) {
+      // Cloudinaryを使用してロゴURLを生成（logoPublicIdがある場合のみ）
+      if (logoPublicId) {
+        // Cloudinary URL生成関数を使用（余計な加工はしない）
         if (typeof window.getOrganizerImageUrl === 'function') {
-          logoUrl = window.getOrganizerImageUrl(originalLogoUrl, organizerId, { w: 400 });
+          logoUrl = window.getOrganizerImageUrl(logoPublicId, organizer.id, { w: 400 });
         } else if (typeof window.cloudinaryUrl === 'function') {
-          logoUrl = window.cloudinaryUrl(originalLogoUrl, { w: 400 });
+          logoUrl = window.cloudinaryUrl(logoPublicId, { w: 400 });
         } else {
-          logoUrl = originalLogoUrl;
+          // フォールバック：直接Cloudinary URLを生成
+          logoUrl = `https://res.cloudinary.com/ddrxsy9jw/image/upload/f_auto,q_auto,w_400/${logoPublicId}`;
         }
       }
       
