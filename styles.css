@@ -1111,7 +1111,7 @@ body {
 
 /* Pop Section (季節・編集部おすすめポップ) */
 .pop-section {
-  margin-bottom: 0;
+  margin-bottom: 24px;
   padding-bottom: 0;
 }
 
@@ -1134,34 +1134,138 @@ body {
 .pop-carousel {
   display: flex;
   gap: 16px;
-  padding: 20px 0 24px 0;
+  padding: 24px 0;
   width: max-content;
 }
 
-.pop-card {
-  flex: 0 0 320px;
-  width: 320px;
-  height: 180px;
-  border-radius: 16px;
+/* トップバナー（大きな横長） */
+.pop-banner {
+  flex: 0 0 680px;
+  width: 680px;
+  height: 240px;
+  border-radius: 20px;
   overflow: hidden;
   position: relative;
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: var(--card);
+}
+
+.pop-banner:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+.pop-banner-image {
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pop-banner-image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  color: #fff;
+}
+
+.pop-banner-content {
+  padding: 32px 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: linear-gradient(135deg, #6BB6FF, #4A9EFF);
+  color: #fff;
+}
+
+.pop-banner-badge {
+  display: inline-block;
+  background: #FFD700;
+  color: #1e2a23;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+  width: fit-content;
+}
+
+.pop-banner-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  line-height: 1.3;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pop-banner-subtitle {
+  font-size: 1rem;
+  opacity: 0.95;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.pop-banner-button {
+  display: inline-block;
+  background: #2C5AA0;
+  color: #fff;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  width: fit-content;
+  transition: background 0.2s;
+}
+
+.pop-banner-button:hover {
+  background: #1e3f6e;
+}
+
+/* キャンペーンカード（正方形/横長） */
+.pop-card {
+  flex: 0 0 320px;
+  width: 320px;
+  height: 240px;
+  border-radius: 20px;
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
   background: var(--card);
   display: flex;
   flex-direction: column;
 }
 
 .pop-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
 }
 
 .pop-card-image {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  background-size: cover;
+  background-position: center;
+  position: relative;
   background: linear-gradient(135deg, var(--primary-light), var(--primary));
 }
 
@@ -1170,33 +1274,50 @@ body {
   bottom: 0;
   left: 0;
   right: 0;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.6), transparent);
-  padding: 20px 16px 16px 16px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.3), transparent);
+  padding: 24px 20px 20px 20px;
   color: #fff;
 }
 
-.pop-card-title {
-  font-size: 1.1rem;
+.pop-card-badge {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  color: #fff;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.75rem;
   font-weight: 600;
-  margin-bottom: 4px;
-  line-height: 1.4;
+  margin-bottom: 10px;
+  width: fit-content;
+}
+
+.pop-card-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+  line-height: 1.3;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .pop-card-subtitle {
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   opacity: 0.95;
   line-height: 1.4;
+  margin-bottom: 12px;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
 
 .pop-card-cta {
   display: inline-block;
   margin-top: 8px;
   font-size: 0.9rem;
-  font-weight: 500;
+  font-weight: 600;
   color: #fff;
   text-decoration: none;
-  opacity: 0.9;
+  opacity: 0.95;
   transition: opacity 0.2s;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
 
 .pop-card-cta:hover {
@@ -1208,18 +1329,37 @@ body {
     padding: 0 12px;
   }
 
+  .pop-banner {
+    flex: 0 0 90vw;
+    width: 90vw;
+    height: 200px;
+    grid-template-columns: 1fr;
+  }
+
+  .pop-banner-image {
+    display: none;
+  }
+
+  .pop-banner-content {
+    padding: 24px 20px;
+  }
+
+  .pop-banner-title {
+    font-size: 1.4rem;
+  }
+
   .pop-card {
     flex: 0 0 280px;
     width: 280px;
-    height: 160px;
+    height: 200px;
   }
 
   .pop-card-title {
-    font-size: 1rem;
+    font-size: 1.2rem;
   }
 
   .pop-card-subtitle {
-    font-size: 0.8rem;
+    font-size: 0.85rem;
   }
 }
 

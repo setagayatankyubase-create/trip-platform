@@ -186,23 +186,36 @@
       // ポップデータ（一時的にハードコード、後でJSONから読み込む）
       const popData = [
         {
-          type: 'season',
-          title: '冬の自然体験',
-          subtitle: '雪・野鳥・里山',
-          image: '', // 後で画像を設定
+          type: 'banner',
+          title: '冬のおでかけ',
+          subtitle: '冬のテーマパーク・イベント予約開始!',
+          badge: 'おすすめ',
+          cta: '今すぐチェック',
+          image: '', // 後で画像を設定（左側の画像）
+          bgColor: '#6BB6FF', // 右側の背景色
           link: '/?season=winter'
         },
         {
-          type: 'season',
+          type: 'card',
+          title: '冬の自然体験',
+          subtitle: '雪・野鳥・里山',
+          badge: '季節',
+          image: '',
+          link: '/?season=winter'
+        },
+        {
+          type: 'card',
           title: '春の自然観察',
           subtitle: '植物・生き物・里山',
+          badge: '季節',
           image: '',
           link: '/?season=spring'
         },
         {
-          type: 'editor',
+          type: 'card',
           title: '探究BASEおすすめ',
           subtitle: 'はじめてでも安心',
+          badge: '編集部',
           image: '',
           link: '/?recommended=1'
         }
@@ -214,33 +227,72 @@
       }
 
       container.innerHTML = popData.map(pop => {
-        // 画像URLを生成（imageがpublic_idの場合）
-        let imageUrl = '';
-        if (pop.image) {
-          if (typeof window.cloudinaryUrl === 'function') {
-            imageUrl = window.cloudinaryUrl(pop.image, { w: 640, h: 360 });
-          } else if (pop.image.startsWith('http')) {
-            imageUrl = pop.image;
-          } else {
-            imageUrl = `https://res.cloudinary.com/ddrxsy9jw/image/upload/f_auto,q_auto,w_640,h_360/${pop.image}`;
+        if (pop.type === 'banner') {
+          // トップバナー（2列構成）
+          let imageUrl = '';
+          if (pop.image) {
+            if (typeof window.cloudinaryUrl === 'function') {
+              imageUrl = window.cloudinaryUrl(pop.image, { w: 640, h: 480 });
+            } else if (pop.image.startsWith('http')) {
+              imageUrl = pop.image;
+            } else {
+              imageUrl = `https://res.cloudinary.com/ddrxsy9jw/image/upload/f_auto,q_auto,w_640,h_480/${pop.image}`;
+            }
           }
-        }
 
-        const imageStyle = imageUrl 
-          ? `background-image: url('${imageUrl.replace(/'/g, "\\'")}');`
-          : '';
+          const imageStyle = imageUrl 
+            ? `background-image: url('${imageUrl.replace(/'/g, "\\'")}');`
+            : '';
+          
+          const bgColor = pop.bgColor || '#6BB6FF';
 
-        return `
-          <a href="${pop.link || '#'}" class="pop-card">
-            <div class="pop-card-image" style="${imageStyle}">
-              <div class="pop-card-overlay">
-                <div class="pop-card-title">${pop.title || ''}</div>
-                ${pop.subtitle ? `<div class="pop-card-subtitle">${pop.subtitle}</div>` : ''}
-                <span class="pop-card-cta">詳しく見る →</span>
+          return `
+            <a href="${pop.link || '#'}" class="pop-banner">
+              <div class="pop-banner-image" style="${imageStyle}">
+                <div class="pop-banner-image-overlay">
+                  ${pop.badge ? `<span class="pop-banner-badge">${pop.badge}</span>` : ''}
+                  <div class="pop-banner-title">
+                    ${pop.title || ''}
+                  </div>
+                  <div style="font-size: 0.9rem; margin-top: 8px;">チケット・パス・体験</div>
+                </div>
               </div>
-            </div>
-          </a>
-        `;
+              <div class="pop-banner-content" style="background: ${bgColor};">
+                <div class="pop-banner-subtitle">${pop.subtitle || ''}</div>
+                ${pop.cta ? `<span class="pop-banner-button">${pop.cta}</span>` : ''}
+              </div>
+            </a>
+          `;
+        } else {
+          // キャンペーンカード
+          let imageUrl = '';
+          if (pop.image) {
+            if (typeof window.cloudinaryUrl === 'function') {
+              imageUrl = window.cloudinaryUrl(pop.image, { w: 640, h: 480 });
+            } else if (pop.image.startsWith('http')) {
+              imageUrl = pop.image;
+            } else {
+              imageUrl = `https://res.cloudinary.com/ddrxsy9jw/image/upload/f_auto,q_auto,w_640,h_480/${pop.image}`;
+            }
+          }
+
+          const imageStyle = imageUrl 
+            ? `background-image: url('${imageUrl.replace(/'/g, "\\'")}');`
+            : '';
+
+          return `
+            <a href="${pop.link || '#'}" class="pop-card">
+              <div class="pop-card-image" style="${imageStyle}">
+                <div class="pop-card-overlay">
+                  ${pop.badge ? `<span class="pop-card-badge">${pop.badge}</span>` : ''}
+                  <div class="pop-card-title">${pop.title || ''}</div>
+                  ${pop.subtitle ? `<div class="pop-card-subtitle">${pop.subtitle}</div>` : ''}
+                  <span class="pop-card-cta">詳しく見る →</span>
+                </div>
+              </div>
+            </a>
+          `;
+        }
       }).join('');
     }
 
