@@ -131,7 +131,7 @@
       </div>
       <div class="map-search-container">
         <div class="map-search-map" id="map-search-map">
-          <div class="map-simple-map" id="map-simple-map" style="display: none;"></div>
+          <div class="map-google-map" id="map-google-map" style="display: none;"></div>
           <div class="map-area" id="kanto-map">
             <div class="map-prefecture" data-prefecture="tokyo" data-area="東京都">
               <span class="prefecture-name">▶ 東京都</span>
@@ -1379,11 +1379,11 @@
               // 地図表示を切り替え
               kantoMap.style.display = 'none';
               if (citiesList) citiesList.style.display = 'none';
-              const simpleMapContainer = document.getElementById('map-simple-map');
-              if (simpleMapContainer) {
-                simpleMapContainer.style.display = 'block';
-                // シンプルな地図を表示（現在地と近くのイベント）
-                showSimpleNearbyMap(lat, lng, simpleMapContainer);
+              const googleMapContainer = document.getElementById('map-google-map');
+              if (googleMapContainer) {
+                googleMapContainer.style.display = 'block';
+                // Google Mapsを初期化
+                initNearbyMap(lat, lng, googleMapContainer);
               }
               
               nearbyButton.disabled = false;
@@ -1404,15 +1404,67 @@
       }
     }
     
-    // シンプルな地図で近くのイベントを表示
-    function showSimpleNearbyMap(userLat, userLng, container) {
+    // 近くのイベントを表示するGoogle Mapsの初期化
+    function initNearbyMap(userLat, userLng, container) {
+      // Google Maps APIが読み込まれているか確認
+      if (typeof google === 'undefined' || typeof google.maps === 'undefined') {
+        // Google Maps APIを読み込む
+        if (!document.querySelector('script[src*="maps.googleapis.com"]')) {
+          const script = document.createElement('script');
+          script.src = `https://maps.googleapis.com/maps/api/js?key=${window.GOOGLE_MAPS_API_KEY}&callback=initNearbyMapCallback&language=ja&region=JP&loading=async`;
+          script.async = true;
+          script.defer = true;
+          window.initNearbyMapCallback = () => {
+            createNearbyMap(userLat, userLng, container);
+          };
+          document.head.appendChild(script);
+        } else {
+          // 既に読み込まれている場合は直接作成
+          setTimeout(() => {
+            createNearbyMap(userLat, userLng, container);
+          }, 500);
+        }
+      } else {
+        createNearbyMap(userLat, userLng, container);
+      }
+    }
+    
+    // Google Mapsを作成
+    function createNearbyMap(userLat, userLng, container) {
+      // コンテナをクリア
+      container.innerHTML = '';
+      
+      // 地図を作成
+      const map = new google.maps.Map(container, {
+        center: { lat: userLat, lng: userLng },
+        zoom: 13,
+        mapTypeControl: true,
+        streetViewControl: false,
+        fullscreenControl: true
+      });
+      
+      // 現在地マーカーを追加
+      new google.maps.Marker({
+        position: { lat: userLat, lng: userLng },
+        map: map,
+        title: '現在地',
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 10,
+          fillColor: '#4285F4',
+          fillOpacity: 1,
+          strokeColor: '#fff',
+          strokeWeight: 3
+        }
+      });
+      
       // イベントデータを取得
       let source = Array.isArray(window.eventIndex) && window.eventIndex.length > 0
         ? window.eventIndex
         : (Array.isArray(window.eventData?.events) ? window.eventData.events : []);
       
       if (source.length === 0) {
-        container.innerHTML = '<div class="map-simple-message">イベントデータが見つかりませんでした</div>';
+        console.log('[initNearbyMap] No event data available');
         return;
       }
       
@@ -1431,41 +1483,85 @@
         return { event, distance };
       }).sort((a, b) => a.distance - b.distance);
       
-      // 近くのイベント（20km以内、最大10件）
+      // 近くのイベント（20km以内、最大20件）をマップに表示
       const nearbyEvents = eventsWithDistance
         .filter(item => item.distance <= 20)
-        .slice(0, 10);
+        .slice(0, 20);
       
-      // シンプルな地図表示
-      let html = '<div class="map-simple-content">';
-      html += '<div class="map-simple-header">';
-      html += '<h3>現在地周辺のイベント</h3>';
-      html += `<p class="map-simple-location">📍 現在地から ${nearbyEvents.length}件のイベントが見つかりました</p>`;
-      html += '</div>';
+      console.log('[initNearbyMap] Found', nearbyEvents.length, 'nearby events');
       
-      if (nearbyEvents.length > 0) {
-        html += '<div class="map-simple-events">';
-        nearbyEvents.forEach(({ event, distance }) => {
-          const price = event.price ? event.price : 0;
-          const priceLabel = price > 0 ? `¥ ${price.toLocaleString()}` : '無料';
-          html += `
-            <div class="map-simple-event-item" onclick="window.location.href='experience.html?id=${event.id}'">
-              <div class="map-simple-event-info">
-                <h4>${event.title || 'イベント'}</h4>
-                <p class="map-simple-event-distance">📍 ${distance.toFixed(1)}km</p>
-                <p class="map-simple-event-price">${priceLabel}</p>
-              </div>
-            </div>
+      // イベントマーカーを追加
+      nearbyEvents.forEach(({ event, distance }) => {
+        const lat = parseFloat(event.location.lat);
+        const lng = parseFloat(event.location.lng);
+        const price = event.price ? event.price : 0;
+        const priceLabel = price > 0 ? `¥ ${price.toLocaleString()}` : '';
+        
+        // カスタムマーカーアイコン（価格表示）
+        let markerIcon = null;
+        if (priceLabel) {
+          const textLength = priceLabel.length;
+          const baseWidth = 40;
+          const charWidth = 8;
+          const padding = 10;
+          const rectWidth = Math.max(baseWidth, textLength * charWidth + padding);
+          const rectHeight = 24;
+          const borderRadius = 4;
+          
+          const svg = `
+            <svg width="${rectWidth}" height="${rectHeight + 8}" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur in="SourceAlpha" stdDeviation="1"/>
+                  <feOffset dx="0" dy="1" result="offsetblur"/>
+                  <feComponentTransfer>
+                    <feFuncA type="linear" slope="0.2"/>
+                  </feComponentTransfer>
+                  <feMerge>
+                    <feMergeNode/>
+                    <feMergeNode in="SourceGraphic"/>
+                  </feMerge>
+                </filter>
+              </defs>
+              <rect x="0" y="0" rx="${borderRadius}" ry="${borderRadius}" width="${rectWidth}" height="${rectHeight}" fill="#ffffff" stroke="#cccccc" stroke-width="1" filter="url(#shadow)"/>
+              <text x="${rectWidth / 2}" y="${rectHeight / 2 + 4}" text-anchor="middle" font-size="12" font-weight="600" fill="#333333" font-family="Arial, sans-serif">${priceLabel}</text>
+            </svg>
           `;
+          
+          markerIcon = {
+            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
+            scaledSize: new google.maps.Size(rectWidth, rectHeight + 8),
+            anchor: new google.maps.Point(rectWidth / 2, rectHeight + 8),
+            origin: new google.maps.Point(0, 0)
+          };
+        }
+        
+        const marker = new google.maps.Marker({
+          position: { lat, lng },
+          map: map,
+          title: `${event.title || ''} - ${distance.toFixed(1)}km`,
+          icon: markerIcon,
+          animation: google.maps.Animation.DROP
         });
-        html += '</div>';
-      } else {
-        html += '<div class="map-simple-message">近くにイベントが見つかりませんでした</div>';
+        
+        // マーカークリック時にイベント詳細ページに遷移
+        marker.addListener('click', () => {
+          window.location.href = `experience.html?id=${event.id}`;
+        });
+      });
+      
+      // すべてのマーカーが表示されるように地図を調整
+      if (nearbyEvents.length > 0) {
+        const bounds = new google.maps.LatLngBounds();
+        bounds.extend({ lat: userLat, lng: userLng });
+        nearbyEvents.forEach(({ event }) => {
+          bounds.extend({
+            lat: parseFloat(event.location.lat),
+            lng: parseFloat(event.location.lng)
+          });
+        });
+        map.fitBounds(bounds);
       }
-      
-      html += '</div>';
-      container.innerHTML = html;
-      
     }
 
     // 位置情報を取得して近場のイベントを表示（非推奨：地図から探すに置き換え）

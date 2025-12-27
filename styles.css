@@ -2422,82 +2422,12 @@ body {
   border: 2px solid var(--border);
 }
 
-.map-simple-map {
+.map-google-map {
   width: 100%;
+  height: 100%;
   min-height: 500px;
   border-radius: 8px;
-  background: #f9f9f9;
-  padding: 24px;
-}
-
-.map-simple-content {
-  max-width: 800px;
-  margin: 0 auto;
-}
-
-.map-simple-header {
-  margin-bottom: 24px;
-  text-align: center;
-}
-
-.map-simple-header h3 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin-bottom: 8px;
-  color: var(--text);
-}
-
-.map-simple-location {
-  font-size: 0.95rem;
-  color: var(--text-secondary);
-}
-
-.map-simple-events {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 16px;
-}
-
-.map-simple-event-item {
-  background: #fff;
-  border: 2px solid var(--border);
-  border-radius: 8px;
-  padding: 16px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.map-simple-event-item:hover {
-  border-color: var(--primary);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.map-simple-event-info h4 {
-  font-size: 1rem;
-  font-weight: 600;
-  margin-bottom: 8px;
-  color: var(--text);
-}
-
-.map-simple-event-distance {
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  margin-bottom: 4px;
-}
-
-.map-simple-event-price {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--primary);
-  margin-top: 8px;
-}
-
-.map-simple-message {
-  text-align: center;
-  padding: 40px;
-  color: var(--text-secondary);
-  font-size: 1rem;
+  overflow: hidden;
 }
 
 .map-area {
