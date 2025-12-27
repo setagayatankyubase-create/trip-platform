@@ -900,27 +900,6 @@
           }
         }, 100);
       }
-
-            function hideMenu() {
-              if (hideTimer) {
-                clearTimeout(hideTimer);
-              }
-              hideTimer = setTimeout(() => {
-                menu.style.opacity = '0';
-                menu.style.visibility = 'hidden';
-                menu.style.pointerEvents = 'none';
-                menu.style.transform = 'translateY(-10px)';
-                hideTimer = null;
-              }, 600);
-            }
-
-            headerCategoryButton.addEventListener('mouseenter', showMenu);
-            headerCategoryButton.addEventListener('mouseleave', hideMenu);
-            menu.addEventListener('mouseenter', showMenu);
-            menu.addEventListener('mouseleave', hideMenu);
-          }
-        }, 100);
-      }
     }
 
     // ページ読み込み後に初期化
