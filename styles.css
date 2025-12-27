@@ -931,7 +931,8 @@ body {
 
 .event-list-column {
   overflow-y: auto;
-  max-height: calc(100vh - 250px);
+  max-height: none;
+  height: calc(100vh - 250px);
   padding-right: 10px;
   /* スクロールをスムーズに */
   scroll-behavior: smooth;
