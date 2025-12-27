@@ -95,8 +95,16 @@
   <main>
     <!-- ポップセクション（季節・編集部おすすめ） -->
     <section class="section pop-section">
-      <div class="pop-carousel-wrapper">
-        <div class="pop-carousel" id="pop-carousel"></div>
+      <!-- 1段目：大きな横長バナー -->
+      <div class="pop-banner-wrapper">
+        <div id="pop-banner-container"></div>
+      </div>
+      <!-- 2段目：キャンペーンカード -->
+      <div class="pop-campaigns-wrapper">
+        <h2 class="pop-campaigns-title">実施中のお得なキャンペーン</h2>
+        <div class="pop-carousel-wrapper">
+          <div class="pop-carousel" id="pop-carousel"></div>
+        </div>
       </div>
     </section>
 
@@ -180,21 +188,23 @@
   <script>
     // ポップセクションのレンダリング
     function renderPopSection() {
-      const container = document.getElementById('pop-carousel');
-      if (!container) return;
+      const bannerContainer = document.getElementById('pop-banner-container');
+      const carouselContainer = document.getElementById('pop-carousel');
+      
+      // バナーデータ
+      const bannerData = {
+        type: 'banner',
+        title: '冬のおでかけ',
+        subtitle: '冬のテーマパーク・イベント予約開始!',
+        badge: 'おすすめ',
+        cta: '今すぐチェック',
+        image: 'pop1_j2wr9k', // 左側の画像
+        bgColor: '#6BB6FF', // 右側の背景色
+        link: '/?season=winter'
+      };
 
-      // ポップデータ（一時的にハードコード、後でJSONから読み込む）
-      const popData = [
-        {
-          type: 'banner',
-          title: '冬のおでかけ',
-          subtitle: '冬のテーマパーク・イベント予約開始!',
-          badge: 'おすすめ',
-          cta: '今すぐチェック',
-          image: 'pop1_j2wr9k', // 左側の画像
-          bgColor: '#6BB6FF', // 右側の背景色
-          link: '/?season=winter'
-        },
+      // キャンペーンカードデータ
+      const campaignData = [
         {
           type: 'card',
           title: '冬の自然体験',
@@ -213,50 +223,47 @@
         }
       ];
 
-      if (!popData || popData.length === 0) {
-        container.parentElement.parentElement.style.display = 'none';
-        return;
+      // 1段目：バナーのレンダリング
+      if (bannerContainer && bannerData) {
+        let imageUrl = '';
+        if (bannerData.image) {
+          if (typeof window.cloudinaryUrl === 'function') {
+            imageUrl = window.cloudinaryUrl(bannerData.image, { w: 1000, h: 560 });
+          } else if (bannerData.image.startsWith('http')) {
+            imageUrl = bannerData.image;
+          } else {
+            imageUrl = `https://res.cloudinary.com/ddrxsy9jw/image/upload/f_auto,q_auto,w_1000,h_560/${bannerData.image}`;
+          }
+        }
+
+        const imageStyle = imageUrl 
+          ? `background-image: url('${imageUrl.replace(/'/g, "\\'")}');`
+          : '';
+        
+        const bgColor = bannerData.bgColor || '#6BB6FF';
+
+        bannerContainer.innerHTML = `
+          <a href="${bannerData.link || '#'}" class="pop-banner">
+            <div class="pop-banner-image" style="${imageStyle}">
+              <div class="pop-banner-image-overlay">
+                ${bannerData.badge ? `<span class="pop-banner-badge">${bannerData.badge}</span>` : ''}
+                <div class="pop-banner-title">
+                  ${bannerData.title || ''}
+                </div>
+                <div style="font-size: 0.9rem; margin-top: 8px;">チケット・パス・体験</div>
+              </div>
+            </div>
+            <div class="pop-banner-content" style="background: ${bgColor};">
+              <div class="pop-banner-subtitle">${bannerData.subtitle || ''}</div>
+              ${bannerData.cta ? `<span class="pop-banner-button">${bannerData.cta}</span>` : ''}
+            </div>
+          </a>
+        `;
       }
 
-      container.innerHTML = popData.map(pop => {
-        if (pop.type === 'banner') {
-          // トップバナー（2列構成）
-          let imageUrl = '';
-          if (pop.image) {
-            if (typeof window.cloudinaryUrl === 'function') {
-              imageUrl = window.cloudinaryUrl(pop.image, { w: 640, h: 480 });
-            } else if (pop.image.startsWith('http')) {
-              imageUrl = pop.image;
-            } else {
-              imageUrl = `https://res.cloudinary.com/ddrxsy9jw/image/upload/f_auto,q_auto,w_640,h_480/${pop.image}`;
-            }
-          }
-
-          const imageStyle = imageUrl 
-            ? `background-image: url('${imageUrl.replace(/'/g, "\\'")}');`
-            : '';
-          
-          const bgColor = pop.bgColor || '#6BB6FF';
-
-          return `
-            <a href="${pop.link || '#'}" class="pop-banner">
-              <div class="pop-banner-image" style="${imageStyle}">
-                <div class="pop-banner-image-overlay">
-                  ${pop.badge ? `<span class="pop-banner-badge">${pop.badge}</span>` : ''}
-                  <div class="pop-banner-title">
-                    ${pop.title || ''}
-                  </div>
-                  <div style="font-size: 0.9rem; margin-top: 8px;">チケット・パス・体験</div>
-                </div>
-              </div>
-              <div class="pop-banner-content" style="background: ${bgColor};">
-                <div class="pop-banner-subtitle">${pop.subtitle || ''}</div>
-                ${pop.cta ? `<span class="pop-banner-button">${pop.cta}</span>` : ''}
-              </div>
-            </a>
-          `;
-        } else {
-          // キャンペーンカード
+      // 2段目：キャンペーンカードのレンダリング
+      if (carouselContainer && campaignData && campaignData.length > 0) {
+        carouselContainer.innerHTML = campaignData.map(pop => {
           let imageUrl = '';
           if (pop.image) {
             if (typeof window.cloudinaryUrl === 'function') {
@@ -284,8 +291,10 @@
               </div>
             </a>
           `;
-        }
-      }).join('');
+        }).join('');
+      } else if (carouselContainer && (!campaignData || campaignData.length === 0)) {
+        carouselContainer.parentElement.parentElement.style.display = 'none';
+      }
     }
 
     // カテゴリIDからlucide-staticアイコン名へのマッピング

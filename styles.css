@@ -1115,16 +1115,36 @@ body {
   padding-bottom: 0;
 }
 
-.pop-carousel-wrapper {
+/* 1段目：大きな横長バナー */
+.pop-banner-wrapper {
+  max-width: 1400px;
+  margin: 0 auto 32px auto;
+  padding: 0 18px;
+}
+
+/* 2段目：キャンペーンカード */
+.pop-campaigns-wrapper {
   max-width: 1400px;
   margin: 0 auto;
   padding: 0 18px;
+}
+
+.pop-campaigns-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+  text-align: left;
+  color: var(--text);
+}
+
+.pop-carousel-wrapper {
   overflow-x: auto;
   overflow-y: hidden;
   scrollbar-width: none;
   -ms-overflow-style: none;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
+  padding-bottom: 8px;
 }
 
 .pop-carousel-wrapper::-webkit-scrollbar {
@@ -1134,15 +1154,15 @@ body {
 .pop-carousel {
   display: flex;
   gap: 16px;
-  padding: 24px 0;
+  padding: 0;
   width: max-content;
 }
 
 /* トップバナー（大きな横長） */
 .pop-banner {
-  flex: 0 0 680px;
-  width: 680px;
-  height: 240px;
+  width: 100%;
+  max-width: 100%;
+  height: 280px;
   border-radius: 20px;
   overflow: hidden;
   position: relative;
