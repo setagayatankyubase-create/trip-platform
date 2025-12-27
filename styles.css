@@ -935,6 +935,12 @@ body {
   padding-right: 10px;
 }
 
+/* イベント一覧ページのグリッドを2カラムに固定 */
+.event-list-column .grid {
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
 .map-column {
   position: sticky;
   top: 100px;
@@ -1851,6 +1857,11 @@ body {
   .event-list-column {
     max-height: none;
     padding-right: 0;
+  }
+
+  /* モバイルでは1カラム */
+  .event-list-column .grid {
+    grid-template-columns: 1fr;
   }
 
   .map-column {

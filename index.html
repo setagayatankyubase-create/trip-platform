@@ -348,11 +348,24 @@
     // カテゴリ一覧
     function renderPopularCategories() {
       const container = document.getElementById('popular-categories-list');
-      if (!container || !window.eventMeta || !window.eventMeta.categories) return;
+      if (!container || !window.eventMeta || !window.eventMeta.categories) {
+        console.log('[renderPopularCategories] Container or categories not found');
+        return;
+      }
 
       const categories = window.eventMeta.categories; // すべてのカテゴリを表示
+      console.log('[renderPopularCategories] Rendering', categories.length, 'categories');
+      
+      // イベントデータの確認
+      const eventIndexCount = Array.isArray(window.eventIndex) ? window.eventIndex.length : 0;
+      const eventDataCount = Array.isArray(window.eventData?.events) ? window.eventData.events.length : 0;
+      console.log('[renderPopularCategories] eventIndex:', eventIndexCount, 'events, eventData:', eventDataCount, 'events');
+      
       container.innerHTML = categories.map(cat => {
         const eventCount = countEventsByCategory(cat.id);
+        if (eventCount > 0) {
+          console.log('[renderPopularCategories] Category', cat.id, cat.name, 'has', eventCount, 'events');
+        }
         return `
           <a href="list.html?category=${cat.id}" class="popular-item" data-item-id="${cat.id}">
             <span class="popular-item-name">${cat.name}</span>
@@ -444,12 +457,25 @@
         ? window.eventIndex
         : (Array.isArray(window.eventData?.events) ? window.eventData.events : []);
       
-      if (source.length === 0) return 0;
+      if (source.length === 0) {
+        console.log('[countEventsByCategory] No event data available for category:', categoryId);
+        return 0;
+      }
       
-      return source.filter(e => {
+      const matches = source.filter(e => {
         const catId = e.categoryId || e.category_id || e.category;
-        return String(catId) === String(categoryId);
-      }).length;
+        const matches = String(catId) === String(categoryId);
+        if (matches && !e.categoryId && !e.category_id && !e.category) {
+          console.warn('[countEventsByCategory] Event', e.id, 'has no category field');
+        }
+        return matches;
+      });
+      
+      if (matches.length > 0) {
+        console.log('[countEventsByCategory] Category', categoryId, 'matched', matches.length, 'events:', matches.map(e => e.id || e.title).join(', '));
+      }
+      
+      return matches.length;
     }
 
     // キーワード別イベント数をカウント
@@ -1248,8 +1274,9 @@
         renderCategories();
         initCategoryMenu(); // カテゴリメニューを初期化（ホバー表示用）
         renderWeekCalendar();
-        renderPopularSearch(); // 人気タグ・地域検索セクションを描画
         await renderEventBlocks();
+        // データ読み込み後にカテゴリカウントを更新
+        renderPopularSearch(); // 人気タグ・地域検索セクションを描画
         await renderLocationBasedEvents(); // 位置情報ベースのイベントを表示
 
       } catch (e) {
