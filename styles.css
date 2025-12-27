@@ -950,7 +950,7 @@ body {
   position: sticky;
   top: 50%;
   transform: translateY(-50%);
-  align-self: start;
+  align-self: center;
   height: calc(100vh - 40px);
   min-height: 400px;
   max-height: 800px;
