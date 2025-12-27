@@ -950,11 +950,11 @@ body {
 
 .map-column {
   position: sticky;
-  top: 100px;
+  top: 150px;
   align-self: start;
-  height: calc(100vh - 120px);
+  height: calc(100vh - 170px);
   min-height: 400px;
-  max-height: calc(100vh - 120px);
+  max-height: calc(100vh - 170px);
   /* スクロールしても固定 */
   will-change: transform;
   /* 常に固定 */
