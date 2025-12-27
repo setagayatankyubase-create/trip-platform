@@ -921,15 +921,48 @@ body {
 }
 
 /* Map */
+/* リスト+マップコンテナ（2カラムレイアウト） */
+.list-map-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.event-list-column {
+  overflow-y: auto;
+  max-height: calc(100vh - 250px);
+  padding-right: 10px;
+}
+
+.map-column {
+  position: sticky;
+  top: 100px;
+  height: calc(100vh - 120px);
+  min-height: 600px;
+}
+
 .map-container {
   position: relative;
   width: 100%;
-  height: 400px;
+  height: 100%;
   border-radius: 14px;
   overflow: hidden;
-  margin: 20px 0;
   background: #e8f5e9;
   border: 1px solid var(--border);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* イベントカードの選択状態 */
+.event-card.selected,
+.event-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  border-color: var(--primary);
+}
+
+.event-card.selected {
+  border: 2px solid var(--primary);
 }
 
 .map-container .map-placeholder {
@@ -1138,6 +1171,9 @@ body {
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
   padding-bottom: 8px;
+  /* スマホでのスワイプを改善 */
+  touch-action: pan-x;
+  overscroll-behavior-x: contain;
 }
 
 .pop-carousel-wrapper::-webkit-scrollbar {
@@ -1146,9 +1182,23 @@ body {
 
 .pop-carousel {
   display: flex;
-  gap: 16px;
+  gap: 12px;
   padding: 0;
   width: max-content;
+  /* スマホでのスクロールをスムーズに */
+  will-change: transform;
+}
+
+@media (min-width: 769px) {
+  .pop-carousel {
+    gap: 16px;
+  }
+}
+
+@media (min-width: 769px) {
+  .pop-carousel {
+    gap: 16px;
+  }
 }
 
 /* トップバナー（大きな横長） */

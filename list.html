@@ -73,21 +73,23 @@
     <div class="filters" id="desktop-filters">
     </div>
 
-    <!-- マップ -->
-    <div id="map-container" class="map-container hidden">
-      <button class="map-toggle" onclick="toggleMap()">マップを閉じる</button>
-      <div id="map"></div>
-    </div>
-
-    <!-- 結果表示 -->
-    <div style="display: grid; grid-template-columns: 1fr; gap: 20px;">
-      <div>
+    <!-- 結果表示（2カラム：リスト + マップ） -->
+    <div class="list-map-container">
+      <!-- 左側：イベントリスト -->
+      <div class="event-list-column">
         <div style="margin-bottom: 16px; color: #6c7a72; font-size: 0.9rem;">
           <span id="result-count">0</span>件のイベントが見つかりました
           <span id="result-message"></span>
         </div>
         <div class="grid" id="event-list"></div>
         <div id="event-zero-suggestions"></div>
+      </div>
+
+      <!-- 右側：マップ -->
+      <div class="map-column">
+        <div id="map-container" class="map-container">
+          <div id="map"></div>
+        </div>
       </div>
     </div>
   </main>
@@ -146,25 +148,14 @@
   <script src="app.js"></script>
   <script>
     let currentEvents = [];
-    let mapVisible = false;
+    let selectedEventId = null;
 
-    // マップ表示切替
-    function toggleMap() {
-      const container = document.getElementById('map-container');
-      const button = document.getElementById('map-toggle');
-      mapVisible = !mapVisible;
-
-      if (mapVisible) {
-        container.classList.remove('hidden');
-        button.textContent = 'マップを閉じる';
-        if (!MapManager.mapInstance) {
-          MapManager.init('map');
-          renderMapMarkers();
-        }
-      } else {
-        container.classList.add('hidden');
-        button.textContent = 'マップ表示';
+    // マップ初期化（常時表示）
+    function initMap() {
+      if (!MapManager.mapInstance) {
+        MapManager.init('map');
       }
+      renderMapMarkers();
     }
 
     // マップマーカーの表示
@@ -172,7 +163,27 @@
       MapManager.clearMarkers();
       currentEvents.forEach(event => {
         if (event.location && event.location.lat) {
-          MapManager.addMarker(event, () => {});
+          MapManager.addMarker(event, (eventId) => {
+            // マーカークリック時にリストの該当イベントをハイライト
+            selectEvent(eventId);
+          });
+        }
+      });
+    }
+
+    // イベント選択（マーカー or リストクリック時）
+    function selectEvent(eventId) {
+      selectedEventId = eventId;
+      
+      // リストの該当イベントカードをハイライト
+      document.querySelectorAll('.event-card').forEach(card => {
+        const cardEventId = card.dataset.eventId;
+        if (cardEventId === eventId) {
+          card.classList.add('selected');
+          // スクロールして表示
+          card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+          card.classList.remove('selected');
         }
       });
     }
@@ -656,9 +667,7 @@
       }
 
       // マップ更新
-      if (mapVisible) {
-        renderMapMarkers();
-      }
+      renderMapMarkers();
 
       // 検索フォームに値を設定
       const searchQueryEl = document.getElementById('search-query');
@@ -799,6 +808,7 @@
         populateOptions();
         initCategoryMenu(); // カテゴリメニューを初期化
         checkMobile();
+        initMap(); // マップを初期化
         loadEvents();
         window.addEventListener('resize', checkMobile);
 
