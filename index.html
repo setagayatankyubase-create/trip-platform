@@ -8,7 +8,7 @@
   <link rel="icon" type="image/png" href="https://res.cloudinary.com/ddrxsy9jw/image/upload/f_auto,q_auto,w_32/logo_tfqqd0">
   <link rel="apple-touch-icon" href="https://res.cloudinary.com/ddrxsy9jw/image/upload/f_auto,q_auto,w_180/logo_tfqqd0">
   <link rel="stylesheet" href="styles.css">
-  <!-- d3.js and topojson-client for SVG map -->
+  <!-- d3.js and topojson-client for SVG map (script方式で統一) -->
   <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
   <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
   <script type="application/ld+json">
@@ -1357,8 +1357,15 @@
         });
       }
       
-      // 関東地方のSVG地図を初期化
-      createKantoSVGMap();
+      // 関東地方のSVG地図を初期化（DOMContentLoadedで実行）
+      if (document.readyState === 'loading') {
+        window.addEventListener('DOMContentLoaded', () => {
+          createKantoSVGMap();
+        });
+      } else {
+        // DOMが既に読み込まれている場合は即座に実行
+        createKantoSVGMap();
+      }
       
       // 「近くから探す」ボタンの処理
       const nearbyButton = document.getElementById('map-nearby-button');
@@ -1456,11 +1463,6 @@
       
       const width = 900, height = 700;
       
-      // TopoJSONデータのパス（まず外部URLを試す、失敗したらローカルにフォールバック）
-      // 注意：外部URLがCORSでブロックされる場合は、/assets/maps/japan.topojson に配置してください
-      const TOPO_PATH = "https://raw.githubusercontent.com/dataofjapan/land/master/japan.topojson";
-      // フォールバック: const TOPO_PATH = "/assets/maps/japan.topojson";
-      
       // 関東地方の都道府県
       const KANTO = new Set([
         "東京都", "神奈川県", "千葉県", "埼玉県", "茨城県", "栃木県", "群馬県"
@@ -1478,9 +1480,12 @@
       };
       
       try {
-        console.log('[createKantoSVGMap] Fetching TopoJSON from:', TOPO_PATH);
-        // TopoJSONデータを取得
-        const topo = await d3.json(TOPO_PATH);
+        // TopoJSONデータを取得（自動フォールバック）
+        console.log('[createKantoSVGMap] Fetching TopoJSON...');
+        const topo = await loadTopoJson(
+          "https://raw.githubusercontent.com/dataofjapan/land/master/japan.topojson",
+          "/assets/maps/japan.topojson"
+        );
         console.log('[createKantoSVGMap] TopoJSON loaded:', topo);
         
         if (!topo || !topo.objects) {
@@ -1491,10 +1496,10 @@
         const objKey = Object.keys(topo.objects)[0];
         console.log('[createKantoSVGMap] Using object key:', objKey);
         
-        // topojson-clientのfeature関数を使用
+        // topojson-clientのfeature関数を使用（script方式で読み込まれた場合）
         const topojsonClient = window.topojson;
         if (!topojsonClient || !topojsonClient.feature) {
-          throw new Error('topojson.feature is not available');
+          throw new Error('topojson.feature is not available. Make sure topojson-client is loaded.');
         }
         
         const geo = topojsonClient.feature(topo, topo.objects[objKey]);
