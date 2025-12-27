@@ -115,7 +115,7 @@
         <h2 id="location-events-title">近くのおすすめイベント</h2>
       </div>
       <div class="card-carousel-wrapper">
-        <div class="grid" id="location-events-list"></div>
+        <div class="card-carousel" id="location-events-list"></div>
       </div>
     </section>
 
@@ -1163,9 +1163,9 @@
             }
           }
 
-            // グリッド表示で表示（CardRendererが読み込まれるまで待機）
-            if (typeof CardRenderer !== 'undefined' && CardRenderer.renderList) {
-              CardRenderer.renderList(nearbyEvents, 'location-events-list');
+            // カルーセル表示で表示（CardRendererが読み込まれるまで待機）
+            if (typeof CardRenderer !== 'undefined' && CardRenderer.renderCarousel) {
+              CardRenderer.renderCarousel(nearbyEvents, 'location-events-list');
               console.log('[renderLocationBasedEvents] Events rendered successfully');
             } else {
               console.warn('[renderLocationBasedEvents] CardRenderer not loaded yet, waiting...');
@@ -1174,8 +1174,8 @@
               const maxRetries = 10;
               const retryInterval = setInterval(() => {
                 retryCount++;
-                if (typeof CardRenderer !== 'undefined' && CardRenderer.renderList) {
-                  CardRenderer.renderList(nearbyEvents, 'location-events-list');
+                if (typeof CardRenderer !== 'undefined' && CardRenderer.renderCarousel) {
+                  CardRenderer.renderCarousel(nearbyEvents, 'location-events-list');
                   console.log('[renderLocationBasedEvents] Events rendered successfully (retry ' + retryCount + ')');
                   clearInterval(retryInterval);
                 } else if (retryCount >= maxRetries) {
@@ -1203,9 +1203,9 @@
           await processNearbyEvents(defaultLat, defaultLng, true);
         },
         {
-          enableHighAccuracy: true, // より正確な位置情報を取得
-          timeout: 15000, // タイムアウトを15秒に延長
-          maximumAge: 300000 // 5分間キャッシュ
+          enableHighAccuracy: true, // GPSを使用してより正確な位置情報を取得
+          timeout: 20000, // タイムアウトを20秒に延長（GPS取得に時間がかかる場合があるため）
+          maximumAge: 0 // キャッシュを使わず、常に最新の位置情報を取得
         }
       );
     }

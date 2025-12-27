@@ -638,9 +638,6 @@ body {
   margin-right: auto;
   padding: 0;
   width: 100%;
-  height: auto;
-  max-height: none;
-  overflow: visible;
 }
 
 .card-carousel {
@@ -663,17 +660,6 @@ body {
   scroll-snap-align: start;
 }
 
-/* 近くのおすすめイベント用のグリッド表示 */
-#location-events-list.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 20px;
-  margin-top: 20px;
-  height: auto;
-  max-height: none;
-  overflow: visible;
-  padding: 0;
-}
 
 .card-carousel::-webkit-scrollbar {
   display: none;
