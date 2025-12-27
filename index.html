@@ -120,13 +120,68 @@
       </div>
     </section>
 
-    <!-- 位置情報ベースのイベント（今週のイベントの下） -->
-    <section class="section event-block" id="location-based-events" style="display: none;">
+    <!-- 地図から探す -->
+    <section class="section event-block" id="map-search-section">
       <div class="event-block-header">
-        <h2 id="location-events-title">近くのおすすめイベント</h2>
+        <h2>地図から探す</h2>
       </div>
-      <div class="card-carousel-wrapper">
-        <div class="card-carousel" id="location-events-list"></div>
+      <div class="map-search-container">
+        <div class="map-search-sidebar" id="map-search-sidebar">
+          <div class="map-region-list">
+            <div class="map-region-item active" data-region="kanto">
+              <span class="region-icon">▶</span>
+              <span class="region-name">首都圏</span>
+            </div>
+            <div class="map-region-item" data-region="tohoku">
+              <span class="region-icon">▶</span>
+              <span class="region-name">東北</span>
+            </div>
+            <div class="map-region-item" data-region="koshinetsu">
+              <span class="region-icon">▶</span>
+              <span class="region-name">甲信越</span>
+            </div>
+            <div class="map-region-item" data-region="hokuriku">
+              <span class="region-icon">▶</span>
+              <span class="region-name">北陸</span>
+            </div>
+            <div class="map-region-item" data-region="tokai">
+              <span class="region-icon">▶</span>
+              <span class="region-name">東海</span>
+            </div>
+            <div class="map-region-item" data-region="kinki">
+              <span class="region-icon">▶</span>
+              <span class="region-name">近畿</span>
+            </div>
+            <div class="map-region-item" data-region="chugoku">
+              <span class="region-icon">▶</span>
+              <span class="region-name">山陰・山陽</span>
+            </div>
+            <div class="map-region-item" data-region="shikoku">
+              <span class="region-icon">▶</span>
+              <span class="region-name">四国</span>
+            </div>
+            <div class="map-region-item" data-region="kyushu">
+              <span class="region-icon">▶</span>
+              <span class="region-name">九州</span>
+            </div>
+            <div class="map-region-item" data-region="okinawa">
+              <span class="region-icon">▶</span>
+              <span class="region-name">沖縄</span>
+            </div>
+          </div>
+        </div>
+        <div class="map-search-map" id="map-search-map">
+          <div class="map-area" id="kanto-map">
+            <div class="map-prefecture" data-prefecture="tokyo" data-area="東京">▶ 東京</div>
+            <div class="map-prefecture" data-prefecture="kanagawa" data-area="神奈川">▶ 神奈川</div>
+            <div class="map-prefecture" data-prefecture="saitama" data-area="埼玉">▶ 埼玉</div>
+            <div class="map-prefecture" data-prefecture="chiba" data-area="千葉">▶ 千葉</div>
+            <div class="map-prefecture" data-prefecture="ibaraki" data-area="茨城">▶ 茨城</div>
+            <div class="map-prefecture" data-prefecture="tochigi" data-area="栃木">栃木</div>
+            <div class="map-prefecture" data-prefecture="gunma" data-area="群馬">群馬</div>
+            <div class="map-prefecture" data-prefecture="yamanashi" data-area="山梨">山梨</div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -1142,7 +1197,61 @@
       return R * c; // 距離（km）
     }
 
-    // 位置情報を取得して近場のイベントを表示
+    // 地図から探す機能の初期化
+    function initMapSearch() {
+      const regionItems = document.querySelectorAll('.map-region-item');
+      const mapArea = document.getElementById('map-search-map');
+      
+      // 地域選択時の処理
+      regionItems.forEach(item => {
+        item.addEventListener('click', () => {
+          // アクティブ状態を更新
+          regionItems.forEach(r => r.classList.remove('active'));
+          item.classList.add('active');
+          
+          const region = item.dataset.region;
+          // 地域に応じた地図を表示（現在は関東のみ実装）
+          if (region === 'kanto') {
+            mapArea.innerHTML = `
+              <div class="map-area" id="kanto-map">
+                <div class="map-prefecture active" data-prefecture="tokyo" data-area="東京">▶ 東京</div>
+                <div class="map-prefecture" data-prefecture="kanagawa" data-area="神奈川">▶ 神奈川</div>
+                <div class="map-prefecture" data-prefecture="saitama" data-area="埼玉">▶ 埼玉</div>
+                <div class="map-prefecture" data-prefecture="chiba" data-area="千葉">▶ 千葉</div>
+                <div class="map-prefecture" data-prefecture="ibaraki" data-area="茨城">▶ 茨城</div>
+                <div class="map-prefecture" data-prefecture="tochigi" data-area="栃木">栃木</div>
+                <div class="map-prefecture" data-prefecture="gunma" data-area="群馬">群馬</div>
+                <div class="map-prefecture" data-prefecture="yamanashi" data-area="山梨">山梨</div>
+              </div>
+            `;
+            
+            // 都道府県クリック時の処理
+            const prefectures = mapArea.querySelectorAll('.map-prefecture');
+            prefectures.forEach(pref => {
+              pref.addEventListener('click', () => {
+                const area = pref.dataset.area;
+                if (area) {
+                  window.location.href = `list.html?area=${encodeURIComponent(area)}`;
+                }
+              });
+            });
+          }
+        });
+      });
+      
+      // 初期状態で関東の都道府県クリックイベントを設定
+      const prefectures = mapArea.querySelectorAll('.map-prefecture');
+      prefectures.forEach(pref => {
+        pref.addEventListener('click', () => {
+          const area = pref.dataset.area;
+          if (area) {
+            window.location.href = `list.html?area=${encodeURIComponent(area)}`;
+          }
+        });
+      });
+    }
+
+    // 位置情報を取得して近場のイベントを表示（非推奨：地図から探すに置き換え）
     async function renderLocationBasedEvents() {
       const section = document.getElementById('location-based-events');
       const container = document.getElementById('location-events-list');
@@ -1711,7 +1820,8 @@
 
         renderPopSection(); // ポップセクションを描画
         // 位置情報ベースのイベントを最優先で表示（データ読み込み後すぐに実行）
-        await renderLocationBasedEvents();
+        // 地図から探す機能を初期化
+        initMapSearch();
         renderCategories();
         initCategoryMenu(); // カテゴリメニューを初期化（ホバー表示用）
         renderWeekCalendar();
