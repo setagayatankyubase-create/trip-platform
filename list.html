@@ -255,9 +255,16 @@
     window.selectEvent = function(eventId) {
       selectedEventId = eventId;
       
-      // イベント詳細ページに遷移
+      // 該当イベントカードにスクロール
       if (eventId) {
-        window.location.href = `experience.html?id=${encodeURIComponent(eventId)}`;
+        const eventCard = document.querySelector(`[data-event-id="${eventId}"]`);
+        if (eventCard) {
+          eventCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // 少し上にスクロール（15px）
+          setTimeout(() => {
+            window.scrollBy({ top: -15, behavior: 'smooth' });
+          }, 100);
+        }
       }
     };
 
