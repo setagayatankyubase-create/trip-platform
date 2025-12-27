@@ -1182,6 +1182,10 @@ body {
 .pop-section {
   margin-bottom: 24px;
   padding-bottom: 0;
+  max-width: 100%;
+  padding: 0;
+  margin-left: 0;
+  margin-right: 0;
 }
 
 /* 1段目：大きな横長バナー */
@@ -1193,9 +1197,10 @@ body {
 
 /* 2段目：キャンペーンカード */
 .pop-campaigns-wrapper {
-  max-width: 100%;
-  margin: 0 auto;
+  width: 100%;
+  margin: 0;
   padding: 0 12px;
+  box-sizing: border-box;
 }
 
 
