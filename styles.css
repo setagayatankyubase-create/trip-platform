@@ -2733,15 +2733,15 @@ body {
 }
 
 .map-svg .pref {
-  fill: #f7faf7;
-  stroke: rgba(22, 48, 42, 0.18);
+  fill: #e0ebe0;
+  stroke: rgba(22, 48, 42, 0.32);
   stroke-width: 1;
   transition: fill 0.2s ease, stroke 0.2s ease, opacity 0.2s ease;
 }
 .map-svg .pref.is-selected {
-  fill: rgba(15, 127, 99, 0.22);
-  stroke: rgba(15, 127, 99, 0.70);
-  stroke-width: 1.4;
+  fill: rgba(15, 127, 99, 0.35);
+  stroke: rgba(15, 127, 99, 0.85);
+  stroke-width: 1.6;
 }
 
 .map-svg .pref-label {

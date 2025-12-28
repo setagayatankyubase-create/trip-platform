@@ -154,14 +154,6 @@
                   <div class="chipgrid" id="categoryChips"></div>
                 </section>
 
-                <section class="card card--tags" id="tagCard">
-                  <div class="card__head">
-                    <h3 class="card__title">タグで探す</h3>
-                  </div>
-                  <p class="card__hint">こだわりの要素を追加できます</p>
-                  <div class="chipgrid" id="tagChips"></div>
-                </section>
-
                 <section class="card card--cta">
                   <p class="cta__hint">条件を一覧で確認して気になる体験を探す</p>
                   <button class="cta" id="searchToListBtn" type="button">
@@ -3294,20 +3286,16 @@
 
     function renderMetaChips(forceReload = false) {
       const categoryChips = document.getElementById("categoryChips");
-      const tagChips = document.getElementById("tagChips");
-      const defaultTags = ["自然", "アウトドア", "体験", "キャンプ"];
       if (!ensureBaseStats()) return;
 
       const filteredEvents = Array.isArray(window.filteredEvents) ? window.filteredEvents : [];
       const isFiltering = Boolean(
         window.selectedPrefecture ||
-        window.selectedCategories.length ||
-        window.selectedTags.length
+        window.selectedCategories.length
       );
       const categoryCounts = isFiltering ? countByCategory(filteredEvents) : window.baseCategoryCounts;
-      const tagCounts = isFiltering ? countByTag(filteredEvents) : window.baseTagCounts;
 
-      const renderChips = (container, items, fallback, type, counts, activeFilters) => {
+      const renderChips = (container, items, fallback, counts, activeFilters) => {
         if (!container) return;
         container.innerHTML = "";
         const sources = items && items.length ? items : fallback;
@@ -3341,21 +3329,13 @@
           chip.disabled = shouldDisable;
 
           if (normalizedPayload) {
-            if (type === "category") {
-              window.categoryLabelMap[normalizedPayload] = displayName;
-            } else {
-              window.tagLabelMap[normalizedPayload] = displayName;
-            }
+            window.categoryLabelMap[normalizedPayload] = displayName;
           }
 
           if (!shouldDisable) {
             chip.addEventListener("click", () => {
               if (!normalizedPayload) return;
-              if (type === "category") {
-                handleCategoryToggle(normalizedPayload, displayName, isActive);
-              } else {
-                handleTagToggle(normalizedPayload, displayName, isActive);
-              }
+              handleCategoryToggle(normalizedPayload, displayName, isActive);
             });
           }
 
@@ -3363,44 +3343,43 @@
         });
       };
 
-      const renderWithMeta = (metaCategories = [], metaTags = []) => {
-        renderChips(categoryChips, metaCategories, [], "category", categoryCounts, window.selectedCategories);
-        renderChips(tagChips, metaTags, defaultTags, "tag", tagCounts, window.selectedTags);
+      const renderWithMeta = (metaCategories = []) => {
+        renderChips(categoryChips, metaCategories, [], categoryCounts, window.selectedCategories);
       };
 
       if (!forceReload && cachedEventMeta) {
-        renderWithMeta(cachedEventMeta.categories || [], cachedEventMeta.tags || []);
+        renderWithMeta(cachedEventMeta.categories || []);
         return;
       }
 
       if (typeof window.loadEventMeta === "function") {
-        renderWithMeta([], []);
+        renderWithMeta([]);
         if (!metaLoadPromise) {
           metaLoadPromise = window.loadEventMeta()
             .then((meta) => {
               cachedEventMeta = meta || {};
               metaLoadPromise = null;
-              renderWithMeta(cachedEventMeta.categories || [], cachedEventMeta.tags || []);
+              renderWithMeta(cachedEventMeta.categories || []);
               return meta;
             })
             .catch(() => {
               metaLoadPromise = null;
-              renderWithMeta([], []);
+              renderWithMeta([]);
               return null;
             });
         } else {
           metaLoadPromise
             .then((meta) => {
-              renderWithMeta(meta?.categories || [], meta?.tags || []);
+              renderWithMeta(meta?.categories || []);
             })
             .catch(() => {
-              renderWithMeta([], []);
+              renderWithMeta([]);
             });
         }
         return;
       }
 
-      renderWithMeta([], []);
+      renderWithMeta([]);
     }
 
     function getAllEvents() {
