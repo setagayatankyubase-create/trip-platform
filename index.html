@@ -1747,6 +1747,10 @@
       return p?.nam_ja || p?.name_ja || p?.NAME_JA || "";
     }
 
+    function getPrefFillColor(d) {
+      return "#f4f9f2";
+    }
+
     // boundsが本土BBoxと交差してるか
     function intersectsBbox(bounds, bbox) {
       const [[minX, minY], [maxX, maxY]] = bounds;
