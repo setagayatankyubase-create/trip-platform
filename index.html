@@ -1434,6 +1434,48 @@
     // 地図以外のSVG生成を一時停止するフラグ（地図だけに集中するため）
     const DISABLE_OTHER_SVG_GENERATION = true;
     
+    // ★離島除外処理（本土だけを表示するため）
+    // 関東本土のだいたいの範囲（少し広めに）
+    // lon: 138〜141.5 / lat: 34〜37.5
+    const MAINLAND_BBOX = [[138.0, 34.0], [141.5, 37.5]];
+    
+    // boundsが本土BBoxと交差してるか
+    function intersectsBbox(bounds, bbox) {
+      const [[minX, minY], [maxX, maxY]] = bounds;
+      const [[bx0, by0], [bx1, by1]] = bbox;
+      return !(maxX < bx0 || minX > bx1 || maxY < by0 || minY > by1);
+    }
+    
+    // Feature（Polygon/MultiPolygon）から本土BBoxにかかるポリゴンだけ残す
+    function keepMainlandPolygons(feature, bbox = MAINLAND_BBOX) {
+      if (!feature?.geometry) return feature;
+      
+      const g = feature.geometry;
+      
+      if (g.type === "Polygon") {
+        const b = d3.geoBounds(feature);
+        return intersectsBbox(b, bbox) ? feature : null;
+      }
+      
+      if (g.type === "MultiPolygon") {
+        // MultiPolygonを Polygonごとに分解して判定
+        const kept = g.coordinates.filter((polyCoords) => {
+          const polyFeature = { type: "Feature", geometry: { type: "Polygon", coordinates: polyCoords } };
+          const b = d3.geoBounds(polyFeature);
+          return intersectsBbox(b, bbox);
+        });
+        
+        if (!kept.length) return null;
+        
+        return {
+          ...feature,
+          geometry: { type: "MultiPolygon", coordinates: kept }
+        };
+      }
+      
+      return feature;
+    }
+    
     // 描画ロジックを分離（リサイズ時にも呼び出せるように）
     function renderKantoMap(kantoFeatures, eventCountByAreaKey, areaKeyByName, getNameJa) {
       const svg = d3.select("#kantoMap");
@@ -1467,7 +1509,7 @@
       // SVGにフィット（fitExtentで意図的な余白を入れる）
       const projection = d3.geoMercator();
       // 余白を"意図して"入れる（じゃらんはギチギチにしない）
-      const pad = 24;
+      const pad = 12;
       projection.fitExtent(
         [[pad, pad], [width - pad, height - pad]],
         kantoGeoJson
@@ -1723,19 +1765,26 @@
           console.log('[createKantoSVGMap] First 10 ja names:', geo.features.slice(0, 10).map(f => getNameJa(f.properties)));
         }
         
-        // 関東だけ抽出（日本語名で判定）
-        const kantoFeatures = geo.features.filter(f => KANTO.has(getNameJa(f.properties)));
+        // 関東だけ抽出（日本語名で判定）+ 東京都の離島を除外
+        const kantoFeaturesFiltered = geo.features
+          .filter(f => KANTO.has(getNameJa(f.properties)))
+          .map(f => (getNameJa(f.properties) === "東京都" ? keepMainlandPolygons(f) : f))
+          .filter(Boolean);
         
         // デバッグ：関東抽出の結果を確認
         console.log('[createKantoSVGMap] Total features:', geo.features.length);
-        console.log('[createKantoSVGMap] Kanto features found:', kantoFeatures.length);
-        console.log('[createKantoSVGMap] Kanto names:', kantoFeatures.map(f => getNameJa(f.properties)));
+        console.log('[createKantoSVGMap] Kanto features found (before filter):', geo.features.filter(f => KANTO.has(getNameJa(f.properties))).length);
+        console.log('[createKantoSVGMap] Kanto features found (after filter):', kantoFeaturesFiltered.length);
+        console.log('[createKantoSVGMap] Kanto names:', kantoFeaturesFiltered.map(f => getNameJa(f.properties)));
         
         // 0件の場合は警告を出して終了
-        if (kantoFeatures.length === 0) {
+        if (kantoFeaturesFiltered.length === 0) {
           console.warn('[createKantoSVGMap] No Kanto features matched. Check name mapping.');
           return;
         }
+        
+        // 最終的な関東FeatureCollection（離島除外済み）
+        const kantoFeatures = kantoFeaturesFiltered;
         
         // イベント数を取得
         const eventCountByAreaKey = {};
