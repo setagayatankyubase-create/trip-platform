@@ -2431,15 +2431,15 @@ body {
 }
 
 .map-search-map {
-  background: linear-gradient(135deg, #e8f4f0 0%, #d4ede4 100%);
-  border-radius: 12px;
-  padding: 40px;
+  background: #f7fbfa;
+  border-radius: 16px;
+  padding: 16px;
   position: relative;
   min-height: 500px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid var(--border);
+  border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .map-google-map {
@@ -2454,8 +2454,10 @@ body {
   width: 100%;
   /* じゃらんっぽい比率で枠を作る */
   aspect-ratio: 16 / 9;
-  background: #fff;
-  border-radius: 12px;
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
   overflow: hidden;
   position: relative;
 }
@@ -2465,6 +2467,17 @@ body {
   width: 100%;
   height: 100%;
   /* SVGは枠に100%フィット */
+}
+
+/* 県ラベル（じゃらん寄せ：白縁＋軽い影） */
+.pref-label {
+  font-size: 14px;
+  font-weight: 700;
+  fill: #0f4f46;
+  paint-order: stroke;
+  stroke: rgba(255, 255, 255, 0.9);
+  stroke-width: 4px;
+  pointer-events: none;
 }
 
 .map-area {
