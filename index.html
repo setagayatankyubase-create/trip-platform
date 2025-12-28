@@ -1988,37 +1988,6 @@
 
       labelLayerTexts = labelLayer.selectAll("text.pref-label");
 
-      const badgeLayer = svg.append("g").attr("class", "badge-layer");
-      badgeLayer.selectAll("g.badge")
-        .data(kantoFeatures)
-        .join("g")
-          .attr("class", "badge")
-          .each(function(d) {
-            const name = getNameJa(d.properties);
-            const c = getPrefCount(name);
-            if (!SHOW_ZERO && c === 0) return;
-            
-            const [x, y] = path.centroid(d);
-            const g = d3.select(this);
-            
-            // バッジ背景
-            g.append("circle")
-              .attr("cx", x)
-              .attr("cy", y + 20)
-              .attr("r", 14)
-              .attr("fill", "#0f7a63");
-            
-            // バッジテキスト
-            g.append("text")
-              .attr("x", x)
-              .attr("y", y + 20)
-              .attr("text-anchor", "middle")
-              .attr("dominant-baseline", "central")
-              .attr("font-weight", 700)
-              .attr("font-size", 11)
-              .attr("fill", "#fff")
-              .text(c);
-          });
     }
 
     function updateSelectedPrefectureState(prefName, baseName, count) {
