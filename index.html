@@ -131,10 +131,6 @@
       <div class="map-search-container">
         <div class="map-search-description">
           <p>地図からエリアを選んで体験を見る</p>
-          <button class="map-nearby-button" id="map-nearby-button">
-            <span class="map-nearby-icon">📍</span>
-            <span>近くから探す</span>
-          </button>
         </div>
         <div class="map-search-map" id="map-search-map">
           <div class="map-area">
@@ -1444,38 +1440,6 @@
 
       initMap();
 
-      const nearbyButton = document.getElementById('map-nearby-button');
-      if (nearbyButton) {
-        nearbyButton.addEventListener('click', () => {
-          if (!navigator.geolocation) {
-            alert('位置情報が利用できません');
-            return;
-          }
-
-          nearbyButton.disabled = true;
-          nearbyButton.innerHTML = '<span class="map-nearby-icon">📍</span><span>位置情報を取得中...</span>';
-
-          navigator.geolocation.getCurrentPosition(
-            async (position) => {
-              const lat = position.coords.latitude;
-              const lng = position.coords.longitude;
-              
-              nearbyButton.disabled = false;
-              nearbyButton.innerHTML = '<span class="map-nearby-icon">📍</span><span>近くから探す</span>';
-            },
-            (error) => {
-              alert('位置情報の取得に失敗しました');
-              nearbyButton.disabled = false;
-              nearbyButton.innerHTML = '<span class="map-nearby-icon">📍</span><span>近くから探す</span>';
-            },
-            {
-              enableHighAccuracy: true,
-              timeout: 20000,
-              maximumAge: 0
-            }
-          );
-        });
-      }
     }
     
     // TopoJSONデータの自動フォールバック関数（createKantoSVGMapより前に定義）
