@@ -2551,6 +2551,22 @@ body {
   flex-direction: column;
   gap: 14px;
 }
+.condition-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  padding: 12px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+.condition-line.has-selection {
+  background: rgba(15,127,99,.06);
+  border-color: rgba(15,127,99,.2);
+}
 .card {
   background: var(--panel);
   border: 1px solid var(--line);
@@ -2694,6 +2710,10 @@ body {
 }
 .card--cta {
   padding:14px;
+  margin-top:auto;
+  position:sticky;
+  bottom:20px;
+  z-index:1;
 }
 .cta__hint {
   margin:0 0 10px 0;

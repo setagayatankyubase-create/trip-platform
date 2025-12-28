@@ -145,22 +145,10 @@
             </div>
             <aside class="map-right">
               <div class="filters">
-                <section class="card card--summary is-empty" id="selectedAreaCard">
-                  <div class="card__head">
-                    <h3 class="card__title">選択中エリア</h3>
-                    <button class="linkbtn" id="clearAreaBtn" type="button">クリア</button>
-                  </div>
-                  <div class="summary">
-                    <div class="summary__main">
-                      <span class="summary__label" id="selectedAreaLabel">未選択</span>
-                      <p class="summary__state" id="searchStateSentence">条件未選択（全件表示）</p>
-                    </div>
-                    <div class="summary__count">
-                      <span class="summary__num" id="selectedAreaCount">—</span>
-                      <span class="summary__unit">件</span>
-                    </div>
-                  </div>
-                </section>
+                <div class="condition-line" id="conditionLine">
+                  <span id="conditionSentence">条件：未選択（全件表示）</span>
+                  <button class="linkbtn" id="clearAreaBtn" type="button" disabled>クリア</button>
+                </div>
 
                 <section class="card" id="categoryCard">
                   <div class="card__head">
@@ -1956,26 +1944,15 @@
     function updateSelectedPrefectureState(prefName, filteredCount) {
       window.selectedPrefecture = normalizePrefectureName(prefName);
       const normalizedPref = window.selectedPrefecture;
-      const displayName = normalizedPref ? getDisplayPrefName(normalizedPref) : "";
-      const labelEl = document.getElementById("selectedAreaLabel");
-      const countEl = document.getElementById("selectedAreaCount");
-      const card = document.getElementById("selectedAreaCard");
       const clearBtn = document.getElementById("clearAreaBtn");
-
-      if (labelEl) {
-        labelEl.textContent = displayName || "未選択";
-      }
-      if (countEl) {
-        countEl.textContent = typeof filteredCount === "number" ? filteredCount.toLocaleString() : "—";
-      }
-      if (card) {
-        card.classList.toggle("is-empty", !normalizedPref);
-        card.classList.toggle("has-selection", Boolean(normalizedPref));
+      const conditionLineEl = document.getElementById("conditionLine");
+      if (conditionLineEl) {
+        conditionLineEl.classList.toggle("has-selection", Boolean(normalizedPref));
       }
       if (clearBtn) {
         clearBtn.disabled = !normalizedPref;
       }
-      updateSearchStateSentence(filteredCount);
+      updateConditionLine(filteredCount);
     }
     
     // 関東地方のSVG地図を作成（TopoJSON使用）
@@ -3376,6 +3353,7 @@
           const filterValue = item?.id ?? item?.value ?? item?.name ?? item?.label ?? item;
           const normalizedPayload = normalizeString(filterValue);
           const chipCount = normalizedPayload ? (availableCounts[normalizedPayload] ?? 0) : 0;
+          if (chipCount === 0) return;
           const chip = document.createElement("button");
           chip.type = "button";
           chip.className = "chip";
@@ -3521,7 +3499,7 @@
       return keyword;
     }
 
-    function buildSearchStateSentence(filteredCount) {
+    function buildConditionSentence(filteredCount) {
       const parts = [];
       if (window.selectedPrefecture) {
         parts.push(getDisplayPrefName(window.selectedPrefecture));
@@ -3543,21 +3521,30 @@
         parts.push(`"${keyword}"`);
       }
 
-      const countSuffix = typeof filteredCount === "number"
-        ? ` → ${filteredCount.toLocaleString()}件`
-        : "";
-
+      const totalCount = window.baseEvents?.length || 0;
       if (!parts.length) {
-        return `条件未選択（全件表示）${countSuffix}`;
+        return `条件：未選択（全${totalCount.toLocaleString()}件）`;
       }
-      return `${parts.join(' × ')}${countSuffix}`;
+      const countValue = typeof filteredCount === "number"
+        ? filteredCount
+        : 0;
+      const suffix = `（${countValue.toLocaleString()}件）`;
+      return `条件：${parts.join(' × ')}${suffix}`;
     }
 
-    function updateSearchStateSentence(filteredCount) {
-      const sentenceEl = document.getElementById("searchStateSentence");
+    function updateConditionLine(filteredCount) {
+      const sentenceEl = document.getElementById("conditionSentence");
       if (sentenceEl) {
-        sentenceEl.textContent = buildSearchStateSentence(filteredCount);
+        sentenceEl.textContent = buildConditionSentence(filteredCount);
       }
+      updateCtaText(filteredCount);
+    }
+
+    function updateCtaText(filteredCount) {
+      const button = document.getElementById("searchToListBtn");
+      if (!button) return;
+      const countValue = typeof filteredCount === "number" ? filteredCount : 0;
+      button.textContent = `${countValue.toLocaleString()}件を一覧で見る`;
     }
 
     function updateFilterResultsNotice(filteredCount) {
@@ -3570,7 +3557,7 @@
         mapSearchMap.appendChild(notice);
       }
       if (filteredCount === 0) {
-        const sentence = buildSearchStateSentence(filteredCount);
+        const sentence = buildConditionSentence(filteredCount);
         notice.innerHTML = `
           <div class="no-results-sentence">${sentence}</div>
           <p class="no-results-guidance">エリアを広げる、カテゴリやタグを1つ外すなど、少し条件を緩めてみましょう。</p>
