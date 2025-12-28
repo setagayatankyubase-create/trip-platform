@@ -138,7 +138,7 @@
         </div>
         <div class="map-search-map" id="map-search-map">
           <div class="map-svg-container" id="map-svg-container">
-            <svg id="kantoMap" viewBox="0 0 900 700"></svg>
+            <svg id="kantoMap"></svg>
           </div>
           <div class="map-cities-list" id="map-cities-list" style="display: none;">
             <button class="map-back-button" id="map-back-button">← エリア選択に戻る</button>
@@ -1495,6 +1495,13 @@
       svg.selectAll("*").remove();
       
       const width = 900, height = 520;
+      
+      // ★SVG要素のサイズとviewBoxを設定（重要！）
+      svg
+        .attr("width", width)
+        .attr("height", height)
+        .attr("viewBox", [0, 0, width, height])
+        .attr("preserveAspectRatio", "xMidYMid meet");
       
       // 関東地方の都道府県
       const KANTO = new Set([
