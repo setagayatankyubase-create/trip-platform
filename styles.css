@@ -127,7 +127,7 @@ body {
 }
 
 .header-category-menu-button {
-  background: var(--primary);
+  background: var(--brand);
   border: none;
   padding: 0 20px;
   cursor: pointer;
@@ -141,7 +141,7 @@ body {
 }
 
 .header-category-menu-button:hover {
-  background: var(--hover);
+  background: var(--brand-strong);
 }
 
 .header-category-menu-button .hamburger-icon {
@@ -474,7 +474,7 @@ body {
 
 .hero-search-button {
   padding: 18px 40px;
-  background: var(--primary);
+  background: var(--brand);
   color: #fff;
   border: none;
   border-radius: 0 50px 50px 0;
@@ -492,7 +492,7 @@ body {
 }
 
 .hero-search-button:hover {
-  background: var(--hover);
+  background: var(--brand-strong);
 }
 
 .hero-subtext {
