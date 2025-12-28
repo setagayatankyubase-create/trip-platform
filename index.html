@@ -115,7 +115,7 @@
     <!-- 今週のイベント -->
     <section class="section event-block">
       <div class="week-event-header">
-        <h2>今週のイベント</h2>
+        <h2 id="week-event-title">今週のイベント</h2>
       </div>
       <div class="week-calendar-wrapper">
         <div class="week-calendar" id="week-calendar"></div>
@@ -1172,6 +1172,10 @@
 
       // 次週ボタンの表示を更新
       const nextWeekBtn = document.getElementById('next-week-btn');
+      const weekTitleEl = document.getElementById('week-event-title');
+      if (weekTitleEl) {
+        weekTitleEl.textContent = offset === 0 ? '今週のイベント' : '来週のイベント';
+      }
       if (nextWeekBtn) {
         if (offset === 0) {
           nextWeekBtn.textContent = '→';
