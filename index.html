@@ -1370,8 +1370,7 @@
         backButton.addEventListener('click', () => {
           citiesList.style.display = 'none';
           if (svgContainer) svgContainer.style.display = 'block';
-          // 関東地方の地図を再表示
-          createKantoSVGMap();
+          // 地図は再生成せず表示を切り替えるだけ
         });
       }
       
@@ -1545,9 +1544,9 @@
         .join("path")
           .attr("class", "pref")
           .attr("d", path)
-          .attr("fill", "#e6f3ef")
-          .attr("stroke", "#2aa889")
-          .attr("stroke-width", 1.2)
+          .attr("fill", "#fafafa")
+          .attr("stroke", "#dfe4e3")
+          .attr("stroke-width", 0.9)
           .style("cursor", d => {
             const name = getNameJa(d.properties);
             const key = areaKeyByName[name];
@@ -1559,15 +1558,21 @@
             const key = areaKeyByName[name];
             const c = eventCountByAreaKey[key] ?? 0;
             if (SHOW_ZERO || c > 0) {
-              d3.select(this)
-                .attr("fill", "#d7eee7")
-                .attr("stroke-width", 1.8);
+              if (!d3.select(this).classed("is-selected")) {
+                d3.select(this)
+                  .attr("fill", "#f4f5f4")
+                  .attr("stroke", "#cad2cf")
+                  .attr("stroke-width", 1.2);
+              }
             }
           })
           .on("mouseleave", function(e, d) {
-            d3.select(this)
-              .attr("fill", "#e6f3ef")
-              .attr("stroke-width", 1.2);
+            if (!d3.select(this).classed("is-selected")) {
+              d3.select(this)
+                .attr("fill", "#fafafa")
+                .attr("stroke", "#dfe4e3")
+                .attr("stroke-width", 0.9);
+            }
           })
           .on("click", async (e, d) => {
             const name = getNameJa(d.properties);
@@ -1582,7 +1587,20 @@
             const areaState = document.getElementById("areaState");
             if (areaState) {
               areaState.textContent = `選択中：${name}`;
+              areaState.style.background = "#e8f2ed";
             }
+            
+            // 県の選択状態を更新
+            prefLayer.selectAll("path.pref")
+              .classed("is-selected", false)
+              .attr("fill", "#fafafa")
+              .attr("stroke", "#dfe4e3")
+              .attr("stroke-width", 0.9);
+            d3.select(e.currentTarget)
+              .classed("is-selected", true)
+              .attr("fill", "#2aa889")
+              .attr("stroke", "#1f7f6a")
+              .attr("stroke-width", 2);
             
             // 市区町村データがある場合は市区町村マップを表示
             const cities = prefectureCities[key];
@@ -1591,7 +1609,6 @@
             
             if (cities && cities.length > 0 && citiesList && svgContainer) {
               // 二段階目：市区町村のGoogle Mapsを表示
-              // Google Maps用のコンテナを作成
               const googleMapContainer = document.createElement('div');
               googleMapContainer.className = 'map-google-map';
               googleMapContainer.style.width = '100%';
@@ -1600,7 +1617,6 @@
               svgContainer.parentElement.appendChild(googleMapContainer);
               initCityMap(key, name, cities, googleMapContainer);
             } else {
-              // イベント一覧ページに遷移
               window.location.href = `list.html?area=${encodeURIComponent(name)}`;
             }
           });
@@ -1833,22 +1849,6 @@
         kantoMapRendered = true;
         console.log('[createKantoSVGMap] Map rendered successfully');
         
-        // ★リサイズ対応：ResizeObserverを設定（初回のみ）
-        if (!resizeObserver && container) {
-          resizeObserver = new ResizeObserver(() => {
-            console.log('[createKantoSVGMap] Container resized, re-rendering...');
-            if (kantoMapData) {
-              // データが既に読み込まれている場合は再描画
-              renderKantoMap(
-                kantoMapData.kantoFeatures,
-                kantoMapData.eventCountByAreaKey,
-                kantoMapData.areaKeyByName,
-                kantoMapData.getNameJa
-              );
-            }
-          });
-          resizeObserver.observe(container);
-        }
         
         // デバッグ：実際に描画されたpathの数を確認
         setTimeout(() => {
