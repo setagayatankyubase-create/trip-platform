@@ -2439,6 +2439,23 @@ body {
   min-height: 500px;
 }
 
+.map-filter-no-results {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 79, 70, 0.95);
+  color: #fff;
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 5;
+}
+
 /* 地図エリア（左地図＋右カラム） */
 .map-area {
   margin: 0;
@@ -2523,6 +2540,11 @@ body {
 
 .chip:hover {
   background: #e9ecef;
+}
+.chip.active {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 /* スマホは2段に落ちる */
