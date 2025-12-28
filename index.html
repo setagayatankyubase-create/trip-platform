@@ -137,7 +137,7 @@
               </div>
             </div>
             <aside class="map-right">
-              <div class="panel-panel">
+              <div class="map-controls">
                 <div class="panel-card__header">
                   <button class="linkbtn clear-button" id="clearAreaBtn" type="button" disabled>クリア</button>
                 </div>
@@ -147,8 +147,7 @@
                   </div>
                   <div class="chipgrid" id="categoryChips"></div>
                 </section>
-
-                <section class="card card--cta">
+                <section class="map-cta">
                   <button class="cta" id="searchToListBtn" type="button">
                     この条件で一覧を見る
                   </button>
@@ -3439,12 +3438,15 @@
       const button = document.getElementById("searchToListBtn");
       if (!button) return;
       const countValue = typeof filteredCount === "number" ? filteredCount : 0;
+      const prefs = Array.isArray(window.selectedPrefectures) ? window.selectedPrefectures : [];
+      const prefLabels = prefs.map(getDisplayPrefName).filter(Boolean);
+      const prefix = prefLabels.length ? `${prefLabels.join('・')}のイベントを` : 'このエリアのイベントを';
       if (countValue === 0) {
         button.textContent = `0件（条件を変えてください）`;
         button.disabled = true;
         return;
       }
-      button.textContent = `${countValue.toLocaleString()}件を一覧で見る`;
+      button.textContent = `${prefix}${countValue.toLocaleString()}件見る`;
       button.disabled = false;
     }
 
