@@ -140,24 +140,50 @@
           <div class="map-area">
             <div class="map-left">
               <div class="map-stage" id="map-svg-container">
-                <svg id="kantoMap"></svg>
+                <svg id="kantoMap" class="map-svg"></svg>
               </div>
             </div>
             <aside class="map-right">
-              <div class="box">
-                <div class="box-title">選択中エリア</div>
-                <div id="areaState" class="state">未選択</div>
-              </div>
-              <div class="box">
-                <div class="box-title">カテゴリで探す</div>
-                <div id="categoryChips" class="chips"></div>
-              </div>
-              <div class="box">
-                <div class="box-title">タグで探す</div>
-                <div id="tagChips" class="chips"></div>
-              </div>
-              <div class="box map-search-actions">
-                <button id="searchConditionsButton" type="button" class="primary">この条件で検索</button>
+              <div class="filters">
+                <section class="card card--summary is-empty" id="selectedAreaCard">
+                  <div class="card__head">
+                    <h3 class="card__title">選択中エリア</h3>
+                    <button class="linkbtn" id="clearAreaBtn" type="button">クリア</button>
+                  </div>
+                  <div class="summary">
+                    <div class="summary__main">
+                      <span class="summary__label" id="selectedAreaLabel">未選択</span>
+                      <p class="summary__state" id="searchStateSentence">条件未選択（全件表示）</p>
+                    </div>
+                    <div class="summary__count">
+                      <span class="summary__num" id="selectedAreaCount">—</span>
+                      <span class="summary__unit">件</span>
+                    </div>
+                  </div>
+                </section>
+
+                <section class="card" id="categoryCard">
+                  <div class="card__head">
+                    <h3 class="card__title">カテゴリで探す</h3>
+                  </div>
+                  <p class="card__hint">大分類からメインテーマを選べます</p>
+                  <div class="chipgrid" id="categoryChips"></div>
+                </section>
+
+                <section class="card card--tags" id="tagCard">
+                  <div class="card__head">
+                    <h3 class="card__title">タグで探す</h3>
+                  </div>
+                  <p class="card__hint">こだわりの要素を追加できます</p>
+                  <div class="chipgrid" id="tagChips"></div>
+                </section>
+
+                <section class="card card--cta">
+                  <p class="cta__hint">条件を一覧で確認して気になる体験を探す</p>
+                  <button class="cta" id="searchToListBtn" type="button">
+                    この条件で一覧を見る
+                  </button>
+                </section>
               </div>
             </aside>
           </div>
@@ -392,6 +418,9 @@
         ? window.selectedCategories.filter(cat => cat !== value)
         : [...window.selectedCategories, value];
       window.selectedCategories = nextCategories;
+      if (value && label) {
+        window.categoryLabelMap[value] = label;
+      }
       applyFiltersAndRender({ label: isActive ? "" : label });
     }
 
@@ -400,11 +429,14 @@
         ? window.selectedTags.filter(tag => tag !== value)
         : [...window.selectedTags, value];
       window.selectedTags = nextTags;
+      if (value && label) {
+        window.tagLabelMap[value] = label;
+      }
       applyFiltersAndRender({ label: isActive ? "" : label });
     }
 
-    function initSearchConditionsButton() {
-      const button = document.getElementById('searchConditionsButton');
+    function initSearchToListButton() {
+      const button = document.getElementById('searchToListBtn');
       if (!button) return;
       button.addEventListener('click', () => {
         const params = new URLSearchParams();
@@ -420,6 +452,20 @@
         const query = params.toString();
         const targetUrl = query ? `list.html?${query}` : 'list.html';
         window.location.href = targetUrl;
+      });
+    }
+
+    function initAreaClearButton() {
+      const button = document.getElementById('clearAreaBtn');
+      if (!button) return;
+      button.addEventListener('click', () => {
+        if (!window.selectedPrefecture) return;
+        window.selectedPrefecture = "";
+        const heroSearchInput = document.getElementById('search-query');
+        const headerSearchInput = document.querySelector('#header-search .header-search-input');
+        if (heroSearchInput) heroSearchInput.value = "";
+        if (headerSearchInput) headerSearchInput.value = "";
+        applyFiltersAndRender({ label: "" });
       });
     }
 
@@ -1507,6 +1553,8 @@
     window.baseCategoryCounts = {};
     window.baseTagCounts = {};
     window.filteredEvents = [];
+    window.categoryLabelMap = {};
+    window.tagLabelMap = {};
     let cachedEventMeta = null;
     let metaLoadPromise = null;
 
@@ -1893,24 +1941,41 @@
           .classed("is-selected", isActive)
           .attr("fill", isActive ? MAP_SELECTED_FILL : MAP_DEFAULT_FILL)
           .attr("stroke", isActive ? MAP_SELECTED_STROKE : MAP_DEFAULT_STROKE)
-          .attr("stroke-width", isActive ? 2 : 1.1);
+          .attr("stroke-width", isActive ? 1.6 : 1.1)
+          .attr("fill-opacity", isActive ? 1 : 0.75)
+          .attr("stroke-opacity", isActive ? 1 : 0.65);
       });
+    }
+
+    function getDisplayPrefName(prefName) {
+      if (!prefName) return "";
+      if (prefName === "北海道") return prefName;
+      return prefName.replace(/(都|道|府|県)$/, "");
     }
 
     function updateSelectedPrefectureState(prefName, filteredCount) {
       window.selectedPrefecture = normalizePrefectureName(prefName);
-      const areaState = document.getElementById("areaState");
-      if (!areaState) return;
-      if (prefName) {
-        const baseName = prefName.replace("都", "").replace("県", "").replace("府", "").replace("道", "");
-        areaState.textContent = filteredCount != null
-          ? `選択中：${baseName}（${filteredCount}件）`
-          : `選択中：${baseName}`;
-        areaState.style.background = "#e8f2ed";
-      } else {
-        areaState.textContent = "未選択";
-        areaState.style.background = "";
+      const normalizedPref = window.selectedPrefecture;
+      const displayName = normalizedPref ? getDisplayPrefName(normalizedPref) : "";
+      const labelEl = document.getElementById("selectedAreaLabel");
+      const countEl = document.getElementById("selectedAreaCount");
+      const card = document.getElementById("selectedAreaCard");
+      const clearBtn = document.getElementById("clearAreaBtn");
+
+      if (labelEl) {
+        labelEl.textContent = displayName || "未選択";
       }
+      if (countEl) {
+        countEl.textContent = typeof filteredCount === "number" ? filteredCount.toLocaleString() : "—";
+      }
+      if (card) {
+        card.classList.toggle("is-empty", !normalizedPref);
+        card.classList.toggle("has-selection", Boolean(normalizedPref));
+      }
+      if (clearBtn) {
+        clearBtn.disabled = !normalizedPref;
+      }
+      updateSearchStateSentence(filteredCount);
     }
     
     // 関東地方のSVG地図を作成（TopoJSON使用）
@@ -3305,25 +3370,53 @@
         if (!container) return;
         container.innerHTML = "";
         const sources = items && items.length ? items : fallback;
+        const availableCounts = counts || {};
         sources.forEach((item) => {
           const displayName = (item?.label || item?.name || item?.title || item?.text || (typeof item === "string" ? item : item?.id) || "no-title");
           const filterValue = item?.id ?? item?.value ?? item?.name ?? item?.label ?? item;
           const normalizedPayload = normalizeString(filterValue);
-          const chipCount = normalizedPayload ? (counts[normalizedPayload] ?? 0) : 0;
+          const chipCount = normalizedPayload ? (availableCounts[normalizedPayload] ?? 0) : 0;
           const chip = document.createElement("button");
           chip.type = "button";
           chip.className = "chip";
-          chip.textContent = `${displayName}（${chipCount}）`;
+          chip.dataset.key = normalizedPayload || "";
+
+          const textSpan = document.createElement("span");
+          textSpan.className = "chip__text";
+          textSpan.textContent = displayName;
+
+          const countSpan = document.createElement("span");
+          countSpan.className = "chip__count";
+          countSpan.textContent = chipCount.toLocaleString();
+
+          chip.appendChild(textSpan);
+          chip.appendChild(countSpan);
+
           const isActive = normalizedPayload && activeFilters.includes(normalizedPayload);
-          chip.classList.toggle("active", isActive);
-          chip.addEventListener("click", () => {
-            if (!normalizedPayload) return;
+          chip.classList.toggle("is-selected", isActive);
+          const shouldDisable = !isActive && chipCount === 0;
+          chip.classList.toggle("is-zero", shouldDisable);
+          chip.disabled = shouldDisable;
+
+          if (normalizedPayload) {
             if (type === "category") {
-              handleCategoryToggle(normalizedPayload, displayName, isActive);
+              window.categoryLabelMap[normalizedPayload] = displayName;
             } else {
-              handleTagToggle(normalizedPayload, displayName, isActive);
+              window.tagLabelMap[normalizedPayload] = displayName;
             }
-          });
+          }
+
+          if (!shouldDisable) {
+            chip.addEventListener("click", () => {
+              if (!normalizedPayload) return;
+              if (type === "category") {
+                handleCategoryToggle(normalizedPayload, displayName, isActive);
+              } else {
+                handleTagToggle(normalizedPayload, displayName, isActive);
+              }
+            });
+          }
+
           container.appendChild(chip);
         });
       };
@@ -3421,7 +3514,53 @@
       });
     }
 
-    function updateFilterResultsNotice(hasResults) {
+    function getCurrentKeyword() {
+      const hero = document.getElementById('search-query');
+      const header = document.querySelector('#header-search .header-search-input');
+      const keyword = (hero?.value || header?.value || "").trim();
+      return keyword;
+    }
+
+    function buildSearchStateSentence(filteredCount) {
+      const parts = [];
+      if (window.selectedPrefecture) {
+        parts.push(getDisplayPrefName(window.selectedPrefecture));
+      }
+      if (window.selectedCategories.length) {
+        window.selectedCategories.forEach(cat => {
+          const label = window.categoryLabelMap[cat];
+          parts.push(label || cat);
+        });
+      }
+      if (window.selectedTags.length) {
+        window.selectedTags.forEach(tag => {
+          const label = window.tagLabelMap[tag];
+          parts.push(label || tag);
+        });
+      }
+      const keyword = getCurrentKeyword();
+      if (keyword) {
+        parts.push(`"${keyword}"`);
+      }
+
+      const countSuffix = typeof filteredCount === "number"
+        ? ` → ${filteredCount.toLocaleString()}件`
+        : "";
+
+      if (!parts.length) {
+        return `条件未選択（全件表示）${countSuffix}`;
+      }
+      return `${parts.join(' × ')}${countSuffix}`;
+    }
+
+    function updateSearchStateSentence(filteredCount) {
+      const sentenceEl = document.getElementById("searchStateSentence");
+      if (sentenceEl) {
+        sentenceEl.textContent = buildSearchStateSentence(filteredCount);
+      }
+    }
+
+    function updateFilterResultsNotice(filteredCount) {
       const mapSearchMap = document.getElementById('map-search-map');
       if (!mapSearchMap) return;
       let notice = mapSearchMap.querySelector('.map-filter-no-results');
@@ -3430,8 +3569,12 @@
         notice.className = 'map-filter-no-results';
         mapSearchMap.appendChild(notice);
       }
-      if (!hasResults) {
-        notice.textContent = '該当イベントはありません（0件です）';
+      if (filteredCount === 0) {
+        const sentence = buildSearchStateSentence(filteredCount);
+        notice.innerHTML = `
+          <div class="no-results-sentence">${sentence}</div>
+          <p class="no-results-guidance">エリアを広げる、カテゴリやタグを1つ外すなど、少し条件を緩めてみましょう。</p>
+        `;
         notice.style.display = 'flex';
       } else {
         notice.style.display = 'none';
@@ -3460,7 +3603,7 @@
       window.filteredEvents = filteredEvents;
 
       await renderEventBlocks(filteredEvents);
-      updateFilterResultsNotice(filteredEvents.length > 0);
+      updateFilterResultsNotice(filteredEvents.length);
       updateSelectedPrefectureState(window.selectedPrefecture, filteredEvents.length);
       if (refreshMetaChips) {
         renderMetaChips();
@@ -3507,7 +3650,8 @@
         renderCategories();
         initCategoryMenu(); // カテゴリメニューを初期化（ホバー表示用）
         renderWeekCalendar();
-        initSearchConditionsButton();
+        initSearchToListButton();
+        initAreaClearButton();
         await applyFiltersAndRender();
         // データ読み込み後にカテゴリカウントを更新
         console.log('[index.html] After loadEventData - eventData:', window.eventData);
