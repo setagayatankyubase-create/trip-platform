@@ -2525,6 +2525,7 @@ body {
   font-size: 14px;
   font-weight: 600;
   color: var(--text);
+  display: none;
 }
 .condition-line.has-selection {
   background: rgba(15,127,99,.06);
