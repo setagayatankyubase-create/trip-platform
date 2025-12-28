@@ -3288,12 +3288,7 @@
       const categoryChips = document.getElementById("categoryChips");
       if (!ensureBaseStats()) return;
 
-      const filteredEvents = Array.isArray(window.filteredEvents) ? window.filteredEvents : [];
-      const isFiltering = Boolean(
-        window.selectedPrefecture ||
-        window.selectedCategories.length
-      );
-      const categoryCounts = isFiltering ? countByCategory(filteredEvents) : window.baseCategoryCounts;
+      const categoryCounts = window.baseCategoryCounts;
 
       const renderChips = (container, items, fallback, counts, activeFilters) => {
         if (!container) return;
