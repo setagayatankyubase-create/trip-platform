@@ -1494,7 +1494,7 @@
       // SVGをクリア
       svg.selectAll("*").remove();
       
-      const width = 900, height = 700;
+      const width = 900, height = 520;
       
       // 関東地方の都道府県
       const KANTO = new Set([
@@ -1573,8 +1573,16 @@
         const SHOW_ZERO = false;
         
         // SVGにフィット
-        const projection = d3.geoMercator().fitSize([width, height], { type: "FeatureCollection", features: kantoFeatures });
-        const path = d3.geoPath(projection);
+        const projection = d3.geoMercator();
+        // ★ここが決定打：関東だけをSVGサイズにフィットさせる
+        projection.fitSize(
+          [width, height],
+          {
+            type: "FeatureCollection",
+            features: kantoFeatures
+          }
+        );
+        const path = d3.geoPath().projection(projection);
         
         // 背景
         svg.append("rect")
@@ -1590,11 +1598,11 @@
             .attr("d", path)
             .attr("fill", "#e2f2ee")
             .attr("stroke", "#2aa58d")
-            .attr("stroke-width", 2)
+            .attr("stroke-width", 2.5)
             .attr("opacity", 1)
             .style("fill", "#e2f2ee")
             .style("stroke", "#2aa58d")
-            .style("stroke-width", "2px")
+            .style("stroke-width", "2.5px")
             .style("opacity", "1")
             .style("cursor", d => {
               const name = getNameJa(d.properties);
