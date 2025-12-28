@@ -1662,6 +1662,16 @@
         .filter(Boolean);
     }
 
+    function countByPref(events) {
+      const result = {};
+      (events || []).forEach((event) => {
+        const pref = normalizePrefectureName(getEventPrefecture(event) || "");
+        if (!pref) return;
+        result[pref] = (result[pref] || 0) + 1;
+      });
+      return result;
+    }
+
     function countByCategory(events) {
       return events.reduce((acc, event) => {
         if (!getEventPrefecture(event)) return acc;
