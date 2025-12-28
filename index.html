@@ -141,6 +141,7 @@
             <div class="map-left">
               <div class="map-stage" id="map-svg-container">
                 <svg id="kantoMap"></svg>
+                <button id="mapBackBtn" type="button" class="map-back-btn" aria-label="全体表示に戻る">全体図</button>
               </div>
             </div>
             <aside class="map-right">
@@ -1457,13 +1458,154 @@
     // 本土（関東周辺）の範囲を厳しめに：伊豆諸島を落としやすい
     const TOKYO_MAINLAND_BBOX = [[138.6, 35.2], [140.4, 36.2]];
 
-    const KANTO_MAP_VIEWBOX = { width: 900, height: 520 };
-    const KANTO_MAP_VIEWBOX_VALUE = `0 0 ${KANTO_MAP_VIEWBOX.width} ${KANTO_MAP_VIEWBOX.height}`;
+    const AREAKEY_TO_PREF = {
+      tokyo: "東京都",
+      kanagawa: "神奈川県",
+      chiba: "千葉県",
+      saitama: "埼玉県",
+      ibaraki: "茨城県",
+      tochigi: "栃木県",
+      gunma: "群馬県",
+      yamanashi: "山梨県"
+    };
+
+    const PREFECTURE_SHORT_MAP = {
+      東京: "東京都",
+      神奈川: "神奈川県",
+      千葉: "千葉県",
+      埼玉: "埼玉県",
+      茨城: "茨城県",
+      栃木: "栃木県",
+      群馬: "群馬県",
+      山梨: "山梨県"
+    };
+
+    const PREFECTURE_SUFFIXES = ["都", "道", "府", "県"];
 
     window.selectedPrefecture = "";
     window.currentMetaFilters = { categories: [], tags: [] };
+    window.mapLevel = 1;
     let cachedEventMeta = null;
     let metaLoadPromise = null;
+
+    const PREF_NAMES = Object.keys(PREFECTURE_SHORT_MAP).concat(Object.values(PREFECTURE_SHORT_MAP));
+
+    function normalizePrefectureName(value) {
+      if (value === undefined || value === null) return "";
+      let name = String(value).trim().replace(/[\u3000\s]+/g, "");
+      if (!name) return "";
+      if (PREFECTURE_SHORT_MAP[name]) {
+        return PREFECTURE_SHORT_MAP[name];
+      }
+      for (const short of Object.keys(PREFECTURE_SHORT_MAP)) {
+        if (name === short) {
+          return PREFECTURE_SHORT_MAP[short];
+        }
+        if (name === PREFECTURE_SHORT_MAP[short]) {
+          return name;
+        }
+      }
+      const lastChar = name.slice(-1);
+      if (!PREFECTURE_SUFFIXES.includes(lastChar)) {
+        name = `${name}県`;
+      }
+      return name;
+    }
+
+    function findPrefectureInText(text) {
+      if (!text || typeof text !== "string") return "";
+      const normalized = text.replace(/[\u3000\s]+/g, "");
+      for (const candidate of PREF_NAMES) {
+        if (normalized.includes(candidate)) {
+          return normalizePrefectureName(candidate);
+        }
+      }
+      return "";
+    }
+
+    function getEventPrefecture(event) {
+      if (!event || typeof event !== "object") return "";
+      const directFields = [
+        event.prefecture,
+        event.pref,
+        event.prefName,
+        event.pref_name,
+        event.area?.prefecture,
+        event.area?.prefName,
+        event.area?.pref_name,
+        event.areaName,
+        event.area_name,
+        event.area,
+        event.city,
+        event.state,
+        event.location?.prefecture,
+        event.location?.pref,
+        event.location?.address
+      ];
+      for (const candidate of directFields) {
+        if (candidate) {
+          const normalized = normalizePrefectureName(candidate);
+          if (normalized) return normalized;
+        }
+      }
+      const freeTextFields = [
+        event.location?.address,
+        event.location?.place,
+        event.address,
+        event.place,
+        event.location,
+        event.detail,
+        event.description
+      ];
+      for (const field of freeTextFields) {
+        const guess = findPrefectureInText(field);
+        if (guess) return guess;
+      }
+      if (event.areaKey && AREAKEY_TO_PREF[event.areaKey]) {
+        return AREAKEY_TO_PREF[event.areaKey];
+      }
+      return "";
+    }
+
+    function getCountsByPref(events) {
+      return events.reduce((acc, event) => {
+        const pref = getEventPrefecture(event);
+        if (pref) {
+          acc[pref] = (acc[pref] || 0) + 1;
+        }
+        return acc;
+      }, {});
+    }
+
+    function logPrefectureCoverage() {
+      const all = getAllEvents();
+      if (!all.length) return;
+      let okCount = 0;
+      let ngCount = 0;
+      const ngEvents = [];
+      all.forEach(event => {
+        const pref = getEventPrefecture(event);
+        if (pref) {
+          okCount++;
+        } else {
+          ngCount++;
+          if (ngEvents.length < 5) ngEvents.push({
+            id: event.id,
+            title: event.title,
+            city: event.city,
+            area: event.area,
+            rawPref: event.prefecture
+          });
+        }
+      });
+      console.log("[pref] total", all.length, "ok", okCount, "ng", ngCount);
+      if (ngEvents.length) {
+        console.table(ngEvents);
+      }
+    }
+
+    const KANTO_MAP_VIEWBOX = { width: 900, height: 520 };
+    const KANTO_MAP_VIEWBOX_VALUE = `0 0 ${KANTO_MAP_VIEWBOX.width} ${KANTO_MAP_VIEWBOX.height}`;
 
     function normalizeString(value) {
       if (value === undefined || value === null) return "";
@@ -1500,6 +1642,7 @@
 
     function countByCategory(events) {
       return events.reduce((acc, event) => {
+        if (!getEventPrefecture(event)) return acc;
         const normalized = normalizeCategoryId(event);
         if (!normalized) return acc;
         acc[normalized] = (acc[normalized] || 0) + 1;
@@ -1509,6 +1652,7 @@
 
     function countByTag(events) {
       return events.reduce((acc, event) => {
+        if (!getEventPrefecture(event)) return acc;
         extractTagIds(event).forEach((tagId) => {
           acc[tagId] = (acc[tagId] || 0) + 1;
         });
@@ -1517,10 +1661,9 @@
     }
 
     function filterEventsByPref(events, prefName) {
-      if (!prefName) return events;
-      const target = String(prefName).trim();
-      if (!target) return events;
-      return events.filter(event => String(event?.prefecture || "").trim() === target);
+      const normalizedPref = normalizePrefectureName(prefName);
+      if (!normalizedPref) return events;
+      return events.filter(event => getEventPrefecture(event) === normalizedPref);
     }
 
     // boundsが本土BBoxと交差してるか
@@ -1579,13 +1722,7 @@
         .attr("preserveAspectRatio", "xMidYMid slice");
       
       const SHOW_ZERO = true;
-      const countsByPref = (window.eventData?.events || []).reduce((acc, event) => {
-        const pref = (event?.prefecture || "").trim();
-        if (pref) {
-          acc[pref] = (acc[pref] || 0) + 1;
-        }
-        return acc;
-      }, {});
+      const countsByPref = getCountsByPref(getAllEvents());
       
       // ★関東だけのFeatureCollectionを作成（フィルタ後）
       const kantoGeoJson = {
@@ -1610,7 +1747,8 @@
         .attr("fill", "#ffffff");
       
       // 県ポリゴン（じゃらん寄せのデザイン）
-      const prefLayer = svg.append("g").attr("class", "pref-layer");
+      const mapRoot = svg.append("g").attr("class", "map-root");
+      const prefLayer = mapRoot.append("g").attr("class", "pref-layer");
       const getPrefFillColor = (count) => {
         if (count === 0) return "#f4f9f2";
         if (count <= 3) return "#dfece1";
@@ -1681,6 +1819,7 @@
             updateSelectedPrefectureState(name, baseName, c);
             window.currentMetaFilters = { categories: [], tags: [] };
             renderMetaChips();
+            focusOnFeature(d);
             
             const heroSearchInput = document.getElementById('search-query');
             const headerSearchInput = document.querySelector('#header-search .header-search-input');
@@ -1688,7 +1827,6 @@
             if (headerSearchInput) headerSearchInput.value = baseName;
             applyFiltersAndRender({}, baseName, { refreshMetaChips: false });
 
-            // 県の選択状態を更新
             prefLayer.selectAll("path.pref")
               .classed("is-selected", false)
               .attr("fill", "#fafafa")
@@ -1696,31 +1834,55 @@
               .attr("stroke-width", 0.9);
             d3.select(e.currentTarget)
               .classed("is-selected", true)
-          .attr("fill", "#2aa889")
+            .attr("fill", "#2aa889")
               .attr("stroke", "#1f7f6a")
               .attr("stroke-width", 2);
-            
-            // 市区町村データがある場合は市区町村マップを表示
-            const cities = prefectureCities[key];
-            const citiesList = document.getElementById('map-cities-list');
-            const svgContainer = document.getElementById('map-svg-container');
-            
-            if (cities && cities.length > 0 && citiesList && svgContainer) {
-              // 二段階目：市区町村のGoogle Mapsを表示
-              const googleMapContainer = document.createElement('div');
-              googleMapContainer.className = 'map-google-map';
-              googleMapContainer.style.width = '100%';
-              googleMapContainer.style.height = '500px';
-              svgContainer.style.display = 'none';
-              svgContainer.parentElement.appendChild(googleMapContainer);
-              initCityMap(key, name, cities, googleMapContainer);
-            } else {
-              window.location.href = `list.html?area=${encodeURIComponent(name)}`;
-            }
           });
+
+      prefLayerPaths = prefLayer.selectAll("path.pref");
+
+      const mapBackBtn = document.getElementById("mapBackBtn");
+      const resetMapZoom = () => {
+        mapRoot.attr("transform", null);
+        window.mapLevel = 1;
+        if (prefLayerPaths) {
+          prefLayerPaths.attr("opacity", 1).style("pointer-events", null);
+        }
+        if (mapBackBtn) {
+          mapBackBtn.classList.remove("visible");
+        }
+      };
+      if (mapBackBtn) {
+        mapBackBtn.onclick = () => resetMapZoom();
+      }
+
+      const focusOnFeature = (feature) => {
+        if (!feature) return;
+        resetMapZoom();
+        const bounds = path.bounds(feature);
+        const [minX, minY] = bounds[0];
+        const [maxX, maxY] = bounds[1];
+        const deltaX = Math.max(maxX - minX, 1);
+        const deltaY = Math.max(maxY - minY, 1);
+        const scale = Math.min(width / deltaX, height / deltaY) * 0.9;
+        const centerX = (minX + maxX) / 2;
+        const centerY = (minY + maxY) / 2;
+        const translateX = width / 2 - scale * centerX;
+        const translateY = height / 2 - scale * centerY;
+        mapRoot.attr("transform", `translate(${translateX},${translateY}) scale(${scale})`);
+        window.mapLevel = 2;
+        if (mapBackBtn) {
+          mapBackBtn.classList.add("visible");
+        }
+        if (prefLayerPaths) {
+          prefLayerPaths.attr("opacity", d => d === feature ? 1 : 0.18)
+            .style("pointer-events", d => d === feature ? null : "none");
+        }
+      };
+      
+      resetMapZoom();
       
       // 県ラベル（じゃらん寄せ：白縁＋軽い影）
-      prefLayerPaths = prefLayer.selectAll("path.pref");
       const labelLayer = svg.append("g").attr("class", "label-layer");
       labelLayer.selectAll("text.pref-label")
         .data(kantoFeatures)
@@ -1777,7 +1939,7 @@
     }
 
     function updateSelectedPrefectureState(prefName, baseName, count) {
-      window.selectedPrefecture = prefName || "";
+      window.selectedPrefecture = normalizePrefectureName(prefName);
       const areaState = document.getElementById("areaState");
       if (!areaState) return;
       if (prefName) {
@@ -1938,10 +2100,13 @@
         // 最終的な関東FeatureCollection（離島除外済み）
         const kantoFeatures = kantoFeaturesFiltered;
         
-        // イベント数を取得
+        // イベント数を取得（prefectureベース）
+        const allEvents = getAllEvents();
+        const prefCounts = getCountsByPref(allEvents);
         const eventCountByAreaKey = {};
         for (const [name, key] of Object.entries(areaKeyByName)) {
-          eventCountByAreaKey[key] = await countEventsByArea(name);
+          const normalizedName = normalizePrefectureName(name);
+          eventCountByAreaKey[key] = prefCounts[normalizedName] ?? 0;
         }
         
         // 地図データを保持（リサイズ時に再描画用）
@@ -3174,8 +3339,9 @@
       const tagChips = document.getElementById("tagChips");
       const defaultTags = ["自然", "アウトドア", "体験", "キャンプ"];
       const allEvents = getAllEvents();
+      const validEvents = allEvents.filter(event => getEventPrefecture(event));
       const areaEvents = filterEventsByPref(allEvents, window.selectedPrefecture);
-      const baseEvents = window.selectedPrefecture ? areaEvents : allEvents;
+      const baseEvents = window.selectedPrefecture ? areaEvents : validEvents;
       const categoryCounts = countByCategory(baseEvents);
       const tagCounts = countByTag(baseEvents);
 
@@ -3263,7 +3429,7 @@
         tags = [],
         prefecture = ""
       } = filters;
-      const targetPrefecture = prefecture ? String(prefecture).trim() : "";
+      const targetPrefecture = normalizePrefectureName(prefecture);
       return allEvents.filter((event) => {
         if (targetPrefecture) {
           const eventPref = String(event?.prefecture || "").trim();
@@ -3302,7 +3468,7 @@
 
     mapUpdater = (filteredEvents = getAllEvents()) => {
       const counts = filteredEvents.reduce((acc, event) => {
-        const pref = (event?.prefecture || "").trim();
+        const pref = getEventPrefecture(event);
         if (pref) acc[pref] = (acc[pref] || 0) + 1;
         return acc;
       }, {});
@@ -3415,6 +3581,7 @@
             console.warn('Failed to load eventIndex:', e);
           }
         }
+        logPrefectureCoverage();
 
         const yearElement = document.getElementById('current-year');
         if (yearElement) {

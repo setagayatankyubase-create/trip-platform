@@ -2489,6 +2489,31 @@ body {
   position: relative;
 }
 
+#mapBackBtn,
+.map-back-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 10;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--text);
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.85rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.map-back-btn.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 #map-svg-container {
   width: 100%;
   height: 520px;

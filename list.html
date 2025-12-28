@@ -47,7 +47,7 @@
     <div class="search-bar">
       <div class="search-bar-wrapper" style="position: relative;">
         <form class="search-form" id="main-search-form" onsubmit="handleSearch(event)">
-          <input type="text" id="search-query" placeholder="行きたい自然体験・場所を探す" name="q">
+          <input type="text" id="eventListSearchInput" placeholder="行きたい自然体験・場所を探す" name="q">
           <select id="search-category" name="category">
             <option value="">すべてのカテゴリ</option>
           </select>
@@ -62,7 +62,7 @@
   </header>
 
   <main class="container">
-    <div style="margin: 20px 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+    <div id="eventListTop" style="margin: 20px 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
       <h1 style="margin: 0; font-size: 1.5rem;">イベント一覧</h1>
       <div style="display: flex; gap: 10px; align-items: center;">
         <button id="filter-trigger" class="filter-reset" style="display: none;" onclick="BottomSheet.open()">フィルタ</button>
@@ -278,7 +278,7 @@
     // フィルタ適用
     async function applyFilters() {
       const params = {
-        q: document.getElementById('search-query')?.value || '',
+        q: document.getElementById('eventListSearchInput')?.value || '',
         category: document.getElementById('search-category')?.value || '',
         area: document.getElementById('search-area')?.value || '',
         date: document.getElementById('search-date')?.value || '',
@@ -290,7 +290,7 @@
     // モバイルフィルタ適用
     async function applyMobileFilters() {
       const params = {
-        q: document.getElementById('search-query')?.value || '',
+        q: document.getElementById('eventListSearchInput')?.value || '',
         category: document.getElementById('mobile-filter-category')?.value || '',
         area: document.getElementById('mobile-filter-area')?.value || '',
         date: document.getElementById('mobile-filter-date')?.value || '',
@@ -298,12 +298,22 @@
       URLManager.updateParams(params);
       BottomSheet.close();
       await loadEvents();
+      scrollToEventListSearchTarget();
     }
 
     // フィルタリセット
     function resetFilters() {
       URLManager.setParams({});
       window.location.reload();
+    }
+
+    function scrollToEventListSearchTarget() {
+      const target = document.getElementById("eventListSearchInput") || document.getElementById("eventListTop");
+      if (!target) return;
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (target.id === "eventListSearchInput" && typeof target.focus === "function") {
+        target.focus();
+      }
     }
 
     // 検索処理
@@ -320,6 +330,7 @@
       URLManager.setParams(params);
       // loadEvents は async なので await する
       await loadEvents();
+      scrollToEventListSearchTarget();
     }
 
     // 一覧用フィルタ処理（events_index を前提に軽量実装）
@@ -810,7 +821,7 @@
       renderMapMarkers();
 
       // 検索フォームに値を設定
-      const searchQueryEl = document.getElementById('search-query');
+      const searchQueryEl = document.getElementById('eventListSearchInput');
       const searchCategoryEl = document.getElementById('search-category');
       const searchDateEl = document.getElementById('search-date');
       const searchAreaEl = document.getElementById('search-area');
