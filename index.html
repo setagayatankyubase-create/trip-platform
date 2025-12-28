@@ -1511,7 +1511,7 @@
       // ★SVG要素のサイズとviewBoxを設定（重要！）
       svg
         .attr("viewBox", `0 0 ${width} ${height}`)
-        .attr("preserveAspectRatio", "xMidYMid meet");
+        .attr("preserveAspectRatio", "xMidYMid slice");
       
       const SHOW_ZERO = false;
       const countsByPref = (window.eventData?.events || []).reduce((acc, event) => {
