@@ -142,10 +142,8 @@
             <aside class="map-right">
               <div class="filters">
                 <div class="condition-line" id="conditionLine">
-                  <span id="conditionSentence">条件：未選択（全件表示）</span>
                   <button class="linkbtn" id="clearAreaBtn" type="button" disabled>クリア</button>
                 </div>
-                <div class="selected-chips" id="selectedChips" aria-live="polite"></div>
 
                 <section class="card" id="categoryCard">
                   <div class="card__head">
@@ -1906,15 +1904,11 @@
 
     function updateSelectedPrefectureState(filteredCount) {
       const clearBtn = document.getElementById("clearAreaBtn");
-      const conditionLineEl = document.getElementById("conditionLine");
       const hasSelection = Array.isArray(window.selectedPrefectures) && window.selectedPrefectures.length > 0;
-      if (conditionLineEl) {
-        conditionLineEl.classList.toggle("has-selection", hasSelection);
-      }
       if (clearBtn) {
         clearBtn.disabled = !hasSelection;
       }
-      updateConditionLine(filteredCount);
+      updateCtaText(filteredCount);
     }
     
     // 関東地方のSVG地図を作成（TopoJSON使用）
@@ -3447,152 +3441,24 @@
       return keyword;
     }
 
-    function buildConditionSentence(filteredCount) {
-      const segments = [];
-      const prefs = Array.isArray(window.selectedPrefectures) ? window.selectedPrefectures : [];
-      if (prefs.length) {
-        const prefLabels = prefs
-          .map(pref => getDisplayPrefName(pref))
-          .filter(Boolean);
-        if (prefLabels.length) {
-          segments.push(prefLabels.join('・'));
-        }
-      }
-      const categoryLabels = window.selectedCategories
-        .map(cat => window.categoryLabelMap[cat] || cat)
-        .filter(Boolean);
-      if (categoryLabels.length) {
-        segments.push(categoryLabels.join('・'));
-      }
-      const tagLabels = window.selectedTags
-        .map(tag => window.tagLabelMap[tag] || tag)
-        .filter(Boolean);
-      if (tagLabels.length) {
-        segments.push(tagLabels.join('・'));
-      }
-
-      const keyword = getCurrentKeyword();
-      if (keyword) {
-        segments.push(`"${keyword}"`);
-      }
-
-      const totalCount = window.baseEvents?.length || 0;
-      if (!segments.length) {
-        return `条件：未選択（全${totalCount.toLocaleString()}件）`;
-      }
-      const countValue = typeof filteredCount === "number"
-        ? filteredCount
-        : 0;
-      return `条件：${segments.join(' × ')}（${countValue.toLocaleString()}件）`;
-    }
-
-    function updateConditionLine(filteredCount) {
-      const sentenceEl = document.getElementById("conditionSentence");
-      if (sentenceEl) {
-        sentenceEl.textContent = buildConditionSentence(filteredCount);
-      }
-      updateCtaText(filteredCount);
-      renderSelectedChips();
-    }
-
     function updateCtaText(filteredCount) {
       const button = document.getElementById("searchToListBtn");
       if (!button) return;
       const countValue = typeof filteredCount === "number" ? filteredCount : 0;
+      if (countValue === 0) {
+        button.textContent = `0件（条件を変えてください）`;
+        button.disabled = true;
+        return;
+      }
       button.textContent = `${countValue.toLocaleString()}件を一覧で見る`;
-    }
-
-    function removePrefectureSelection(pref) {
-      const normalized = normalizePrefectureName(pref);
-      if (!normalized) return;
-      const selection = Array.isArray(window.selectedPrefectures) ? window.selectedPrefectures : [];
-      if (!selection.includes(normalized)) return;
-      window.selectedPrefectures = selection.filter(p => p !== normalized);
-      applyFiltersAndRender({ label: "" });
-    }
-
-    function handleSelectedChipRemove(type, value) {
-      if (!value) return;
-      if (type === "pref") {
-        removePrefectureSelection(value);
-        return;
-      }
-      if (type === "category") {
-        const label = window.categoryLabelMap[value] || value;
-        handleCategoryToggle(value, label, true);
-        return;
-      }
-      if (type === "tag") {
-        const label = window.tagLabelMap[value] || value;
-        handleTagToggle(value, label, true);
-        return;
-      }
-    }
-
-    function renderSelectedChips() {
-      const container = document.getElementById("selectedChips");
-      if (!container) return;
-      container.innerHTML = "";
-      const createChip = (text, type, value) => {
-        const chip = document.createElement("button");
-        chip.type = "button";
-        chip.className = `selection-chip selection-chip--${type}`;
-        chip.innerHTML = `
-          <span>${text}</span>
-          <span class="selection-chip__remove" aria-hidden="true">×</span>
-        `;
-        chip.addEventListener("click", (event) => {
-          event.preventDefault();
-          handleSelectedChipRemove(type, value);
-        });
-        return chip;
-      };
-
-      const addPrefChips = () => {
-        const prefs = Array.isArray(window.selectedPrefectures) ? window.selectedPrefectures : [];
-        prefs.forEach(pref => {
-          const label = getDisplayPrefName(pref);
-          const chip = createChip(label, "pref", pref);
-          container.appendChild(chip);
-        });
-      };
-
-      const addCategoryChips = () => {
-        window.selectedCategories.forEach(cat => {
-          const label = window.categoryLabelMap[cat] || cat;
-          const chip = createChip(label, "category", cat);
-          container.appendChild(chip);
-        });
-      };
-
-      const addTagChips = () => {
-        window.selectedTags.forEach(tag => {
-          const label = window.tagLabelMap[tag] || tag;
-          const chip = createChip(label, "tag", tag);
-          container.appendChild(chip);
-        });
-      };
-
-      addPrefChips();
-      addCategoryChips();
-      addTagChips();
+      button.disabled = false;
     }
 
     function updateFilterResultsNotice(filteredCount) {
       const mapSearchMap = document.getElementById('map-search-map');
       if (!mapSearchMap) return;
       let notice = mapSearchMap.querySelector('.map-filter-no-results');
-      if (!notice) {
-        notice = document.createElement('div');
-        notice.className = 'map-filter-no-results';
-        mapSearchMap.appendChild(notice);
-      }
-      if (filteredCount === 0) {
-        notice.innerHTML = `
-          <p class="no-results-guidance">条件を少し緩めると、他の体験が見つかります</p>
-        `;
-        notice.style.display = 'flex';
-      } else {
+      if (notice) {
         notice.style.display = 'none';
       }
     }
