@@ -1752,6 +1752,15 @@
     }
 
     // boundsが本土BBoxと交差してるか
+    window.latestFilteredEvents = [];
+    window.prefCounts = {};
+
+    function getPrefCount(prefName) {
+      if (!prefName) return 0;
+      return window.prefCounts?.[prefName] ?? 0;
+    }
+
+    // boundsが本土BBoxと交差してるか
     function intersectsBbox(bounds, bbox) {
       const [[minX, minY], [maxX, maxY]] = bounds;
       const [[bx0, by0], [bx1, by1]] = bbox;
@@ -1788,7 +1797,7 @@
     }
     
     // 描画ロジックを分離（リサイズ時にも呼び出せるように）
-    function renderKantoMap(kantoFeatures, eventCountByAreaKey, areaKeyByName, getNameJa) {
+    function renderKantoMap(kantoFeatures, areaKeyByName, getNameJa) {
       const svg = d3.select("#kantoMap");
       const container = document.getElementById("map-svg-container");
       if (!container) {
@@ -1848,31 +1857,23 @@
           .attr("d", path)
           .attr("fill", d => {
             const name = getNameJa(d.properties);
-            const key = areaKeyByName[name];
-            const count = eventCountByAreaKey[key] ?? 0;
+            const count = getPrefCount(name);
             return getPrefFillColor(count);
           })
           .attr("stroke", "#b6c9be")
             .attr("stroke-width", 1.1)
           .style("cursor", d => {
             const name = getNameJa(d.properties);
-            const key = areaKeyByName[name];
-            const c = eventCountByAreaKey[key] ?? 0;
+            const c = getPrefCount(name);
             return (!SHOW_ZERO && c === 0) ? "not-allowed" : "pointer";
           })
           .on("mouseenter", function(e, d) {
             const name = getNameJa(d.properties);
-            const key = areaKeyByName[name];
-            const c = eventCountByAreaKey[key] ?? 0;
+            const c = getPrefCount(name);
             if (SHOW_ZERO || c > 0) {
               if (!d3.select(this).classed("is-selected")) {
                 d3.select(this)
-                  .attr("fill", d => {
-                    const name = getNameJa(d.properties);
-                    const key = areaKeyByName[name];
-                    const count = eventCountByAreaKey[key] ?? 0;
-                    return getPrefFillColor(count);
-                  })
+                  .attr("fill", () => getPrefFillColor(getPrefCount(name)))
                   .attr("stroke", "#a4b7ad")
                   .attr("stroke-width", 1.2);
               }
@@ -1881,12 +1882,7 @@
           .on("mouseleave", function(e, d) {
               if (!d3.select(this).classed("is-selected")) {
                 d3.select(this)
-                  .attr("fill", d => {
-                    const name = getNameJa(d.properties);
-                    const key = areaKeyByName[name];
-                    const count = eventCountByAreaKey[key] ?? 0;
-                    return getPrefFillColor(count);
-                  })
+                  .attr("fill", () => getPrefFillColor(getPrefCount(getNameJa(d.properties))))
                   .attr("stroke", "#b6c9be")
                   .attr("stroke-width", 1.1);
               }
@@ -1894,8 +1890,7 @@
           .on("click", async (e, d) => {
             const name = getNameJa(d.properties);
             const baseName = name.replace("都", "").replace("県", "").replace("府", "").replace("道", "");
-            const key = areaKeyByName[name];
-            const c = eventCountByAreaKey[key] ?? 0;
+            const c = getPrefCount(name);
             
             console.log('[renderKantoMap] Clicked:', name, 'count:', c);
             
@@ -1972,25 +1967,25 @@
       resetMapZoom();
       
       // 県ラベル（じゃらん寄せ：白縁＋軽い影）
-      const labelLayer = svg.append("g").attr("class", "label-layer");
-      labelLayer.selectAll("text.pref-label")
-        .data(kantoFeatures)
-        .join("text")
-          .attr("class", "pref-label")
-          .attr("transform", d => {
-            const [x, y] = path.centroid(d);
-            return `translate(${x},${y})`;
-          })
-          .attr("text-anchor", "middle")
-          .attr("dy", "0.35em")
-          .attr("pointer-events", "none")
-          .text(d => {
-            const name = getNameJa(d.properties);
-            const baseName = name.replace("都", "").replace("県", "").replace("府", "").replace("道", "");
-            return baseName;
-          });
-      
-      // 件数バッジ（イベント数がある場合のみ）
+      const labelLayer = mapRoot.selectAll("g.label-layer").data([0]).join("g").attr("class", "label-layer");
+      const labels = labelLayer.selectAll("text.pref-label").data(kantoFeatures, d => getNameJa(d.properties));
+      labels.exit().remove();
+      const labelEnter = labels.enter().append("text").attr("class", "pref-label");
+      const labelMerge = labelEnter.merge(labels);
+      labelMerge
+        .attr("transform", d => {
+          const [x, y] = path.centroid(d);
+          return `translate(${x},${y})`;
+        })
+        .attr("text-anchor", "middle")
+        .attr("dy", "0.35em")
+        .attr("pointer-events", "none")
+        .text(d => {
+          const name = getNameJa(d.properties);
+          const baseName = name.replace("都", "").replace("県", "").replace("府", "").replace("道", "");
+          return baseName;
+        });
+
       labelLayerTexts = labelLayer.selectAll("text.pref-label");
 
       const badgeLayer = svg.append("g").attr("class", "badge-layer");
@@ -2000,8 +1995,7 @@
           .attr("class", "badge")
           .each(function(d) {
             const name = getNameJa(d.properties);
-            const key = areaKeyByName[name];
-            const c = eventCountByAreaKey[key] ?? 0;
+            const c = getPrefCount(name);
             if (!SHOW_ZERO && c === 0) return;
             
             const [x, y] = path.centroid(d);
@@ -2189,25 +2183,15 @@
         // 最終的な関東FeatureCollection（離島除外済み）
         const kantoFeatures = kantoFeaturesFiltered;
         
-        // イベント数を取得（prefectureベース）
-        const allEvents = getAllEvents();
-        const prefCounts = getCountsByPref(allEvents);
-        const eventCountByAreaKey = {};
-        for (const [name, key] of Object.entries(areaKeyByName)) {
-          const normalizedName = normalizePrefectureName(name);
-          eventCountByAreaKey[key] = prefCounts[normalizedName] ?? 0;
-        }
-        
         // 地図データを保持（リサイズ時に再描画用）
         kantoMapData = {
           kantoFeatures,
-          eventCountByAreaKey,
           areaKeyByName,
           getNameJa
         };
         
         // ★描画関数を呼び出し
-        renderKantoMap(kantoFeatures, eventCountByAreaKey, areaKeyByName, getNameJa);
+        renderKantoMap(kantoFeatures, areaKeyByName, getNameJa);
         
         // 描画完了フラグを設定
         kantoMapRendered = true;
@@ -3605,11 +3589,13 @@
     }
 
     mapUpdater = (filteredEvents = getAllEvents()) => {
+      window.latestFilteredEvents = filteredEvents;
       const counts = filteredEvents.reduce((acc, event) => {
         const pref = getEventPrefecture(event);
         if (pref) acc[pref] = (acc[pref] || 0) + 1;
         return acc;
       }, {});
+      window.prefCounts = counts;
 
       if (prefLayerPaths) {
         prefLayerPaths.each(function(d) {
