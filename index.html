@@ -157,6 +157,10 @@
                 <div class="box-title">タグで探す</div>
                 <div id="tagChips" class="chips"></div>
               </div>
+              <div class="box" id="municipalityBox">
+                <div class="box-title">市区町村で探す</div>
+                <div id="municipalityChips" class="chips"></div>
+              </div>
             </aside>
           </div>
           <div class="map-cities-list" id="map-cities-list" style="display: none;">
@@ -1483,6 +1487,7 @@
     const PREFECTURE_SUFFIXES = ["都", "道", "府", "県"];
 
     window.selectedPrefecture = "";
+    window.selectedMunicipality = "";
     window.currentMetaFilters = { categories: [], tags: [] };
     window.mapLevel = 1;
     let cachedEventMeta = null;
@@ -1563,6 +1568,69 @@
       }
       if (event.areaKey && AREAKEY_TO_PREF[event.areaKey]) {
         return AREAKEY_TO_PREF[event.areaKey];
+      }
+      return "";
+    }
+
+    const UNKNOWN_MUNICIPALITY = "（市区町村不明）";
+
+    function normalizeMunicipalityName(value) {
+      if (value === undefined || value === null) return "";
+      return String(value).trim().replace(/[\u3000\s]+/g, "");
+    }
+
+    function guessMunicipalityFromAddress(address) {
+      if (!address) return "";
+      const text = String(address).trim().replace(/[\u3000\s]+/g, "");
+      const patterns = [
+        /([\u4e00-\u9fff]{1,10}区)/,
+        /([\u4e00-\u9fff]{1,10}市)/,
+        /([\u4e00-\u9fff]{1,10}郡[\u4e00-\u9fff]{1,10}(?:町|村))/,
+        /([\u4e00-\u9fff]{1,10}(?:町|村))/
+      ];
+      for (const pattern of patterns) {
+        const match = text.match(pattern);
+        if (match && match[1]) {
+          return normalizeMunicipalityName(match[1]);
+        }
+      }
+      return "";
+    }
+
+    function getEventMunicipality(event) {
+      if (!event || typeof event !== "object") return "";
+      const directFields = [
+        event.municipality,
+        event.municipality_name,
+        event.city,
+        event.ward,
+        event.wardName,
+        event.district,
+        event.town,
+        event.area?.municipality,
+        event.area?.city,
+        event.area?.ward,
+        event.location?.municipality,
+        event.location?.city,
+        event.location?.district
+      ];
+      for (const candidate of directFields) {
+        if (candidate) {
+          const normalized = normalizeMunicipalityName(candidate);
+          if (normalized) return normalized;
+        }
+      }
+      const textFields = [
+        event.address,
+        event.location?.address,
+        event.location?.place,
+        event.place,
+        event.detail,
+        event.description
+      ];
+      for (const field of textFields) {
+        const guess = guessMunicipalityFromAddress(field);
+        if (guess) return guess;
       }
       return "";
     }
@@ -1656,6 +1724,15 @@
         extractTagIds(event).forEach((tagId) => {
           acc[tagId] = (acc[tagId] || 0) + 1;
         });
+        return acc;
+      }, {});
+    }
+
+    function countMunicipalities(events) {
+      return events.reduce((acc, event) => {
+        const municipality = getEventMunicipality(event) || UNKNOWN_MUNICIPALITY;
+        if (!municipality) return acc;
+        acc[municipality] = (acc[municipality] || 0) + 1;
         return acc;
       }, {});
     }
@@ -1818,6 +1895,7 @@
             
             updateSelectedPrefectureState(name, baseName, c);
             window.currentMetaFilters = { categories: [], tags: [] };
+            window.selectedMunicipality = "";
             renderMetaChips();
             focusOnFeature(d);
             
@@ -1851,6 +1929,9 @@
         if (mapBackBtn) {
           mapBackBtn.classList.remove("visible");
         }
+        window.selectedMunicipality = "";
+        renderMetaChips();
+        applyFiltersAndRender({}, "", { refreshMetaChips: false });
       };
       if (mapBackBtn) {
         mapBackBtn.onclick = () => resetMapZoom();
@@ -3334,6 +3415,47 @@
       setInterval(changeBackground, 5000);
     }
 
+    function renderMunicipalityChips(counts = {}) {
+      const container = document.getElementById("municipalityChips");
+      const box = document.getElementById("municipalityBox");
+      if (!container || !box) return;
+      if (window.mapLevel !== 2) {
+        box.style.display = "none";
+        container.innerHTML = "";
+        return;
+      }
+      box.style.display = "block";
+      container.innerHTML = "";
+      const entries = Object.entries(counts).sort((a, b) => {
+        if (b[1] !== a[1]) return b[1] - a[1];
+        return a[0].localeCompare(b[0], "ja");
+      });
+      const preview = entries.slice(0, 5).map(([name, value]) => `${name}:${value}`);
+      console.log("[municipality] selectedPrefecture", window.selectedPrefecture, "counts", preview);
+      if (!entries.length) {
+        const emptyChip = document.createElement("button");
+        emptyChip.type = "button";
+        emptyChip.className = "chip";
+        emptyChip.textContent = "該当なし";
+        container.appendChild(emptyChip);
+        return;
+      }
+      entries.forEach(([name, count]) => {
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = "chip";
+        chip.textContent = `${name}（${count}）`;
+        const isActive = name === window.selectedMunicipality;
+        chip.classList.toggle("active", isActive);
+        chip.addEventListener("click", () => {
+          const nextValue = isActive ? "" : name;
+          window.selectedMunicipality = nextValue;
+          applyFiltersAndRender({}, "", { refreshMetaChips: false });
+        });
+        container.appendChild(chip);
+      });
+    }
+
     function renderMetaChips(forceReload = false) {
       const categoryChips = document.getElementById("categoryChips");
       const tagChips = document.getElementById("tagChips");
@@ -3344,6 +3466,7 @@
       const baseEvents = window.selectedPrefecture ? areaEvents : validEvents;
       const categoryCounts = countByCategory(baseEvents);
       const tagCounts = countByTag(baseEvents);
+      const municipalityCounts = window.mapLevel === 2 ? countMunicipalities(areaEvents) : {};
 
       const renderChips = (container, items, fallback, type, counts) => {
         if (!container) return;
@@ -3376,6 +3499,7 @@
       const renderWithMeta = (metaCategories = [], metaTags = []) => {
         renderChips(categoryChips, metaCategories, [], "category", categoryCounts);
         renderChips(tagChips, metaTags, defaultTags, "tag", tagCounts);
+        renderMunicipalityChips(municipalityCounts);
       };
 
       if (!forceReload && cachedEventMeta) {
@@ -3427,12 +3551,14 @@
       const {
         categories = [],
         tags = [],
-        prefecture = ""
+        prefecture = "",
+        municipality = ""
       } = filters;
       const targetPrefecture = normalizePrefectureName(prefecture);
+      const targetMunicipality = normalizeMunicipalityName(municipality);
       return allEvents.filter((event) => {
         if (targetPrefecture) {
-          const eventPref = String(event?.prefecture || "").trim();
+          const eventPref = getEventPrefecture(event);
           if (eventPref !== targetPrefecture) return false;
         }
         const categoryId = event?.categoryId || event?.category?.id || event?.category;
@@ -3461,6 +3587,10 @@
           const normalizedTags = eventTags.map(tag => String(tag).toLowerCase());
           const matchesTag = tags.some(tagFilter => normalizedTags.includes(String(tagFilter).toLowerCase()));
           if (!matchesTag) return false;
+        }
+        if (targetMunicipality) {
+          const eventMunicipality = getEventMunicipality(event);
+          if (eventMunicipality !== targetMunicipality) return false;
         }
         return true;
       });
@@ -3537,6 +3667,14 @@
       }
       filtersWithPref.categories = Array.isArray(filtersWithPref.categories) ? filtersWithPref.categories : [];
       filtersWithPref.tags = Array.isArray(filtersWithPref.tags) ? filtersWithPref.tags : [];
+      const explicitMunicipality = filters.municipality ? normalizeMunicipalityName(filters.municipality) : "";
+      const targetMunicipality = explicitMunicipality || window.selectedMunicipality;
+      filtersWithPref.municipality = targetMunicipality;
+      if (explicitMunicipality) {
+        window.selectedMunicipality = explicitMunicipality;
+      } else if (!targetMunicipality) {
+        window.selectedMunicipality = "";
+      }
 
       const normalizedCategories = filtersWithPref.categories.map(normalizeString).filter(Boolean);
       const normalizedTags = filtersWithPref.tags.map(normalizeString).filter(Boolean);
