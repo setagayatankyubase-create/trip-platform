@@ -212,9 +212,20 @@
       }, 500);
     }
 
+    function resolveMapEvents() {
+      if (Array.isArray(window.eventData?.events) && window.eventData.events.length > 0) {
+        return window.eventData.events;
+      }
+      if (Array.isArray(window.eventIndex) && window.eventIndex.length > 0) {
+        return window.eventIndex;
+      }
+      return currentEvents;
+    }
+
     // マップマーカーの表示
     function renderMapMarkers() {
-      console.log('[renderMapMarkers] Rendering markers for', currentEvents.length, 'events');
+      const mapEvents = resolveMapEvents();
+      console.log('[renderMapMarkers] Rendering markers for', mapEvents.length, 'events');
       MapManager.clearMarkers();
       
       if (!MapManager.mapInstance || !MapManager.googleMapsLoaded) {
@@ -224,7 +235,7 @@
       }
       
       let markerCount = 0;
-      currentEvents.forEach(event => {
+      mapEvents.forEach(event => {
         const lat = event.location?.lat;
         const lng = event.location?.lng;
         if (lat && lng && !isNaN(parseFloat(lat)) && !isNaN(parseFloat(lng))) {

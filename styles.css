@@ -2549,6 +2549,25 @@ body {
   color: var(--text);
   text-decoration: underline;
 }
+.map-right {
+  background: #ffffff;
+  border-radius: 26px;
+  padding: 20px;
+  box-shadow: 0 18px 45px rgba(15, 127, 99, 0.15);
+}
+.filters__header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+.clear-button {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.clear-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 .summary {
   display:flex;
   align-items:center;
