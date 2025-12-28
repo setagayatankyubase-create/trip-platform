@@ -3201,7 +3201,10 @@
             const name = getNameJa(d.properties);
             const baseName = name.replace("都", "").replace("県", "").replace("府", "").replace("道", "");
             const count = counts[name] ?? 0;
-            d3.select(this).text(count > 0 ? `${baseName} (${count})` : baseName);
+            const textSelection = d3.select(this);
+            textSelection
+              .text(count > 0 ? `${baseName} (${count})` : baseName)
+              .attr("fill", count > 0 ? "#0f4f46" : "#9db0a3");
           });
         }
       };
