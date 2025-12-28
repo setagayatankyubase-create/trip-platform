@@ -128,33 +128,27 @@
       <div class="event-block-header">
         <h2>行きたいエリアを選ぶ</h2>
       </div>
-      <div class="map-search-container">
-        <div class="map-search-description">
-          <p>地図からエリアを選んで体験を見る</p>
-        </div>
-        <div class="map-search-map" id="map-search-map">
+        <div class="map-search-container">
+          <div class="map-search-map" id="map-search-map">
           <div class="map-area">
             <div class="map-left">
-              <div class="map-stage" id="map-svg-container">
+                <div class="map-stage" id="map-svg-container">
                 <svg id="kantoMap" class="map-svg"></svg>
               </div>
             </div>
             <aside class="map-right">
-              <div class="filters">
-                <div class="filters__header">
+              <div class="panel-card">
+                <div class="panel-card__header">
                   <button class="linkbtn clear-button" id="clearAreaBtn" type="button" disabled>クリア</button>
                 </div>
-
                 <section class="card search-card" id="categoryCard">
                   <div class="card__head">
                     <h3 class="card__title">カテゴリで探す</h3>
                   </div>
-                  <p class="card__hint">大分類からメインテーマを選べます</p>
                   <div class="chipgrid" id="categoryChips"></div>
                 </section>
 
                 <section class="card card--cta">
-                  <p class="cta__hint">条件を一覧で確認して気になる体験を探す</p>
                   <button class="cta" id="searchToListBtn" type="button">
                     この条件で一覧を見る
                   </button>
