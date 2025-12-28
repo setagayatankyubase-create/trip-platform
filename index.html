@@ -1456,6 +1456,9 @@
     // ★離島除外処理（本土だけを表示するため）
     // 本土（関東周辺）の範囲を厳しめに：伊豆諸島を落としやすい
     const TOKYO_MAINLAND_BBOX = [[138.6, 35.2], [140.4, 36.2]];
+
+    const KANTO_MAP_VIEWBOX = { width: 900, height: 520 };
+    const KANTO_MAP_VIEWBOX_VALUE = `0 0 ${KANTO_MAP_VIEWBOX.width} ${KANTO_MAP_VIEWBOX.height}`;
     
     // boundsが本土BBoxと交差してるか
     function intersectsBbox(bounds, bbox) {
@@ -1505,12 +1508,11 @@
       // SVGをクリア
       svg.selectAll("*").remove();
       
-      // ★コンテナのサイズを動的に取得（重要！）
-      const { width, height } = container.getBoundingClientRect();
+      const width = KANTO_MAP_VIEWBOX.width;
+      const height = KANTO_MAP_VIEWBOX.height;
       
-      // ★SVG要素のサイズとviewBoxを設定（重要！）
       svg
-        .attr("viewBox", `0 0 ${width} ${height}`)
+        .attr("viewBox", KANTO_MAP_VIEWBOX_VALUE)
         .attr("preserveAspectRatio", "xMidYMid slice");
       
       const SHOW_ZERO = false;
@@ -1784,11 +1786,9 @@
         console.error('[createKantoSVGMap] Container not found');
         return;
       }
-      const { width, height } = container.getBoundingClientRect();
       
-      // ★SVG要素のサイズとviewBoxを設定（重要！）
       svg
-        .attr("viewBox", "0 0 900 520")
+        .attr("viewBox", KANTO_MAP_VIEWBOX_VALUE)
         .attr("preserveAspectRatio", "xMidYMid slice");
       
       // 関東地方の都道府県
