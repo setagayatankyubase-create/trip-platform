@@ -145,6 +145,7 @@
                   <span id="conditionSentence">条件：未選択（全件表示）</span>
                   <button class="linkbtn" id="clearAreaBtn" type="button" disabled>クリア</button>
                 </div>
+                <div class="selected-chips" id="selectedChips" aria-live="polite"></div>
 
                 <section class="card" id="categoryCard">
                   <div class="card__head">
@@ -416,8 +417,9 @@
       if (!button) return;
       button.addEventListener('click', () => {
         const params = new URLSearchParams();
-        if (window.selectedPrefecture) {
-          params.set('pref', window.selectedPrefecture);
+        const selectedPrefs = Array.isArray(window.selectedPrefectures) ? window.selectedPrefectures : [];
+        if (selectedPrefs.length) {
+          params.set('pref', selectedPrefs.join(','));
         }
         if (window.selectedCategories.length) {
           params.set('category', window.selectedCategories.join(','));
@@ -435,12 +437,13 @@
       const button = document.getElementById('clearAreaBtn');
       if (!button) return;
       button.addEventListener('click', () => {
-        if (!window.selectedPrefecture) return;
-        window.selectedPrefecture = "";
         const heroSearchInput = document.getElementById('search-query');
         const headerSearchInput = document.querySelector('#header-search .header-search-input');
         if (heroSearchInput) heroSearchInput.value = "";
         if (headerSearchInput) headerSearchInput.value = "";
+        window.selectedPrefectures = [];
+        window.selectedCategories = [];
+        window.selectedTags = [];
         applyFiltersAndRender({ label: "" });
       });
     }
@@ -1489,7 +1492,7 @@
     const MAP_SELECTED_FILL = "rgba(0, 128, 96, 0.18)";
     const MAP_SELECTED_STROKE = "rgba(0, 128, 96, 0.8)";
 
-    window.selectedPrefecture = "";
+    window.selectedPrefectures = [];
     window.selectedCategories = [];
     window.selectedTags = [];
     window.baseEvents = [];
@@ -1830,8 +1833,11 @@
             const baseName = name.replace("都", "").replace("県", "").replace("府", "").replace("道", "");
             const heroSearchInput = document.getElementById('search-query');
             const headerSearchInput = document.querySelector('#header-search .header-search-input');
-            const isCurrentlySelected = window.selectedPrefecture === normalizedPref;
-            window.selectedPrefecture = isCurrentlySelected ? "" : normalizedPref;
+            const currentSelection = Array.isArray(window.selectedPrefectures) ? window.selectedPrefectures : [];
+            const isCurrentlySelected = currentSelection.includes(normalizedPref);
+            window.selectedPrefectures = isCurrentlySelected
+              ? currentSelection.filter(pref => pref !== normalizedPref)
+              : [...currentSelection, normalizedPref];
             if (!isCurrentlySelected) {
               if (heroSearchInput) heroSearchInput.value = baseName;
               if (headerSearchInput) headerSearchInput.value = baseName;
@@ -1879,7 +1885,8 @@
       prefLayerPaths.each(function(d) {
         const name = getNameJa(d.properties);
         const normalizedName = normalizePrefectureName(name);
-        const isActive = normalizedName && normalizedName === window.selectedPrefecture;
+        const selectedPrefs = Array.isArray(window.selectedPrefectures) ? window.selectedPrefectures : [];
+        const isActive = normalizedName && selectedPrefs.includes(normalizedName);
         const selection = d3.select(this);
         selection
           .classed("is-selected", isActive)
@@ -1897,16 +1904,15 @@
       return prefName.replace(/(都|道|府|県)$/, "");
     }
 
-    function updateSelectedPrefectureState(prefName, filteredCount) {
-      window.selectedPrefecture = normalizePrefectureName(prefName);
-      const normalizedPref = window.selectedPrefecture;
+    function updateSelectedPrefectureState(filteredCount) {
       const clearBtn = document.getElementById("clearAreaBtn");
       const conditionLineEl = document.getElementById("conditionLine");
+      const hasSelection = Array.isArray(window.selectedPrefectures) && window.selectedPrefectures.length > 0;
       if (conditionLineEl) {
-        conditionLineEl.classList.toggle("has-selection", Boolean(normalizedPref));
+        conditionLineEl.classList.toggle("has-selection", hasSelection);
       }
       if (clearBtn) {
-        clearBtn.disabled = !normalizedPref;
+        clearBtn.disabled = !hasSelection;
       }
       updateConditionLine(filteredCount);
     }
@@ -3391,13 +3397,17 @@
       const {
         categories = [],
         tags = [],
-        prefecture = ""
+        prefectures = []
       } = filters;
-      const targetPrefecture = normalizePrefectureName(prefecture);
+      const normalizedPrefectures = Array.isArray(prefectures)
+        ? prefectures.map(normalizePrefectureName).filter(Boolean)
+        : (prefectures ? [normalizePrefectureName(prefectures)].filter(Boolean) : []);
       return allEvents.filter((event) => {
-        if (targetPrefecture) {
-          const eventPref = getEventPrefecture(event);
-          if (eventPref !== targetPrefecture) return false;
+        if (normalizedPrefectures.length) {
+          const eventPref = normalizePrefectureName(getEventPrefecture(event));
+          if (!eventPref || !normalizedPrefectures.includes(eventPref)) {
+            return false;
+          }
         }
         const categoryId = event?.categoryId || event?.category?.id || event?.category;
         if (categories.length) {
@@ -3438,36 +3448,42 @@
     }
 
     function buildConditionSentence(filteredCount) {
-      const parts = [];
-      if (window.selectedPrefecture) {
-        parts.push(getDisplayPrefName(window.selectedPrefecture));
+      const segments = [];
+      const prefs = Array.isArray(window.selectedPrefectures) ? window.selectedPrefectures : [];
+      if (prefs.length) {
+        const prefLabels = prefs
+          .map(pref => getDisplayPrefName(pref))
+          .filter(Boolean);
+        if (prefLabels.length) {
+          segments.push(prefLabels.join('・'));
+        }
       }
-      if (window.selectedCategories.length) {
-        window.selectedCategories.forEach(cat => {
-          const label = window.categoryLabelMap[cat];
-          parts.push(label || cat);
-        });
+      const categoryLabels = window.selectedCategories
+        .map(cat => window.categoryLabelMap[cat] || cat)
+        .filter(Boolean);
+      if (categoryLabels.length) {
+        segments.push(categoryLabels.join('・'));
       }
-      if (window.selectedTags.length) {
-        window.selectedTags.forEach(tag => {
-          const label = window.tagLabelMap[tag];
-          parts.push(label || tag);
-        });
+      const tagLabels = window.selectedTags
+        .map(tag => window.tagLabelMap[tag] || tag)
+        .filter(Boolean);
+      if (tagLabels.length) {
+        segments.push(tagLabels.join('・'));
       }
+
       const keyword = getCurrentKeyword();
       if (keyword) {
-        parts.push(`"${keyword}"`);
+        segments.push(`"${keyword}"`);
       }
 
       const totalCount = window.baseEvents?.length || 0;
-      if (!parts.length) {
+      if (!segments.length) {
         return `条件：未選択（全${totalCount.toLocaleString()}件）`;
       }
       const countValue = typeof filteredCount === "number"
         ? filteredCount
         : 0;
-      const suffix = `（${countValue.toLocaleString()}件）`;
-      return `条件：${parts.join(' × ')}${suffix}`;
+      return `条件：${segments.join(' × ')}（${countValue.toLocaleString()}件）`;
     }
 
     function updateConditionLine(filteredCount) {
@@ -3476,6 +3492,7 @@
         sentenceEl.textContent = buildConditionSentence(filteredCount);
       }
       updateCtaText(filteredCount);
+      renderSelectedChips();
     }
 
     function updateCtaText(filteredCount) {
@@ -3483,6 +3500,82 @@
       if (!button) return;
       const countValue = typeof filteredCount === "number" ? filteredCount : 0;
       button.textContent = `${countValue.toLocaleString()}件を一覧で見る`;
+    }
+
+    function removePrefectureSelection(pref) {
+      const normalized = normalizePrefectureName(pref);
+      if (!normalized) return;
+      const selection = Array.isArray(window.selectedPrefectures) ? window.selectedPrefectures : [];
+      if (!selection.includes(normalized)) return;
+      window.selectedPrefectures = selection.filter(p => p !== normalized);
+      applyFiltersAndRender({ label: "" });
+    }
+
+    function handleSelectedChipRemove(type, value) {
+      if (!value) return;
+      if (type === "pref") {
+        removePrefectureSelection(value);
+        return;
+      }
+      if (type === "category") {
+        const label = window.categoryLabelMap[value] || value;
+        handleCategoryToggle(value, label, true);
+        return;
+      }
+      if (type === "tag") {
+        const label = window.tagLabelMap[value] || value;
+        handleTagToggle(value, label, true);
+        return;
+      }
+    }
+
+    function renderSelectedChips() {
+      const container = document.getElementById("selectedChips");
+      if (!container) return;
+      container.innerHTML = "";
+      const createChip = (text, type, value) => {
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = `selection-chip selection-chip--${type}`;
+        chip.innerHTML = `
+          <span>${text}</span>
+          <span class="selection-chip__remove" aria-hidden="true">×</span>
+        `;
+        chip.addEventListener("click", (event) => {
+          event.preventDefault();
+          handleSelectedChipRemove(type, value);
+        });
+        return chip;
+      };
+
+      const addPrefChips = () => {
+        const prefs = Array.isArray(window.selectedPrefectures) ? window.selectedPrefectures : [];
+        prefs.forEach(pref => {
+          const label = getDisplayPrefName(pref);
+          const chip = createChip(label, "pref", pref);
+          container.appendChild(chip);
+        });
+      };
+
+      const addCategoryChips = () => {
+        window.selectedCategories.forEach(cat => {
+          const label = window.categoryLabelMap[cat] || cat;
+          const chip = createChip(label, "category", cat);
+          container.appendChild(chip);
+        });
+      };
+
+      const addTagChips = () => {
+        window.selectedTags.forEach(tag => {
+          const label = window.tagLabelMap[tag] || tag;
+          const chip = createChip(label, "tag", tag);
+          container.appendChild(chip);
+        });
+      };
+
+      addPrefChips();
+      addCategoryChips();
+      addTagChips();
     }
 
     function updateFilterResultsNotice(filteredCount) {
@@ -3519,7 +3612,7 @@
       if (!ensureBaseStats()) return;
 
       const filters = {
-        prefecture: window.selectedPrefecture,
+        prefectures: window.selectedPrefectures,
         categories: window.selectedCategories,
         tags: window.selectedTags
       };
@@ -3529,7 +3622,7 @@
 
       await renderEventBlocks(filteredEvents);
       updateFilterResultsNotice(filteredEvents.length);
-      updateSelectedPrefectureState(window.selectedPrefecture, filteredEvents.length);
+      updateSelectedPrefectureState(filteredEvents.length);
       if (refreshMetaChips) {
         renderMetaChips();
       }
