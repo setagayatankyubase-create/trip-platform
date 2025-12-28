@@ -192,6 +192,11 @@
     let currentEvents = [];
     let selectedEventId = null;
 
+    function normalizeQueryValue(value) {
+      if (value === undefined || value === null) return "";
+      return String(value).trim().toLowerCase();
+    }
+
     // マップ初期化（常時表示）
     function initMap() {
       console.log('[list.html] initMap called');
@@ -339,6 +344,12 @@
 
       const today = new Date();
       today.setHours(0, 0, 0, 0);
+      const parseMultiValue = (value) => value
+        ? value.split(',').map(item => item.trim()).filter(Boolean)
+        : [];
+      const categoryFilters = parseMultiValue(params.category).map(normalizeQueryValue);
+      const tagFilters = parseMultiValue(params.tag).map(normalizeQueryValue);
+      const normalizedPref = normalizeQueryValue(params.pref);
 
       // URLパラメータによる事前フィルタ（recommended / new / upcoming）
       if (urlParams.get('recommended') === '1') {
@@ -374,11 +385,18 @@
         });
       }
 
-      // カテゴリ（categoryId が無い場合はスキップ）
-      if (params.category) {
+      // カテゴリ（複数指定に対応）
+      if (categoryFilters.length) {
         filtered = filtered.filter(e => {
-          const catId = e.categoryId || e.category_id || '';
-          return String(catId) === String(params.category);
+          const catId = normalizeQueryValue(e.categoryId || e.category_id || e.category);
+          return categoryFilters.includes(catId);
+        });
+      }
+
+      if (normalizedPref) {
+        filtered = filtered.filter(e => {
+          const eventPref = normalizeQueryValue(e.prefecture || e.area || e.city);
+          return eventPref === normalizedPref;
         });
       }
 
@@ -387,6 +405,34 @@
         filtered = filtered.filter(e => {
           const v = String(params.area);
           return e.city === v || e.prefecture === v || e.area === v;
+        });
+      }
+
+      // タグ（複数指定に対応）
+      if (tagFilters.length) {
+        filtered = filtered.filter(e => {
+          const tagValues = new Set();
+          if (Array.isArray(e.tags)) {
+            e.tags.forEach(tag => {
+              const normalized = normalizeQueryValue(tag);
+              if (normalized) tagValues.add(normalized);
+            });
+          }
+          if (Array.isArray(e.tagIds)) {
+            e.tagIds.forEach(tag => {
+              const normalized = normalizeQueryValue(tag);
+              if (normalized) tagValues.add(normalized);
+            });
+          }
+          if (e.tag) {
+            const normalized = normalizeQueryValue(e.tag);
+            if (normalized) tagValues.add(normalized);
+          }
+          if (e.tag_id) {
+            const normalized = normalizeQueryValue(e.tag_id);
+            if (normalized) tagValues.add(normalized);
+          }
+          return tagFilters.some(tag => tagValues.has(tag));
         });
       }
 
@@ -775,7 +821,7 @@
       }
       if (resultMessageEl) {
         if (currentEvents.length === 0) {
-          resultMessageEl.textContent = '。条件を少しゆるめるか、別の切り口から探してみましょう。';
+          resultMessageEl.textContent = '該当イベントはありません（0件です）';
         } else {
           resultMessageEl.textContent = '';
         }
@@ -820,6 +866,10 @@
       // マップ更新
       renderMapMarkers();
 
+      if (urlParams.get('source') === 'map') {
+        scrollToEventListSearchTarget();
+      }
+
       // 検索フォームに値を設定
       const searchQueryEl = document.getElementById('eventListSearchInput');
       const searchCategoryEl = document.getElementById('search-category');
@@ -829,11 +879,12 @@
       const mobileFilterAreaEl = document.getElementById('mobile-filter-area');
       const mobileFilterDateEl = document.getElementById('mobile-filter-date');
       
+      const categorySelectValue = params.category ? params.category.split(',')[0] : '';
       if (searchQueryEl) searchQueryEl.value = params.q || '';
-      if (searchCategoryEl) searchCategoryEl.value = params.category || '';
+      if (searchCategoryEl) searchCategoryEl.value = categorySelectValue;
       if (searchDateEl) searchDateEl.value = params.date || '';
       if (searchAreaEl) searchAreaEl.value = params.area || '';
-      if (mobileFilterCategoryEl) mobileFilterCategoryEl.value = params.category || '';
+      if (mobileFilterCategoryEl) mobileFilterCategoryEl.value = categorySelectValue;
       if (mobileFilterAreaEl) mobileFilterAreaEl.value = params.area || '';
       if (mobileFilterDateEl) mobileFilterDateEl.value = params.date || '';
     }

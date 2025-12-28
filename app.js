@@ -230,7 +230,10 @@ const URLManager = {
       category: params.get('category') || '',
       date: params.get('date') || '',
       area: params.get('area') || '',
-      weekday: params.get('weekday') || ''
+      weekday: params.get('weekday') || '',
+      pref: params.get('pref') || '',
+      tag: params.get('tag') || '',
+      source: params.get('source') || ''
     };
   },
 

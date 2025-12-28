@@ -131,17 +131,12 @@
       <div class="map-search-container">
         <div class="map-search-description">
           <p>地図からエリアを選んで体験を見る</p>
-          <button class="map-nearby-button" id="map-nearby-button">
-            <span class="map-nearby-icon">📍</span>
-            <span>近くから探す</span>
-          </button>
         </div>
         <div class="map-search-map" id="map-search-map">
           <div class="map-area">
             <div class="map-left">
               <div class="map-stage" id="map-svg-container">
                 <svg id="kantoMap"></svg>
-                <button id="mapBackBtn" type="button" class="map-back-btn" aria-label="全体表示に戻る">全体図</button>
               </div>
             </div>
             <aside class="map-right">
@@ -157,16 +152,10 @@
                 <div class="box-title">タグで探す</div>
                 <div id="tagChips" class="chips"></div>
               </div>
-              <div class="box" id="municipalityBox">
-                <div class="box-title">市区町村で探す</div>
-                <div id="municipalityChips" class="chips"></div>
+              <div class="box map-search-actions">
+                <button id="map-search-submit" class="map-search-submit">この条件で検索</button>
               </div>
             </aside>
-          </div>
-          <div class="map-cities-list" id="map-cities-list" style="display: none;">
-            <button class="map-back-button" id="map-back-button">← エリア選択に戻る</button>
-            <h3 class="map-cities-title" id="map-cities-title"></h3>
-            <div class="map-cities-grid" id="map-cities-grid"></div>
           </div>
         </div>
       </div>
@@ -1364,73 +1353,12 @@
 
     // 地図から探す機能の初期化
     function initMapSearch() {
-      const citiesList = document.getElementById('map-cities-list');
-      const citiesGrid = document.getElementById('map-cities-grid');
-      const citiesTitle = document.getElementById('map-cities-title');
-      const backButton = document.getElementById('map-back-button');
-      const svgContainer = document.getElementById('map-svg-container');
-      
-      // 戻るボタンの処理（市区町村リストから都道府県地図に戻る）
-      if (backButton) {
-        backButton.addEventListener('click', () => {
-          citiesList.style.display = 'none';
-          if (svgContainer) svgContainer.style.display = 'block';
-          // 地図は再生成せず表示を切り替えるだけ
-        });
-      }
-      
-      // 関東地方のSVG地図を初期化（DOMContentLoadedで実行）
       if (document.readyState === 'loading') {
         window.addEventListener('DOMContentLoaded', () => {
           createKantoSVGMap();
         });
       } else {
-        // DOMが既に読み込まれている場合は即座に実行
         createKantoSVGMap();
-      }
-      
-      // 「近くから探す」ボタンの処理
-      const nearbyButton = document.getElementById('map-nearby-button');
-      
-      if (nearbyButton) {
-        nearbyButton.addEventListener('click', () => {
-          // 位置情報を取得
-          if (!navigator.geolocation) {
-            alert('位置情報が利用できません');
-            return;
-          }
-          
-          nearbyButton.disabled = true;
-          nearbyButton.innerHTML = '<span class="map-nearby-icon">📍</span><span>位置情報を取得中...</span>';
-          
-          navigator.geolocation.getCurrentPosition(
-            async (position) => {
-              const lat = position.coords.latitude;
-              const lng = position.coords.longitude;
-              
-              // 地図表示を切り替え
-              if (citiesList) citiesList.style.display = 'none';
-              if (googleMapContainer) {
-                googleMapContainer.style.display = 'block';
-                // Google Mapsを初期化（現在地周辺）
-                initNearbyMap(lat, lng, googleMapContainer);
-              }
-              
-              nearbyButton.disabled = false;
-              nearbyButton.innerHTML = '<span class="map-nearby-icon">📍</span><span>近くから探す</span>';
-            },
-            (error) => {
-              alert('位置情報の取得に失敗しました');
-              nearbyButton.disabled = false;
-              nearbyButton.innerHTML = '<span class="map-nearby-icon">📍</span><span>近くから探す</span>';
-            },
-            {
-              enableHighAccuracy: true,
-              timeout: 20000,
-              maximumAge: 0
-            }
-          );
-        });
       }
     }
     
@@ -1487,9 +1415,8 @@
     const PREFECTURE_SUFFIXES = ["都", "道", "府", "県"];
 
     window.selectedPrefecture = "";
-    window.selectedMunicipality = "";
-    window.currentMetaFilters = { categories: [], tags: [] };
-    window.mapLevel = 1;
+    window.selectedCategories = [];
+    window.selectedTags = [];
     let cachedEventMeta = null;
     let metaLoadPromise = null;
 
@@ -1568,69 +1495,6 @@
       }
       if (event.areaKey && AREAKEY_TO_PREF[event.areaKey]) {
         return AREAKEY_TO_PREF[event.areaKey];
-      }
-      return "";
-    }
-
-    const UNKNOWN_MUNICIPALITY = "（市区町村不明）";
-
-    function normalizeMunicipalityName(value) {
-      if (value === undefined || value === null) return "";
-      return String(value).trim().replace(/[\u3000\s]+/g, "");
-    }
-
-    function guessMunicipalityFromAddress(address) {
-      if (!address) return "";
-      const text = String(address).trim().replace(/[\u3000\s]+/g, "");
-      const patterns = [
-        /([\u4e00-\u9fff]{1,10}区)/,
-        /([\u4e00-\u9fff]{1,10}市)/,
-        /([\u4e00-\u9fff]{1,10}郡[\u4e00-\u9fff]{1,10}(?:町|村))/,
-        /([\u4e00-\u9fff]{1,10}(?:町|村))/
-      ];
-      for (const pattern of patterns) {
-        const match = text.match(pattern);
-        if (match && match[1]) {
-          return normalizeMunicipalityName(match[1]);
-        }
-      }
-      return "";
-    }
-
-    function getEventMunicipality(event) {
-      if (!event || typeof event !== "object") return "";
-      const directFields = [
-        event.municipality,
-        event.municipality_name,
-        event.city,
-        event.ward,
-        event.wardName,
-        event.district,
-        event.town,
-        event.area?.municipality,
-        event.area?.city,
-        event.area?.ward,
-        event.location?.municipality,
-        event.location?.city,
-        event.location?.district
-      ];
-      for (const candidate of directFields) {
-        if (candidate) {
-          const normalized = normalizeMunicipalityName(candidate);
-          if (normalized) return normalized;
-        }
-      }
-      const textFields = [
-        event.address,
-        event.location?.address,
-        event.location?.place,
-        event.place,
-        event.detail,
-        event.description
-      ];
-      for (const field of textFields) {
-        const guess = guessMunicipalityFromAddress(field);
-        if (guess) return guess;
       }
       return "";
     }
@@ -1728,21 +1592,6 @@
       }, {});
     }
 
-    function countMunicipalities(events) {
-      return events.reduce((acc, event) => {
-        const municipality = getEventMunicipality(event) || UNKNOWN_MUNICIPALITY;
-        if (!municipality) return acc;
-        acc[municipality] = (acc[municipality] || 0) + 1;
-        return acc;
-      }, {});
-    }
-
-    function filterEventsByPref(events, prefName) {
-      const normalizedPref = normalizePrefectureName(prefName);
-      if (!normalizedPref) return events;
-      return events.filter(event => getEventPrefecture(event) === normalizedPref);
-    }
-
     function getNameJa(p) {
       return p?.nam_ja || p?.name_ja || p?.NAME_JA || "";
     }
@@ -1804,43 +1653,34 @@
         console.error('[renderKantoMap] Container not found');
         return;
       }
-      
-      // SVGをクリア
+
       svg.selectAll("*").remove();
-      
       const width = KANTO_MAP_VIEWBOX.width;
       const height = KANTO_MAP_VIEWBOX.height;
-      
+
       svg
         .attr("viewBox", KANTO_MAP_VIEWBOX_VALUE)
         .attr("preserveAspectRatio", "xMidYMid slice");
-      
-      const SHOW_ZERO = true;
+
       const countsByPref = getCountsByPref(getAllEvents());
-      
-      // ★関東だけのFeatureCollectionを作成（フィルタ後）
       const kantoGeoJson = {
         type: "FeatureCollection",
         features: kantoFeatures
       };
-      
-      // SVGにフィット（fitExtentで意図的な余白を入れる）
+
       const projection = d3.geoMercator();
-      // 余白を"意図して"入れる（じゃらんはギチギチにしない）
       const pad = 12;
       projection.fitExtent(
         [[pad, pad], [width - pad, height - pad]],
         kantoGeoJson
       );
       const path = d3.geoPath().projection(projection);
-      
-      // 背景（白寄せ）
+
       svg.append("rect")
         .attr("width", width)
         .attr("height", height)
         .attr("fill", "#ffffff");
-      
-      // 県ポリゴン（じゃらん寄せのデザイン）
+
       const mapRoot = svg.append("g").attr("class", "map-root");
       const prefLayer = mapRoot.append("g").attr("class", "pref-layer");
       const getPrefFillColor = (count) => {
@@ -1850,6 +1690,9 @@
         return "#add4b7";
       };
 
+      const getBaseName = (name) => name.replace("都", "").replace("県", "").replace("府", "").replace("道", "");
+      const getCountForPref = (name) => countsByPref[name] ?? window.prefCounts?.[name] ?? 0;
+
       prefLayer.selectAll("path.pref")
         .data(kantoFeatures)
         .join("path")
@@ -1857,116 +1700,34 @@
           .attr("d", path)
           .attr("fill", d => {
             const name = getNameJa(d.properties);
-            const count = getPrefCount(name);
-            return getPrefFillColor(count);
+            return getPrefFillColor(getCountForPref(name));
           })
           .attr("stroke", "#b6c9be")
-            .attr("stroke-width", 1.1)
-          .style("cursor", d => {
-            const name = getNameJa(d.properties);
-            const c = getPrefCount(name);
-            return (!SHOW_ZERO && c === 0) ? "not-allowed" : "pointer";
-          })
-          .on("mouseenter", function(e, d) {
-            const name = getNameJa(d.properties);
-            const c = getPrefCount(name);
-            if (SHOW_ZERO || c > 0) {
-              if (!d3.select(this).classed("is-selected")) {
-                d3.select(this)
-                  .attr("fill", () => getPrefFillColor(getPrefCount(name)))
-                  .attr("stroke", "#a4b7ad")
-                  .attr("stroke-width", 1.2);
-              }
+          .attr("stroke-width", 1.1)
+          .style("cursor", "pointer")
+          .on("mouseenter", function() {
+            if (!d3.select(this).classed("is-selected")) {
+              d3.select(this).attr("stroke-width", 1.4);
             }
           })
-          .on("mouseleave", function(e, d) {
-              if (!d3.select(this).classed("is-selected")) {
-                d3.select(this)
-                  .attr("fill", () => getPrefFillColor(getPrefCount(getNameJa(d.properties))))
-                  .attr("stroke", "#b6c9be")
-                  .attr("stroke-width", 1.1);
-              }
+          .on("mouseleave", function() {
+            if (!d3.select(this).classed("is-selected")) {
+              d3.select(this).attr("stroke-width", 1.1);
+            }
           })
-          .on("click", async (e, d) => {
+          .on("click", (e, d) => {
             const name = getNameJa(d.properties);
-            const baseName = name.replace("都", "").replace("県", "").replace("府", "").replace("道", "");
-            const c = getPrefCount(name);
-            
-            console.log('[renderKantoMap] Clicked:', name, 'count:', c);
-            
-            if (!SHOW_ZERO && c === 0) return;
-            
-            updateSelectedPrefectureState(name, baseName, c);
-            window.currentMetaFilters = { categories: [], tags: [] };
-            window.selectedMunicipality = "";
-            renderMetaChips();
-            focusOnFeature(d);
-            
-            const heroSearchInput = document.getElementById('search-query');
-            const headerSearchInput = document.querySelector('#header-search .header-search-input');
-            if (heroSearchInput) heroSearchInput.value = baseName;
-            if (headerSearchInput) headerSearchInput.value = baseName;
-            applyFiltersAndRender({}, baseName, { refreshMetaChips: false });
-
-            prefLayer.selectAll("path.pref")
-              .classed("is-selected", false)
-              .attr("fill", "#fafafa")
-              .attr("stroke", "#dfe4e3")
-              .attr("stroke-width", 0.9);
-            d3.select(e.currentTarget)
-              .classed("is-selected", true)
-            .attr("fill", "#2aa889")
-              .attr("stroke", "#1f7f6a")
-              .attr("stroke-width", 2);
+            const normalized = normalizePrefectureName(name);
+            const baseName = getBaseName(name);
+            const count = getCountForPref(name);
+            const nextPref = (window.selectedPrefecture === normalized) ? "" : normalized;
+            updateSelectedPrefectureState(nextPref ? name : "", baseName, count);
+            const label = nextPref ? baseName : "";
+            applyFiltersAndRender({ prefecture: nextPref ? name : "" }, label);
           });
 
       prefLayerPaths = prefLayer.selectAll("path.pref");
 
-      const mapBackBtn = document.getElementById("mapBackBtn");
-      const resetMapZoom = () => {
-        mapRoot.attr("transform", null);
-        window.mapLevel = 1;
-        if (prefLayerPaths) {
-          prefLayerPaths.attr("opacity", 1).style("pointer-events", null);
-        }
-        if (mapBackBtn) {
-          mapBackBtn.classList.remove("visible");
-        }
-        window.selectedMunicipality = "";
-        renderMetaChips();
-        applyFiltersAndRender({}, "", { refreshMetaChips: false });
-      };
-      if (mapBackBtn) {
-        mapBackBtn.onclick = () => resetMapZoom();
-      }
-
-      const focusOnFeature = (feature) => {
-        if (!feature) return;
-        resetMapZoom();
-        const bounds = path.bounds(feature);
-        const [minX, minY] = bounds[0];
-        const [maxX, maxY] = bounds[1];
-        const deltaX = Math.max(maxX - minX, 1);
-        const deltaY = Math.max(maxY - minY, 1);
-        const scale = Math.min(width / deltaX, height / deltaY) * 0.9;
-        const centerX = (minX + maxX) / 2;
-        const centerY = (minY + maxY) / 2;
-        const translateX = width / 2 - scale * centerX;
-        const translateY = height / 2 - scale * centerY;
-        mapRoot.attr("transform", `translate(${translateX},${translateY}) scale(${scale})`);
-        window.mapLevel = 2;
-        if (mapBackBtn) {
-          mapBackBtn.classList.add("visible");
-        }
-        if (prefLayerPaths) {
-          prefLayerPaths.attr("opacity", d => d === feature ? 1 : 0.18)
-            .style("pointer-events", d => d === feature ? null : "none");
-        }
-      };
-      
-      resetMapZoom();
-      
-      // 県ラベル（じゃらん寄せ：白縁＋軽い影）
       const labelLayer = mapRoot.selectAll("g.label-layer").data([0]).join("g").attr("class", "label-layer");
       const labels = labelLayer.selectAll("text.pref-label").data(kantoFeatures, d => getNameJa(d.properties));
       labels.exit().remove();
@@ -1980,14 +1741,9 @@
         .attr("text-anchor", "middle")
         .attr("dy", "0.35em")
         .attr("pointer-events", "none")
-        .text(d => {
-          const name = getNameJa(d.properties);
-          const baseName = name.replace("都", "").replace("県", "").replace("府", "").replace("道", "");
-          return baseName;
-        });
+        .text(d => getBaseName(getNameJa(d.properties)));
 
       labelLayerTexts = labelLayer.selectAll("text.pref-label");
-
     }
 
     function updateSelectedPrefectureState(prefName, baseName, count) {
@@ -3376,45 +3132,36 @@
       setInterval(changeBackground, 5000);
     }
 
-    function renderMunicipalityChips(counts = {}) {
-      const container = document.getElementById("municipalityChips");
-      const box = document.getElementById("municipalityBox");
-      if (!container || !box) return;
-      if (window.mapLevel !== 2) {
-        box.style.display = "none";
-        container.innerHTML = "";
-        return;
+    function normalizeMetaSelectionArray(arr) {
+      if (!Array.isArray(arr)) return [];
+      return Array.from(new Set(arr.map(normalizeString).filter(Boolean)));
+    }
+
+    function getMetaSelection(type) {
+      const target = type === "category" ? window.selectedCategories : window.selectedTags;
+      return Array.isArray(target) ? target : [];
+    }
+
+    function isMetaFilterActive(type, value) {
+      if (!value) return false;
+      const selection = getMetaSelection(type);
+      return selection.includes(value);
+    }
+
+    function toggleMetaFilter(type, value) {
+      const normalizedValue = normalizeString(value);
+      if (!normalizedValue) return;
+      const selection = getMetaSelection(type);
+      const exists = selection.includes(normalizedValue);
+      const nextSelection = exists
+        ? selection.filter(item => item !== normalizedValue)
+        : [...selection, normalizedValue];
+      if (type === "category") {
+        window.selectedCategories = nextSelection;
+      } else {
+        window.selectedTags = nextSelection;
       }
-      box.style.display = "block";
-      container.innerHTML = "";
-      const entries = Object.entries(counts).sort((a, b) => {
-        if (b[1] !== a[1]) return b[1] - a[1];
-        return a[0].localeCompare(b[0], "ja");
-      });
-      const preview = entries.slice(0, 5).map(([name, value]) => `${name}:${value}`);
-      console.log("[municipality] selectedPrefecture", window.selectedPrefecture, "counts", preview);
-      if (!entries.length) {
-        const emptyChip = document.createElement("button");
-        emptyChip.type = "button";
-        emptyChip.className = "chip";
-        emptyChip.textContent = "該当なし";
-        container.appendChild(emptyChip);
-        return;
-      }
-      entries.forEach(([name, count]) => {
-        const chip = document.createElement("button");
-        chip.type = "button";
-        chip.className = "chip";
-        chip.textContent = `${name}（${count}）`;
-        const isActive = name === window.selectedMunicipality;
-        chip.classList.toggle("active", isActive);
-        chip.addEventListener("click", () => {
-          const nextValue = isActive ? "" : name;
-          window.selectedMunicipality = nextValue;
-          applyFiltersAndRender({}, "", { refreshMetaChips: false });
-        });
-        container.appendChild(chip);
-      });
+      applyFiltersAndRender();
     }
 
     function renderMetaChips(forceReload = false) {
@@ -3422,36 +3169,26 @@
       const tagChips = document.getElementById("tagChips");
       const defaultTags = ["自然", "アウトドア", "体験", "キャンプ"];
       const allEvents = getAllEvents();
-      const validEvents = allEvents.filter(event => getEventPrefecture(event));
-      const areaEvents = filterEventsByPref(allEvents, window.selectedPrefecture);
-      const baseEvents = window.selectedPrefecture ? areaEvents : validEvents;
-      const categoryCounts = countByCategory(baseEvents);
-      const tagCounts = countByTag(baseEvents);
-      const municipalityCounts = window.mapLevel === 2 ? countMunicipalities(areaEvents) : {};
+      const filteredForCounts = filterEvents(allEvents, { prefecture: window.selectedPrefecture });
+      const categoryCounts = countByCategory(filteredForCounts);
+      const tagCounts = countByTag(filteredForCounts);
 
       const renderChips = (container, items, fallback, type, counts) => {
         if (!container) return;
         container.innerHTML = "";
         const sources = items && items.length ? items : fallback;
-        const activeFilters = window.currentMetaFilters[type === "category" ? "categories" : "tags"] || [];
         sources.forEach((item) => {
           const chip = document.createElement("button");
           chip.type = "button";
           chip.className = "chip";
           const displayName = item?.label || item?.name || item?.title || item?.text || (typeof item === "string" ? item : item?.id) || "no-title";
           const filterValue = item?.id ?? item?.value ?? item?.name ?? item;
-          const payload = filterValue ?? displayName;
-          const normalizedPayload = normalizeString(payload);
+          const normalizedPayload = normalizeString(filterValue || displayName);
           const chipCount = normalizedPayload ? (counts[normalizedPayload] ?? 0) : 0;
           chip.textContent = `${displayName}（${chipCount}）`;
-          chip.classList.toggle("active", normalizedPayload && activeFilters.includes(normalizedPayload));
+          chip.classList.toggle("active", normalizedPayload && isMetaFilterActive(type, normalizedPayload));
           chip.addEventListener("click", () => {
-            if (!payload) return;
-            if (type === "category") {
-              applyFiltersAndRender({ categories: [payload] }, displayName);
-            } else {
-              applyFiltersAndRender({ tags: [payload] }, displayName);
-            }
+            toggleMetaFilter(type, normalizedPayload);
           });
           container.appendChild(chip);
         });
@@ -3460,7 +3197,6 @@
       const renderWithMeta = (metaCategories = [], metaTags = []) => {
         renderChips(categoryChips, metaCategories, [], "category", categoryCounts);
         renderChips(tagChips, metaTags, defaultTags, "tag", tagCounts);
-        renderMunicipalityChips(municipalityCounts);
       };
 
       if (!forceReload && cachedEventMeta) {
@@ -3512,47 +3248,33 @@
       const {
         categories = [],
         tags = [],
-        prefecture = "",
-        municipality = ""
+        prefecture = ""
       } = filters;
       const targetPrefecture = normalizePrefectureName(prefecture);
-      const targetMunicipality = normalizeMunicipalityName(municipality);
+      const normalizedCategories = Array.isArray(categories)
+        ? categories.map(normalizeString).filter(Boolean)
+        : [];
+      const normalizedTags = Array.isArray(tags)
+        ? tags.map(normalizeString).filter(Boolean)
+        : [];
       return allEvents.filter((event) => {
         if (targetPrefecture) {
           const eventPref = getEventPrefecture(event);
           if (eventPref !== targetPrefecture) return false;
         }
-        const categoryId = event?.categoryId || event?.category?.id || event?.category;
-        if (categories.length) {
-          const normalizedCategory = categoryId !== undefined ? String(categoryId).toLowerCase() : null;
-          const matchesCategory = categories.some(cat => normalizedCategory === String(cat).toLowerCase());
+
+        if (normalizedCategories.length) {
+          const eventCategory = normalizeString(event?.categoryId ?? event?.category?.id ?? event?.category);
+          const matchesCategory = normalizedCategories.some(cat => cat === eventCategory);
           if (!matchesCategory) return false;
         }
-        if (tags.length) {
-          const eventTags = [];
-          if (Array.isArray(event?.tags)) {
-            event.tags.forEach((tag) => {
-              if (typeof tag === "string") {
-                eventTags.push(tag);
-              } else if (tag?.id) {
-                eventTags.push(tag.id);
-              } else if (tag?.name) {
-                eventTags.push(tag.name);
-              }
-            });
 
-          }
-          if (Array.isArray(event?.tagIds)) {
-            event.tagIds.forEach(tag => eventTags.push(tag));
-          }
-          const normalizedTags = eventTags.map(tag => String(tag).toLowerCase());
-          const matchesTag = tags.some(tagFilter => normalizedTags.includes(String(tagFilter).toLowerCase()));
+        if (normalizedTags.length) {
+          const eventTags = extractTagIds(event);
+          const matchesTag = normalizedTags.some(tagFilter => eventTags.includes(tagFilter));
           if (!matchesTag) return false;
         }
-        if (targetMunicipality) {
-          const eventMunicipality = getEventMunicipality(event);
-          if (eventMunicipality !== targetMunicipality) return false;
-        }
+
         return true;
       });
     }
@@ -3567,16 +3289,18 @@
       window.prefCounts = counts;
 
       if (prefLayerPaths) {
+        const selectedPref = window.selectedPrefecture;
         prefLayerPaths.each(function(d) {
           const name = getNameJa(d.properties);
+          const normalizedName = normalizePrefectureName(name);
           const count = counts[name] ?? 0;
           const selection = d3.select(this);
-          if (!selection.classed("is-selected")) {
-            selection
-              .attr("fill", getPrefFillColor(count))
-              .attr("stroke", "#b6c9be")
-              .attr("stroke-width", 1.1);
-          }
+          const isSelected = selectedPref && normalizedName === selectedPref;
+          selection
+            .classed("is-selected", isSelected)
+            .attr("fill", isSelected ? "#2aa889" : getPrefFillColor(count))
+            .attr("stroke", isSelected ? "#1f7f6a" : "#b6c9be")
+            .attr("stroke-width", isSelected ? 2 : 1.1);
         });
       }
 
@@ -3614,39 +3338,35 @@
       }
     }
 
-    async function applyFiltersAndRender(filters = {}, label = "", options = {}) {
+    async function applyFiltersAndRender(overrides = {}, label = "", options = {}) {
       const heroSearchInput = document.getElementById('search-query');
       const headerSearchInput = document.querySelector('#header-search .header-search-input');
-      const searchLabel = label || filters.categories?.[0] || filters.tags?.[0] || "";
-      if (searchLabel) {
-        if (heroSearchInput) heroSearchInput.value = searchLabel;
-        if (headerSearchInput) headerSearchInput.value = searchLabel;
+      if (label) {
+        if (heroSearchInput) heroSearchInput.value = label;
+        if (headerSearchInput) headerSearchInput.value = label;
       }
 
       const { refreshMetaChips = true } = options;
-      const filtersWithPref = { ...filters };
-      if (!filtersWithPref.prefecture && window.selectedPrefecture) {
-        filtersWithPref.prefecture = window.selectedPrefecture;
-      }
-      filtersWithPref.categories = Array.isArray(filtersWithPref.categories) ? filtersWithPref.categories : [];
-      filtersWithPref.tags = Array.isArray(filtersWithPref.tags) ? filtersWithPref.tags : [];
-      const explicitMunicipality = filters.municipality ? normalizeMunicipalityName(filters.municipality) : "";
-      const targetMunicipality = explicitMunicipality || window.selectedMunicipality;
-      filtersWithPref.municipality = targetMunicipality;
-      if (explicitMunicipality) {
-        window.selectedMunicipality = explicitMunicipality;
-      } else if (!targetMunicipality) {
-        window.selectedMunicipality = "";
+      if (overrides.prefecture || overrides.pref) {
+        window.selectedPrefecture = normalizePrefectureName(overrides.prefecture || overrides.pref);
       }
 
-      const normalizedCategories = filtersWithPref.categories.map(normalizeString).filter(Boolean);
-      const normalizedTags = filtersWithPref.tags.map(normalizeString).filter(Boolean);
-      window.currentMetaFilters = {
-        categories: normalizedCategories,
-        tags: normalizedTags
-      };
+      const nextCategories = overrides.categories
+        ? normalizeMetaSelectionArray(overrides.categories)
+        : normalizeMetaSelectionArray(window.selectedCategories);
+      const nextTags = overrides.tags
+        ? normalizeMetaSelectionArray(overrides.tags)
+        : normalizeMetaSelectionArray(window.selectedTags);
 
-      const filteredEvents = filterEvents(getAllEvents(), filtersWithPref);
+      window.selectedCategories = nextCategories;
+      window.selectedTags = nextTags;
+
+      const filteredEvents = filterEvents(getAllEvents(), {
+        prefecture: window.selectedPrefecture,
+        categories: window.selectedCategories,
+        tags: window.selectedTags
+      });
+
       await renderEventBlocks(filteredEvents);
       if (typeof mapUpdater === 'function') {
         mapUpdater(filteredEvents);
@@ -3655,6 +3375,33 @@
       if (refreshMetaChips) {
         renderMetaChips();
       }
+    }
+
+    function buildMapSearchUrl() {
+      const params = new URLSearchParams();
+      if (window.selectedPrefecture) {
+        params.set('pref', window.selectedPrefecture);
+      }
+      const categories = Array.isArray(window.selectedCategories) ? window.selectedCategories : [];
+      if (categories.length) {
+        params.set('category', categories.join(','));
+      }
+      const tags = Array.isArray(window.selectedTags) ? window.selectedTags : [];
+      if (tags.length) {
+        params.set('tag', tags.join(','));
+      }
+      params.set('source', 'map');
+      const query = params.toString();
+      return query ? `events/list.html?${query}` : 'events/list.html';
+    }
+
+    function setupMapSearchButton() {
+      const button = document.getElementById('map-search-submit');
+      if (!button) return;
+      button.addEventListener('click', () => {
+        const target = buildMapSearchUrl();
+        window.location.href = target;
+      });
     }
 
     // 初期化（イベントデータ読み込み → 描画）
@@ -3706,6 +3453,7 @@
           console.log('[index.html] Sample event categoryId:', window.eventData.events[0].categoryId);
         }
         renderPopularSearch(); // 人気タグ・地域検索セクションを描画
+        setupMapSearchButton();
 
       } catch (e) {
         console.error(e);
