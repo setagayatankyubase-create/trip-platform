@@ -2759,10 +2759,8 @@ body {
   width: 100%;
   height: auto;
   min-height: 420px;
-  background: #f7fbfa;
+  background: linear-gradient(180deg, #eaf2fb 0%, #d7e4f2 60%, #cdd8eb 100%);
   background-size: cover;
-  background-image:
-    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.9) 0%, transparent 65%);
 }
 
 .map-prefecture {
