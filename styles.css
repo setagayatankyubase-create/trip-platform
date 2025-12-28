@@ -2449,6 +2449,12 @@ body {
   width: 100%;
 }
 
+/* 左カラムが縮まないよう min-width を入れる */
+.map-left {
+  justify-self: start;
+  min-width: 0;
+}
+
 /* 地図は左寄せ固定 */
 .map-left {
   justify-self: start;
