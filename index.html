@@ -1743,6 +1743,10 @@
       return events.filter(event => getEventPrefecture(event) === normalizedPref);
     }
 
+    function getNameJa(p) {
+      return p?.nam_ja || p?.name_ja || p?.NAME_JA || "";
+    }
+
     // boundsが本土BBoxと交差してるか
     function intersectsBbox(bounds, bbox) {
       const [[minX, minY], [maxX, maxY]] = bounds;
