@@ -1445,8 +1445,10 @@
     
     // 二重実行防止のガード
     let kantoMapRendered = false;
-    let kantoMapData = null; // 地図データを保持（リサイズ時に再描画用）
-    let resizeObserver = null; // ResizeObserverのインスタンス
+    let kantoMapData = null;
+    let prefLayerPaths = null;
+    let labelLayerTexts = null;
+    let mapUpdater = null;
     
     // 地図以外のSVG生成を一時停止するフラグ（地図だけに集中するため）
     const DISABLE_OTHER_SVG_GENERATION = true;
@@ -1562,7 +1564,7 @@
             const count = eventCountByAreaKey[key] ?? 0;
             return getPrefFillColor(count);
           })
-            .attr("stroke", "#b6c9be")
+          .attr("stroke", "#b6c9be")
             .attr("stroke-width", 1.1)
           .style("cursor", d => {
             const name = getNameJa(d.properties);
@@ -1634,7 +1636,7 @@
               .attr("stroke-width", 0.9);
             d3.select(e.currentTarget)
               .classed("is-selected", true)
-              .attr("fill", "#2aa889")
+          .attr("fill", "#2aa889")
               .attr("stroke", "#1f7f6a")
               .attr("stroke-width", 2);
             
@@ -1658,6 +1660,7 @@
           });
       
       // 県ラベル（じゃらん寄せ：白縁＋軽い影）
+      prefLayerPaths = prefLayer.selectAll("path.pref");
       const labelLayer = svg.append("g").attr("class", "label-layer");
       labelLayer.selectAll("text.pref-label")
         .data(kantoFeatures)
@@ -1673,11 +1676,12 @@
           .text(d => {
             const name = getNameJa(d.properties);
             const baseName = name.replace("都", "").replace("県", "").replace("府", "").replace("道", "");
-            const count = countsByPref[name] ?? 0;
-            return count > 0 ? `${baseName} (${count})` : baseName;
+            return baseName;
           });
       
       // 件数バッジ（イベント数がある場合のみ）
+      labelLayerTexts = labelLayer.selectAll("text.pref-label");
+
       const badgeLayer = svg.append("g").attr("class", "badge-layer");
       badgeLayer.selectAll("g.badge")
         .data(kantoFeatures)
@@ -2887,13 +2891,15 @@
     }
 
     // イベントブロックの表示（events_index ベース）
-    async function renderEventBlocks() {
+    async function renderEventBlocks(sourceEvents = null) {
       const MAX_HOME_EVENTS = 8;
       
       // eventIndex を優先、なければ eventData.events から構築
-      let source = Array.isArray(window.eventIndex) && window.eventIndex.length > 0
-        ? window.eventIndex
-        : (Array.isArray(window.eventData?.events) ? window.eventData.events : []);
+      let source = Array.isArray(sourceEvents) && sourceEvents.length > 0
+        ? sourceEvents
+        : (Array.isArray(window.eventIndex) && window.eventIndex.length > 0
+          ? window.eventIndex
+          : (Array.isArray(window.eventData?.events) ? window.eventData.events : []));
       
       // next_date が無い場合、最初の数件の詳細JSONから日付を補完
       if (source.length > 0 && !source[0].next_date && !source[0].date_min && (!source[0].dates || source[0].dates.length === 0)) {
@@ -3111,7 +3117,11 @@
           chip.textContent = label;
           const id = item?.id || label;
           chip.addEventListener("click", () => {
-            console.log(`${type} clicked`, id);
+            if (type === "category") {
+              applyFiltersAndRender({ categories: [id] }, label);
+            } else {
+              applyFiltersAndRender({ tags: [id] }, label);
+            }
           });
           container.appendChild(chip);
         });
@@ -3130,6 +3140,100 @@
       } else {
         renderChips(categoryChips, [], [], "category");
         renderChips(tagChips, [], defaultTags, "tag");
+      }
+    }
+
+    function getAllEvents() {
+      if (Array.isArray(window.eventData?.events) && window.eventData.events.length > 0) {
+        return window.eventData.events;
+      }
+      if (Array.isArray(window.eventIndex) && window.eventIndex.length > 0) {
+        return window.eventIndex;
+      }
+      return [];
+    }
+
+    function filterEvents(allEvents, filters = {}) {
+      const { categories = [], tags = [] } = filters;
+      return allEvents.filter((event) => {
+        const categoryId = event?.categoryId || event?.category?.id || event?.category;
+        if (categories.length) {
+          const normalizedCategory = categoryId !== undefined ? String(categoryId).toLowerCase() : null;
+          const matchesCategory = categories.some(cat => normalizedCategory === String(cat).toLowerCase());
+          if (!matchesCategory) return false;
+        }
+        if (tags.length) {
+          const eventTags = [];
+          if (Array.isArray(event?.tags)) {
+            event.tags.forEach((tag) => {
+              if (typeof tag === "string") {
+                eventTags.push(tag);
+              } else if (tag?.id) {
+                eventTags.push(tag.id);
+              } else if (tag?.name) {
+                eventTags.push(tag.name);
+              }
+            });
+
+      mapUpdater = (filteredEvents = getAllEvents()) => {
+        const counts = filteredEvents.reduce((acc, event) => {
+          const pref = (event?.prefecture || "").trim();
+          if (pref) acc[pref] = (acc[pref] || 0) + 1;
+          return acc;
+        }, {});
+
+        if (prefLayerPaths) {
+          prefLayerPaths.each(function(d) {
+            const name = getNameJa(d.properties);
+            const count = counts[name] ?? 0;
+            const selection = d3.select(this);
+            if (!selection.classed("is-selected")) {
+              selection
+                .attr("fill", getPrefFillColor(count))
+                .attr("stroke", "#b6c9be")
+                .attr("stroke-width", 1.1);
+            }
+          });
+        }
+
+        if (labelLayerTexts) {
+          labelLayerTexts.each(function(d) {
+            const name = getNameJa(d.properties);
+            const baseName = name.replace("都", "").replace("県", "").replace("府", "").replace("道", "");
+            const count = counts[name] ?? 0;
+            d3.select(this).text(count > 0 ? `${baseName} (${count})` : baseName);
+          });
+        }
+      };
+
+      if (mapUpdater) {
+        mapUpdater(getAllEvents());
+      }
+          }
+          if (Array.isArray(event?.tagIds)) {
+            event.tagIds.forEach(tag => eventTags.push(tag));
+          }
+          const normalizedTags = eventTags.map(tag => String(tag).toLowerCase());
+          const matchesTag = tags.some(tagFilter => normalizedTags.includes(String(tagFilter).toLowerCase()));
+          if (!matchesTag) return false;
+        }
+        return true;
+      });
+    }
+
+    async function applyFiltersAndRender(filters = {}, label = "") {
+      const heroSearchInput = document.getElementById('search-query');
+      const headerSearchInput = document.querySelector('#header-search .header-search-input');
+      const searchLabel = label || filters.categories?.[0] || filters.tags?.[0] || "";
+      if (searchLabel) {
+        if (heroSearchInput) heroSearchInput.value = searchLabel;
+        if (headerSearchInput) headerSearchInput.value = searchLabel;
+      }
+
+      const filteredEvents = filterEvents(getAllEvents(), filters);
+      await renderEventBlocks(filteredEvents);
+      if (typeof mapUpdater === 'function') {
+        mapUpdater(filteredEvents);
       }
     }
 
