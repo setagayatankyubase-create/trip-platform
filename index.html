@@ -137,8 +137,26 @@
           </button>
         </div>
         <div class="map-search-map" id="map-search-map">
-          <div class="map-svg-container" id="map-svg-container">
-            <svg id="kantoMap"></svg>
+          <div class="map-area">
+            <div class="map-left">
+              <div class="map-stage" id="map-svg-container">
+                <svg id="kantoMap"></svg>
+              </div>
+            </div>
+            <aside class="map-right">
+              <div class="box">
+                <div class="box-title">選択中エリア</div>
+                <div id="areaState" class="state">未選択</div>
+              </div>
+              <div class="box">
+                <div class="box-title">カテゴリで探す</div>
+                <div id="categoryChips" class="chips"></div>
+              </div>
+              <div class="box">
+                <div class="box-title">タグで探す</div>
+                <div id="tagChips" class="chips"></div>
+              </div>
+            </aside>
           </div>
           <div class="map-cities-list" id="map-cities-list" style="display: none;">
             <button class="map-back-button" id="map-back-button">← エリア選択に戻る</button>
@@ -1435,9 +1453,8 @@
     const DISABLE_OTHER_SVG_GENERATION = true;
     
     // ★離島除外処理（本土だけを表示するため）
-    // 関東本土のだいたいの範囲（少し広めに）
-    // lon: 138〜141.5 / lat: 34〜37.5
-    const MAINLAND_BBOX = [[138.0, 34.0], [141.5, 37.5]];
+    // 本土（関東周辺）の範囲を厳しめに：伊豆諸島を落としやすい
+    const TOKYO_MAINLAND_BBOX = [[138.6, 35.2], [140.4, 36.2]];
     
     // boundsが本土BBoxと交差してるか
     function intersectsBbox(bounds, bbox) {
@@ -1446,23 +1463,22 @@
       return !(maxX < bx0 || minX > bx1 || maxY < by0 || minY > by1);
     }
     
-    // Feature（Polygon/MultiPolygon）から本土BBoxにかかるポリゴンだけ残す
-    function keepMainlandPolygons(feature, bbox = MAINLAND_BBOX) {
+    // 東京都の本土だけを残す（伊豆諸島・小笠原を除外）
+    function keepTokyoMainland(feature) {
       if (!feature?.geometry) return feature;
       
       const g = feature.geometry;
       
       if (g.type === "Polygon") {
         const b = d3.geoBounds(feature);
-        return intersectsBbox(b, bbox) ? feature : null;
+        return intersectsBbox(b, TOKYO_MAINLAND_BBOX) ? feature : null;
       }
       
       if (g.type === "MultiPolygon") {
-        // MultiPolygonを Polygonごとに分解して判定
         const kept = g.coordinates.filter((polyCoords) => {
           const polyFeature = { type: "Feature", geometry: { type: "Polygon", coordinates: polyCoords } };
           const b = d3.geoBounds(polyFeature);
-          return intersectsBbox(b, bbox);
+          return intersectsBbox(b, TOKYO_MAINLAND_BBOX);
         });
         
         if (!kept.length) return null;
@@ -1557,7 +1573,16 @@
             const name = getNameJa(d.properties);
             const key = areaKeyByName[name];
             const c = eventCountByAreaKey[key] ?? 0;
+            
+            console.log('[renderKantoMap] Clicked:', name, 'count:', c);
+            
             if (!SHOW_ZERO && c === 0) return;
+            
+            // 右側の状態表示を更新
+            const areaState = document.getElementById("areaState");
+            if (areaState) {
+              areaState.textContent = `選択中：${name}`;
+            }
             
             // 市区町村データがある場合は市区町村マップを表示
             const cities = prefectureCities[key];
@@ -1769,7 +1794,7 @@
         // 関東だけ抽出（日本語名で判定）+ 東京都の離島を除外
         const kantoFeaturesFiltered = geo.features
           .filter(f => KANTO.has(getNameJa(f.properties)))
-          .map(f => (getNameJa(f.properties) === "東京都" ? keepMainlandPolygons(f) : f))
+          .map(f => (getNameJa(f.properties) === "東京都" ? keepTokyoMainland(f) : f))
           .filter(Boolean);
         
         // デバッグ：関東抽出の結果を確認
