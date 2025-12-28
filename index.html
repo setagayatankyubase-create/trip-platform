@@ -1545,10 +1545,10 @@
       // 県ポリゴン（じゃらん寄せのデザイン）
       const prefLayer = svg.append("g").attr("class", "pref-layer");
       const getPrefFillColor = (count) => {
-        if (count === 0) return "#f7faf6";
-        if (count <= 3) return "#e9f3eb";
-        if (count <= 10) return "#d0e7d6";
-        return "#b6dfc2";
+        if (count === 0) return "#f4f9f2";
+        if (count <= 3) return "#dfece1";
+        if (count <= 10) return "#c6e0c9";
+        return "#add4b7";
       };
 
       prefLayer.selectAll("path.pref")
@@ -1562,8 +1562,8 @@
             const count = eventCountByAreaKey[key] ?? 0;
             return getPrefFillColor(count);
           })
-          .attr("stroke", "#dfe4e3")
-          .attr("stroke-width", 0.9)
+            .attr("stroke", "#b6c9be")
+            .attr("stroke-width", 1.1)
           .style("cursor", d => {
             const name = getNameJa(d.properties);
             const key = areaKeyByName[name];
@@ -1583,7 +1583,7 @@
                     const count = eventCountByAreaKey[key] ?? 0;
                     return getPrefFillColor(count);
                   })
-                  .attr("stroke", "#cad2cf")
+                  .attr("stroke", "#a4b7ad")
                   .attr("stroke-width", 1.2);
               }
             }
@@ -1597,12 +1597,13 @@
                     const count = eventCountByAreaKey[key] ?? 0;
                     return getPrefFillColor(count);
                   })
-                  .attr("stroke", "#dfe4e3")
-                  .attr("stroke-width", 0.9);
+                  .attr("stroke", "#b6c9be")
+                  .attr("stroke-width", 1.1);
               }
           })
           .on("click", async (e, d) => {
             const name = getNameJa(d.properties);
+            const baseName = name.replace("都", "").replace("県", "").replace("府", "").replace("道", "");
             const key = areaKeyByName[name];
             const c = eventCountByAreaKey[key] ?? 0;
             
@@ -1613,10 +1614,18 @@
             // 右側の状態表示を更新
             const areaState = document.getElementById("areaState");
             if (areaState) {
-              areaState.textContent = `選択中：${name}`;
+              areaState.textContent = `選択中：${baseName}`;
               areaState.style.background = "#e8f2ed";
             }
             
+            const heroSearchInput = document.getElementById('search-query');
+            const headerSearchInput = document.querySelector('#header-search .header-search-input');
+            if (heroSearchInput) heroSearchInput.value = baseName;
+            if (headerSearchInput) headerSearchInput.value = baseName;
+            if (typeof renderEventBlocks === 'function') {
+              renderEventBlocks();
+            }
+
             // 県の選択状態を更新
             prefLayer.selectAll("path.pref")
               .classed("is-selected", false)
