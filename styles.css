@@ -2443,7 +2443,7 @@ body {
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: minmax(520px, 1fr) 320px;
+  grid-template-columns: minmax(840px, 1fr) 320px;
   gap: 12px;
   align-items: start;
   width: 100%;
@@ -2457,6 +2457,7 @@ body {
 /* 地図枠は白背景＋弱い影 */
 .map-stage {
   width: 100%;
+  max-width: 1200px;
   aspect-ratio: 16 / 9;
   background: #ffffff;
   border-radius: 14px;
@@ -2466,10 +2467,12 @@ body {
   position: relative;
 }
 
-.map-stage svg {
+#kantoMap {
+  display: block;
   width: 100%;
   height: 100%;
-  display: block;
+  max-width: 1200px;
+  max-height: 720px;
 }
 
 /* 右カラム（探索UI） */

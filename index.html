@@ -1514,6 +1514,13 @@
         .attr("preserveAspectRatio", "xMidYMid meet");
       
       const SHOW_ZERO = false;
+      const countsByPref = (window.eventData?.events || []).reduce((acc, event) => {
+        const pref = (event?.prefecture || "").trim();
+        if (pref) {
+          acc[pref] = (acc[pref] || 0) + 1;
+        }
+        return acc;
+      }, {});
       
       // ★関東だけのFeatureCollectionを作成（フィルタ後）
       const kantoGeoJson = {
@@ -1539,12 +1546,24 @@
       
       // 県ポリゴン（じゃらん寄せのデザイン）
       const prefLayer = svg.append("g").attr("class", "pref-layer");
+      const getPrefFillColor = (count) => {
+        if (count === 0) return "#f7faf6";
+        if (count <= 3) return "#e9f3eb";
+        if (count <= 10) return "#d0e7d6";
+        return "#b6dfc2";
+      };
+
       prefLayer.selectAll("path.pref")
         .data(kantoFeatures)
         .join("path")
           .attr("class", "pref")
           .attr("d", path)
-          .attr("fill", "#fafafa")
+          .attr("fill", d => {
+            const name = getNameJa(d.properties);
+            const key = areaKeyByName[name];
+            const count = eventCountByAreaKey[key] ?? 0;
+            return getPrefFillColor(count);
+          })
           .attr("stroke", "#dfe4e3")
           .attr("stroke-width", 0.9)
           .style("cursor", d => {
@@ -1560,19 +1579,29 @@
             if (SHOW_ZERO || c > 0) {
               if (!d3.select(this).classed("is-selected")) {
                 d3.select(this)
-                  .attr("fill", "#f4f5f4")
+                  .attr("fill", d => {
+                    const name = getNameJa(d.properties);
+                    const key = areaKeyByName[name];
+                    const count = eventCountByAreaKey[key] ?? 0;
+                    return getPrefFillColor(count);
+                  })
                   .attr("stroke", "#cad2cf")
                   .attr("stroke-width", 1.2);
               }
             }
           })
           .on("mouseleave", function(e, d) {
-            if (!d3.select(this).classed("is-selected")) {
-              d3.select(this)
-                .attr("fill", "#fafafa")
-                .attr("stroke", "#dfe4e3")
-                .attr("stroke-width", 0.9);
-            }
+              if (!d3.select(this).classed("is-selected")) {
+                d3.select(this)
+                  .attr("fill", d => {
+                    const name = getNameJa(d.properties);
+                    const key = areaKeyByName[name];
+                    const count = eventCountByAreaKey[key] ?? 0;
+                    return getPrefFillColor(count);
+                  })
+                  .attr("stroke", "#dfe4e3")
+                  .attr("stroke-width", 0.9);
+              }
           })
           .on("click", async (e, d) => {
             const name = getNameJa(d.properties);
@@ -1636,8 +1665,9 @@
           .attr("pointer-events", "none")
           .text(d => {
             const name = getNameJa(d.properties);
-            // 都・県・府・道を削除
-            return name.replace("都", "").replace("県", "").replace("府", "").replace("道", "");
+            const baseName = name.replace("都", "").replace("県", "").replace("府", "").replace("道", "");
+            const count = countsByPref[name] ?? 0;
+            return count > 0 ? `${baseName} (${count})` : baseName;
           });
       
       // 件数バッジ（イベント数がある場合のみ）
@@ -3057,6 +3087,45 @@
       setInterval(changeBackground, 5000);
     }
 
+    function renderMetaChips() {
+      const categoryChips = document.getElementById("categoryChips");
+      const tagChips = document.getElementById("tagChips");
+      const defaultTags = ["自然", "アウトドア", "体験", "キャンプ"];
+
+      const renderChips = (container, items, fallback, type) => {
+        if (!container) return;
+        container.innerHTML = "";
+        const sources = items && items.length ? items : fallback;
+        sources.forEach((item) => {
+          const chip = document.createElement("button");
+          chip.type = "button";
+          chip.className = "chip";
+          const label = item?.label || item?.name || item?.title || item?.id || item || "no-title";
+          chip.textContent = label;
+          const id = item?.id || label;
+          chip.addEventListener("click", () => {
+            console.log(`${type} clicked`, id);
+          });
+          container.appendChild(chip);
+        });
+      };
+
+      if (typeof window.loadEventMeta === "function") {
+        window.loadEventMeta()
+          .then((meta) => {
+            renderChips(categoryChips, meta?.categories || [], [], "category");
+            renderChips(tagChips, meta?.tags || [], defaultTags, "tag");
+          })
+          .catch(() => {
+            renderChips(categoryChips, [], [], "category");
+            renderChips(tagChips, [], defaultTags, "tag");
+          });
+      } else {
+        renderChips(categoryChips, [], [], "category");
+        renderChips(tagChips, [], defaultTags, "tag");
+      }
+    }
+
     // 初期化（イベントデータ読み込み → 描画）
     document.addEventListener('DOMContentLoaded', async () => {
       // ヒーロー背景画像の自動切り替えを開始
@@ -3092,6 +3161,7 @@
         // 位置情報ベースのイベントを最優先で表示（データ読み込み後すぐに実行）
         // 地図から探す機能を初期化
         initMapSearch();
+        renderMetaChips();
         renderCategories();
         initCategoryMenu(); // カテゴリメニューを初期化（ホバー表示用）
         renderWeekCalendar();
