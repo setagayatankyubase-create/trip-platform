@@ -232,8 +232,7 @@ const URLManager = {
       area: params.get('area') || '',
       weekday: params.get('weekday') || '',
       pref: params.get('pref') || '',
-      tag: params.get('tag') || '',
-      source: params.get('source') || ''
+      tag: params.get('tag') || ''
     };
   },
 

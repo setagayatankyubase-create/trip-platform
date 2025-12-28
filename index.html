@@ -131,6 +131,10 @@
       <div class="map-search-container">
         <div class="map-search-description">
           <p>地図からエリアを選んで体験を見る</p>
+          <button class="map-nearby-button" id="map-nearby-button">
+            <span class="map-nearby-icon">📍</span>
+            <span>近くから探す</span>
+          </button>
         </div>
         <div class="map-search-map" id="map-search-map">
           <div class="map-area">
@@ -153,7 +157,7 @@
                 <div id="tagChips" class="chips"></div>
               </div>
               <div class="box map-search-actions">
-                <button id="map-search-submit" class="map-search-submit">この条件で検索</button>
+                <button id="searchConditionsButton" type="button" class="primary">この条件で検索</button>
               </div>
             </aside>
           </div>
@@ -381,6 +385,42 @@
       } else if (carouselContainer && (!campaignData || campaignData.length === 0)) {
         carouselContainer.parentElement.parentElement.style.display = 'none';
       }
+    }
+
+    function handleCategoryToggle(value, label, isActive) {
+      const nextCategories = isActive
+        ? window.selectedCategories.filter(cat => cat !== value)
+        : [...window.selectedCategories, value];
+      window.selectedCategories = nextCategories;
+      applyFiltersAndRender({ label: isActive ? "" : label });
+    }
+
+    function handleTagToggle(value, label, isActive) {
+      const nextTags = isActive
+        ? window.selectedTags.filter(tag => tag !== value)
+        : [...window.selectedTags, value];
+      window.selectedTags = nextTags;
+      applyFiltersAndRender({ label: isActive ? "" : label });
+    }
+
+    function initSearchConditionsButton() {
+      const button = document.getElementById('searchConditionsButton');
+      if (!button) return;
+      button.addEventListener('click', () => {
+        const params = new URLSearchParams();
+        if (window.selectedPrefecture) {
+          params.set('pref', window.selectedPrefecture);
+        }
+        if (window.selectedCategories.length) {
+          params.set('category', window.selectedCategories.join(','));
+        }
+        if (window.selectedTags.length) {
+          params.set('tag', window.selectedTags.join(','));
+        }
+        const query = params.toString();
+        const targetUrl = query ? `list.html?${query}` : 'list.html';
+        window.location.href = targetUrl;
+      });
     }
 
     // タグ・地域検索セクションのレンダリング
@@ -1353,12 +1393,50 @@
 
     // 地図から探す機能の初期化
     function initMapSearch() {
-      if (document.readyState === 'loading') {
-        window.addEventListener('DOMContentLoaded', () => {
+
+      const initMap = () => {
+        if (document.readyState === 'loading') {
+          window.addEventListener('DOMContentLoaded', () => {
+            createKantoSVGMap();
+          });
+        } else {
           createKantoSVGMap();
+        }
+      };
+
+      initMap();
+
+      const nearbyButton = document.getElementById('map-nearby-button');
+      if (nearbyButton) {
+        nearbyButton.addEventListener('click', () => {
+          if (!navigator.geolocation) {
+            alert('位置情報が利用できません');
+            return;
+          }
+
+          nearbyButton.disabled = true;
+          nearbyButton.innerHTML = '<span class="map-nearby-icon">📍</span><span>位置情報を取得中...</span>';
+
+          navigator.geolocation.getCurrentPosition(
+            async (position) => {
+              const lat = position.coords.latitude;
+              const lng = position.coords.longitude;
+              
+              nearbyButton.disabled = false;
+              nearbyButton.innerHTML = '<span class="map-nearby-icon">📍</span><span>近くから探す</span>';
+            },
+            (error) => {
+              alert('位置情報の取得に失敗しました');
+              nearbyButton.disabled = false;
+              nearbyButton.innerHTML = '<span class="map-nearby-icon">📍</span><span>近くから探す</span>';
+            },
+            {
+              enableHighAccuracy: true,
+              timeout: 20000,
+              maximumAge: 0
+            }
+          );
         });
-      } else {
-        createKantoSVGMap();
       }
     }
     
@@ -1381,7 +1459,6 @@
     let kantoMapData = null;
     let prefLayerPaths = null;
     let labelLayerTexts = null;
-    let mapUpdater = null;
     
     // 地図以外のSVG生成を一時停止するフラグ（地図だけに集中するため）
     const DISABLE_OTHER_SVG_GENERATION = true;
@@ -1413,10 +1490,19 @@
     };
 
     const PREFECTURE_SUFFIXES = ["都", "道", "府", "県"];
+    const MAP_DEFAULT_FILL = "#f6f8f7";
+    const MAP_DEFAULT_STROKE = "rgba(0, 0, 0, 0.15)";
+    const MAP_SELECTED_FILL = "rgba(0, 128, 96, 0.18)";
+    const MAP_SELECTED_STROKE = "rgba(0, 128, 96, 0.8)";
 
     window.selectedPrefecture = "";
     window.selectedCategories = [];
     window.selectedTags = [];
+    window.baseEvents = [];
+    window.basePrefCounts = {};
+    window.baseCategoryCounts = {};
+    window.baseTagCounts = {};
+    window.filteredEvents = [];
     let cachedEventMeta = null;
     let metaLoadPromise = null;
 
@@ -1592,6 +1678,12 @@
       }, {});
     }
 
+    function filterEventsByPref(events, prefName) {
+      const normalizedPref = normalizePrefectureName(prefName);
+      if (!normalizedPref) return events;
+      return events.filter(event => getEventPrefecture(event) === normalizedPref);
+    }
+
     function getNameJa(p) {
       return p?.nam_ja || p?.name_ja || p?.NAME_JA || "";
     }
@@ -1601,12 +1693,21 @@
     }
 
     // boundsが本土BBoxと交差してるか
-    window.latestFilteredEvents = [];
-    window.prefCounts = {};
-
-    function getPrefCount(prefName) {
-      if (!prefName) return 0;
-      return window.prefCounts?.[prefName] ?? 0;
+    function ensureBaseStats() {
+      if (!Array.isArray(window.baseEvents) || window.baseEvents.length === 0) {
+        window.baseEvents = getAllEvents();
+      }
+      if (!window.baseEvents.length) return false;
+      if (!window.basePrefCounts || Object.keys(window.basePrefCounts).length === 0) {
+        window.basePrefCounts = countByPref(window.baseEvents);
+      }
+      if (!window.baseCategoryCounts || Object.keys(window.baseCategoryCounts).length === 0) {
+        window.baseCategoryCounts = countByCategory(window.baseEvents);
+      }
+      if (!window.baseTagCounts || Object.keys(window.baseTagCounts).length === 0) {
+        window.baseTagCounts = countByTag(window.baseEvents);
+      }
+      return true;
     }
 
     // boundsが本土BBoxと交差してるか
@@ -1653,34 +1754,43 @@
         console.error('[renderKantoMap] Container not found');
         return;
       }
-
+      
+      // SVGをクリア
       svg.selectAll("*").remove();
+      
       const width = KANTO_MAP_VIEWBOX.width;
       const height = KANTO_MAP_VIEWBOX.height;
-
+      
       svg
         .attr("viewBox", KANTO_MAP_VIEWBOX_VALUE)
         .attr("preserveAspectRatio", "xMidYMid slice");
-
-      const countsByPref = getCountsByPref(getAllEvents());
+      
+      ensureBaseStats();
+      const countsByPref = window.basePrefCounts;
+      
+      // ★関東だけのFeatureCollectionを作成（フィルタ後）
       const kantoGeoJson = {
         type: "FeatureCollection",
         features: kantoFeatures
       };
-
+      
+      // SVGにフィット（fitExtentで意図的な余白を入れる）
       const projection = d3.geoMercator();
+      // 余白を"意図して"入れる（じゃらんはギチギチにしない）
       const pad = 12;
       projection.fitExtent(
         [[pad, pad], [width - pad, height - pad]],
         kantoGeoJson
       );
       const path = d3.geoPath().projection(projection);
-
+      
+      // 背景（白寄せ）
       svg.append("rect")
         .attr("width", width)
         .attr("height", height)
         .attr("fill", "#ffffff");
-
+      
+      // 県ポリゴン（じゃらん寄せのデザイン）
       const mapRoot = svg.append("g").attr("class", "map-root");
       const prefLayer = mapRoot.append("g").attr("class", "pref-layer");
       const getPrefFillColor = (count) => {
@@ -1690,25 +1800,17 @@
         return "#add4b7";
       };
 
-      const getBaseName = (name) => name.replace("都", "").replace("県", "").replace("府", "").replace("道", "");
-      const getCountForPref = (name) => countsByPref[name] ?? window.prefCounts?.[name] ?? 0;
-
-      prefLayer.selectAll("path.pref")
+      const prefLayerPathsSelection = prefLayer.selectAll("path.pref")
         .data(kantoFeatures)
         .join("path")
           .attr("class", "pref")
           .attr("d", path)
-          .attr("fill", d => {
-            const name = getNameJa(d.properties);
-            return getPrefFillColor(getCountForPref(name));
-          })
-          .attr("stroke", "#b6c9be")
+          .attr("fill", MAP_DEFAULT_FILL)
+          .attr("stroke", MAP_DEFAULT_STROKE)
           .attr("stroke-width", 1.1)
           .style("cursor", "pointer")
           .on("mouseenter", function() {
-            if (!d3.select(this).classed("is-selected")) {
-              d3.select(this).attr("stroke-width", 1.4);
-            }
+            d3.select(this).attr("stroke-width", 1.4);
           })
           .on("mouseleave", function() {
             if (!d3.select(this).classed("is-selected")) {
@@ -1717,16 +1819,25 @@
           })
           .on("click", (e, d) => {
             const name = getNameJa(d.properties);
-            const normalized = normalizePrefectureName(name);
-            const baseName = getBaseName(name);
-            const count = getCountForPref(name);
-            const nextPref = (window.selectedPrefecture === normalized) ? "" : normalized;
-            updateSelectedPrefectureState(nextPref ? name : "", baseName, count);
-            const label = nextPref ? baseName : "";
-            applyFiltersAndRender({ prefecture: nextPref ? name : "" }, label);
+            const normalizedPref = normalizePrefectureName(name);
+            if (!normalizedPref) return;
+            const baseName = name.replace("都", "").replace("県", "").replace("府", "").replace("道", "");
+            const heroSearchInput = document.getElementById('search-query');
+            const headerSearchInput = document.querySelector('#header-search .header-search-input');
+            const isCurrentlySelected = window.selectedPrefecture === normalizedPref;
+            window.selectedPrefecture = isCurrentlySelected ? "" : normalizedPref;
+            if (!isCurrentlySelected) {
+              if (heroSearchInput) heroSearchInput.value = baseName;
+              if (headerSearchInput) headerSearchInput.value = baseName;
+            } else {
+              if (heroSearchInput) heroSearchInput.value = "";
+              if (headerSearchInput) headerSearchInput.value = "";
+            }
+            applyFiltersAndRender({ label: isCurrentlySelected ? "" : baseName });
           });
 
-      prefLayerPaths = prefLayer.selectAll("path.pref");
+      prefLayerPaths = prefLayerPathsSelection;
+      updateMapSelection();
 
       const labelLayer = mapRoot.selectAll("g.label-layer").data([0]).join("g").attr("class", "label-layer");
       const labels = labelLayer.selectAll("text.pref-label").data(kantoFeatures, d => getNameJa(d.properties));
@@ -1741,17 +1852,46 @@
         .attr("text-anchor", "middle")
         .attr("dy", "0.35em")
         .attr("pointer-events", "none")
-        .text(d => getBaseName(getNameJa(d.properties)));
+        .text(d => {
+          const name = getNameJa(d.properties);
+          const baseName = name.replace("都", "").replace("県", "").replace("府", "").replace("道", "");
+          const count = countsByPref?.[name] ?? 0;
+          return `${baseName}（${count}）`;
+        })
+        .attr("fill", d => {
+          const name = getNameJa(d.properties);
+          const count = countsByPref?.[name] ?? 0;
+          return count > 0 ? "#0f4f46" : "#9db0a3";
+        });
 
       labelLayerTexts = labelLayer.selectAll("text.pref-label");
+
     }
 
-    function updateSelectedPrefectureState(prefName, baseName, count) {
+    function updateMapSelection() {
+      if (!prefLayerPaths) return;
+      prefLayerPaths.each(function(d) {
+        const name = getNameJa(d.properties);
+        const normalizedName = normalizePrefectureName(name);
+        const isActive = normalizedName && normalizedName === window.selectedPrefecture;
+        const selection = d3.select(this);
+        selection
+          .classed("is-selected", isActive)
+          .attr("fill", isActive ? MAP_SELECTED_FILL : MAP_DEFAULT_FILL)
+          .attr("stroke", isActive ? MAP_SELECTED_STROKE : MAP_DEFAULT_STROKE)
+          .attr("stroke-width", isActive ? 2 : 1.1);
+      });
+    }
+
+    function updateSelectedPrefectureState(prefName, filteredCount) {
       window.selectedPrefecture = normalizePrefectureName(prefName);
       const areaState = document.getElementById("areaState");
       if (!areaState) return;
       if (prefName) {
-        areaState.textContent = `選択中：${baseName}（${count}件）`;
+        const baseName = prefName.replace("都", "").replace("県", "").replace("府", "").replace("道", "");
+        areaState.textContent = filteredCount != null
+          ? `選択中：${baseName}（${filteredCount}件）`
+          : `選択中：${baseName}`;
         areaState.style.background = "#e8f2ed";
       } else {
         areaState.textContent = "未選択";
@@ -3132,71 +3272,51 @@
       setInterval(changeBackground, 5000);
     }
 
-    function normalizeMetaSelectionArray(arr) {
-      if (!Array.isArray(arr)) return [];
-      return Array.from(new Set(arr.map(normalizeString).filter(Boolean)));
-    }
-
-    function getMetaSelection(type) {
-      const target = type === "category" ? window.selectedCategories : window.selectedTags;
-      return Array.isArray(target) ? target : [];
-    }
-
-    function isMetaFilterActive(type, value) {
-      if (!value) return false;
-      const selection = getMetaSelection(type);
-      return selection.includes(value);
-    }
-
-    function toggleMetaFilter(type, value) {
-      const normalizedValue = normalizeString(value);
-      if (!normalizedValue) return;
-      const selection = getMetaSelection(type);
-      const exists = selection.includes(normalizedValue);
-      const nextSelection = exists
-        ? selection.filter(item => item !== normalizedValue)
-        : [...selection, normalizedValue];
-      if (type === "category") {
-        window.selectedCategories = nextSelection;
-      } else {
-        window.selectedTags = nextSelection;
-      }
-      applyFiltersAndRender();
-    }
-
     function renderMetaChips(forceReload = false) {
       const categoryChips = document.getElementById("categoryChips");
       const tagChips = document.getElementById("tagChips");
       const defaultTags = ["自然", "アウトドア", "体験", "キャンプ"];
-      const allEvents = getAllEvents();
-      const filteredForCounts = filterEvents(allEvents, { prefecture: window.selectedPrefecture });
-      const categoryCounts = countByCategory(filteredForCounts);
-      const tagCounts = countByTag(filteredForCounts);
+      if (!ensureBaseStats()) return;
 
-      const renderChips = (container, items, fallback, type, counts) => {
+      const filteredEvents = Array.isArray(window.filteredEvents) ? window.filteredEvents : [];
+      const isFiltering = Boolean(
+        window.selectedPrefecture ||
+        window.selectedCategories.length ||
+        window.selectedTags.length
+      );
+      const categoryCounts = isFiltering ? countByCategory(filteredEvents) : window.baseCategoryCounts;
+      const tagCounts = isFiltering ? countByTag(filteredEvents) : window.baseTagCounts;
+
+      const renderChips = (container, items, fallback, type, counts, activeFilters) => {
         if (!container) return;
         container.innerHTML = "";
         const sources = items && items.length ? items : fallback;
         sources.forEach((item) => {
+          const displayName = (item?.label || item?.name || item?.title || item?.text || (typeof item === "string" ? item : item?.id) || "no-title");
+          const filterValue = item?.id ?? item?.value ?? item?.name ?? item?.label ?? item;
+          const normalizedPayload = normalizeString(filterValue);
+          const chipCount = normalizedPayload ? (counts[normalizedPayload] ?? 0) : 0;
           const chip = document.createElement("button");
           chip.type = "button";
           chip.className = "chip";
-          const displayName = item?.label || item?.name || item?.title || item?.text || (typeof item === "string" ? item : item?.id) || "no-title";
-          const filterValue = item?.id ?? item?.value ?? item?.name ?? item;
-          const normalizedPayload = normalizeString(filterValue || displayName);
-          const chipCount = normalizedPayload ? (counts[normalizedPayload] ?? 0) : 0;
           chip.textContent = `${displayName}（${chipCount}）`;
-          chip.classList.toggle("active", normalizedPayload && isMetaFilterActive(type, normalizedPayload));
+          const isActive = normalizedPayload && activeFilters.includes(normalizedPayload);
+          chip.classList.toggle("active", isActive);
           chip.addEventListener("click", () => {
-            toggleMetaFilter(type, normalizedPayload);
+            if (!normalizedPayload) return;
+            if (type === "category") {
+              handleCategoryToggle(normalizedPayload, displayName, isActive);
+            } else {
+              handleTagToggle(normalizedPayload, displayName, isActive);
+            }
           });
           container.appendChild(chip);
         });
       };
 
       const renderWithMeta = (metaCategories = [], metaTags = []) => {
-        renderChips(categoryChips, metaCategories, [], "category", categoryCounts);
-        renderChips(tagChips, metaTags, defaultTags, "tag", tagCounts);
+        renderChips(categoryChips, metaCategories, [], "category", categoryCounts, window.selectedCategories);
+        renderChips(tagChips, metaTags, defaultTags, "tag", tagCounts, window.selectedTags);
       };
 
       if (!forceReload && cachedEventMeta) {
@@ -3251,74 +3371,40 @@
         prefecture = ""
       } = filters;
       const targetPrefecture = normalizePrefectureName(prefecture);
-      const normalizedCategories = Array.isArray(categories)
-        ? categories.map(normalizeString).filter(Boolean)
-        : [];
-      const normalizedTags = Array.isArray(tags)
-        ? tags.map(normalizeString).filter(Boolean)
-        : [];
       return allEvents.filter((event) => {
         if (targetPrefecture) {
           const eventPref = getEventPrefecture(event);
           if (eventPref !== targetPrefecture) return false;
         }
-
-        if (normalizedCategories.length) {
-          const eventCategory = normalizeString(event?.categoryId ?? event?.category?.id ?? event?.category);
-          const matchesCategory = normalizedCategories.some(cat => cat === eventCategory);
+        const categoryId = event?.categoryId || event?.category?.id || event?.category;
+        if (categories.length) {
+          const normalizedCategory = categoryId !== undefined ? String(categoryId).toLowerCase() : null;
+          const matchesCategory = categories.some(cat => normalizedCategory === String(cat).toLowerCase());
           if (!matchesCategory) return false;
         }
+        if (tags.length) {
+          const eventTags = [];
+          if (Array.isArray(event?.tags)) {
+            event.tags.forEach((tag) => {
+              if (typeof tag === "string") {
+                eventTags.push(tag);
+              } else if (tag?.id) {
+                eventTags.push(tag.id);
+              } else if (tag?.name) {
+                eventTags.push(tag.name);
+              }
+            });
 
-        if (normalizedTags.length) {
-          const eventTags = extractTagIds(event);
-          const matchesTag = normalizedTags.some(tagFilter => eventTags.includes(tagFilter));
+          }
+          if (Array.isArray(event?.tagIds)) {
+            event.tagIds.forEach(tag => eventTags.push(tag));
+          }
+          const normalizedTags = eventTags.map(tag => String(tag).toLowerCase());
+          const matchesTag = tags.some(tagFilter => normalizedTags.includes(String(tagFilter).toLowerCase()));
           if (!matchesTag) return false;
         }
-
         return true;
       });
-    }
-
-    mapUpdater = (filteredEvents = getAllEvents()) => {
-      window.latestFilteredEvents = filteredEvents;
-      const counts = filteredEvents.reduce((acc, event) => {
-        const pref = getEventPrefecture(event);
-        if (pref) acc[pref] = (acc[pref] || 0) + 1;
-        return acc;
-      }, {});
-      window.prefCounts = counts;
-
-      if (prefLayerPaths) {
-        const selectedPref = window.selectedPrefecture;
-        prefLayerPaths.each(function(d) {
-          const name = getNameJa(d.properties);
-          const normalizedName = normalizePrefectureName(name);
-          const count = counts[name] ?? 0;
-          const selection = d3.select(this);
-          const isSelected = selectedPref && normalizedName === selectedPref;
-          selection
-            .classed("is-selected", isSelected)
-            .attr("fill", isSelected ? "#2aa889" : getPrefFillColor(count))
-            .attr("stroke", isSelected ? "#1f7f6a" : "#b6c9be")
-            .attr("stroke-width", isSelected ? 2 : 1.1);
-        });
-      }
-
-      if (labelLayerTexts) {
-        labelLayerTexts.each(function(d) {
-          const name = getNameJa(d.properties);
-          const baseName = name.replace("都", "").replace("県", "").replace("府", "").replace("道", "");
-          const count = counts[name] ?? 0;
-          const textSelection = d3.select(this);
-          textSelection
-            .text(`${baseName}（${count}）`)
-            .attr("fill", count > 0 ? "#0f4f46" : "#9db0a3");
-        });
-      }
-    };
-
-    if (mapUpdater) {
-      mapUpdater(getAllEvents());
     }
 
     function updateFilterResultsNotice(hasResults) {
@@ -3338,70 +3424,34 @@
       }
     }
 
-    async function applyFiltersAndRender(overrides = {}, label = "", options = {}) {
+    async function applyFiltersAndRender(options = {}) {
+      const { label = "", refreshMetaChips = true } = options;
       const heroSearchInput = document.getElementById('search-query');
       const headerSearchInput = document.querySelector('#header-search .header-search-input');
+
       if (label) {
         if (heroSearchInput) heroSearchInput.value = label;
         if (headerSearchInput) headerSearchInput.value = label;
       }
 
-      const { refreshMetaChips = true } = options;
-      if (overrides.prefecture || overrides.pref) {
-        window.selectedPrefecture = normalizePrefectureName(overrides.prefecture || overrides.pref);
-      }
+      if (!ensureBaseStats()) return;
 
-      const nextCategories = overrides.categories
-        ? normalizeMetaSelectionArray(overrides.categories)
-        : normalizeMetaSelectionArray(window.selectedCategories);
-      const nextTags = overrides.tags
-        ? normalizeMetaSelectionArray(overrides.tags)
-        : normalizeMetaSelectionArray(window.selectedTags);
-
-      window.selectedCategories = nextCategories;
-      window.selectedTags = nextTags;
-
-      const filteredEvents = filterEvents(getAllEvents(), {
+      const filters = {
         prefecture: window.selectedPrefecture,
         categories: window.selectedCategories,
         tags: window.selectedTags
-      });
+      };
+
+      const filteredEvents = filterEvents(window.baseEvents, filters);
+      window.filteredEvents = filteredEvents;
 
       await renderEventBlocks(filteredEvents);
-      if (typeof mapUpdater === 'function') {
-        mapUpdater(filteredEvents);
-      }
       updateFilterResultsNotice(filteredEvents.length > 0);
+      updateSelectedPrefectureState(window.selectedPrefecture, filteredEvents.length);
       if (refreshMetaChips) {
         renderMetaChips();
       }
-    }
-
-    function buildMapSearchUrl() {
-      const params = new URLSearchParams();
-      if (window.selectedPrefecture) {
-        params.set('pref', window.selectedPrefecture);
-      }
-      const categories = Array.isArray(window.selectedCategories) ? window.selectedCategories : [];
-      if (categories.length) {
-        params.set('category', categories.join(','));
-      }
-      const tags = Array.isArray(window.selectedTags) ? window.selectedTags : [];
-      if (tags.length) {
-        params.set('tag', tags.join(','));
-      }
-      params.set('source', 'map');
-      const query = params.toString();
-      return query ? `events/list.html?${query}` : 'events/list.html';
-    }
-
-    function setupMapSearchButton() {
-      const button = document.getElementById('map-search-submit');
-      if (!button) return;
-      button.addEventListener('click', () => {
-        const target = buildMapSearchUrl();
-        window.location.href = target;
-      });
+      updateMapSelection();
     }
 
     // 初期化（イベントデータ読み込み → 描画）
@@ -3440,11 +3490,11 @@
         // 位置情報ベースのイベントを最優先で表示（データ読み込み後すぐに実行）
         // 地図から探す機能を初期化
         initMapSearch();
-        renderMetaChips();
         renderCategories();
         initCategoryMenu(); // カテゴリメニューを初期化（ホバー表示用）
         renderWeekCalendar();
-        await renderEventBlocks();
+        initSearchConditionsButton();
+        await applyFiltersAndRender();
         // データ読み込み後にカテゴリカウントを更新
         console.log('[index.html] After loadEventData - eventData:', window.eventData);
         console.log('[index.html] After loadEventData - eventData.events:', Array.isArray(window.eventData?.events) ? window.eventData.events.length : 'not array');
@@ -3453,7 +3503,6 @@
           console.log('[index.html] Sample event categoryId:', window.eventData.events[0].categoryId);
         }
         renderPopularSearch(); // 人気タグ・地域検索セクションを描画
-        setupMapSearchButton();
 
       } catch (e) {
         console.error(e);

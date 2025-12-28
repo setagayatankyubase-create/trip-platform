@@ -191,11 +191,7 @@
   <script>
     let currentEvents = [];
     let selectedEventId = null;
-
-    function normalizeQueryValue(value) {
-      if (value === undefined || value === null) return "";
-      return String(value).trim().toLowerCase();
-    }
+    window.skipAutoScrollAfterFilter = false;
 
     // マップ初期化（常時表示）
     function initMap() {
@@ -288,7 +284,11 @@
         area: document.getElementById('search-area')?.value || '',
         date: document.getElementById('search-date')?.value || '',
       };
+      const currentParams = URLManager.getParams();
+      if (currentParams.pref) params.pref = currentParams.pref;
+      if (currentParams.tag) params.tag = currentParams.tag;
       URLManager.updateParams(params);
+      window.skipAutoScrollAfterFilter = true;
       await loadEvents();
     }
 
@@ -300,6 +300,10 @@
         area: document.getElementById('mobile-filter-area')?.value || '',
         date: document.getElementById('mobile-filter-date')?.value || '',
       };
+      const currentParams = URLManager.getParams();
+      if (currentParams.pref) params.pref = currentParams.pref;
+      if (currentParams.tag) params.tag = currentParams.tag;
+      window.skipAutoScrollAfterFilter = true;
       URLManager.updateParams(params);
       BottomSheet.close();
       await loadEvents();
@@ -331,11 +335,19 @@
         date: formData.get('date') || '',
         area: formData.get('area') || ''
       };
+      const currentParams = URLManager.getParams();
+      if (currentParams.pref) params.pref = currentParams.pref;
+      if (currentParams.tag) params.tag = currentParams.tag;
       // URLパラメータを更新
       URLManager.setParams(params);
+      window.skipAutoScrollAfterFilter = true;
       // loadEvents は async なので await する
       await loadEvents();
       scrollToEventListSearchTarget();
+    }
+
+    function normalizeFilterValue(value) {
+      return value ? String(value).trim().toLowerCase() : "";
     }
 
     // 一覧用フィルタ処理（events_index を前提に軽量実装）
@@ -344,12 +356,6 @@
 
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const parseMultiValue = (value) => value
-        ? value.split(',').map(item => item.trim()).filter(Boolean)
-        : [];
-      const categoryFilters = parseMultiValue(params.category).map(normalizeQueryValue);
-      const tagFilters = parseMultiValue(params.tag).map(normalizeQueryValue);
-      const normalizedPref = normalizeQueryValue(params.pref);
 
       // URLパラメータによる事前フィルタ（recommended / new / upcoming）
       if (urlParams.get('recommended') === '1') {
@@ -385,18 +391,27 @@
         });
       }
 
-      // カテゴリ（複数指定に対応）
+      // カテゴリ（複数選択対応）
+      const categoryFilters = params.category
+        ? params.category.split(',').map(normalizeFilterValue).filter(Boolean)
+        : [];
       if (categoryFilters.length) {
         filtered = filtered.filter(e => {
-          const catId = normalizeQueryValue(e.categoryId || e.category_id || e.category);
-          return categoryFilters.includes(catId);
+          const catId = e.categoryId || e.category_id || e.category;
+          const normalizedCat = normalizeFilterValue(catId);
+          return normalizedCat && categoryFilters.includes(normalizedCat);
         });
       }
 
-      if (normalizedPref) {
+      // 都道府県（複数選択対応）
+      const prefFilters = params.pref
+        ? params.pref.split(',').map(normalizeFilterValue).filter(Boolean)
+        : [];
+      if (prefFilters.length) {
         filtered = filtered.filter(e => {
-          const eventPref = normalizeQueryValue(e.prefecture || e.area || e.city);
-          return eventPref === normalizedPref;
+          const eventPref = e.prefecture || e.area || e.area_name || e.city;
+          const normalizedPref = normalizeFilterValue(eventPref);
+          return normalizedPref && prefFilters.includes(normalizedPref);
         });
       }
 
@@ -408,31 +423,31 @@
         });
       }
 
-      // タグ（複数指定に対応）
+      // タグ（複数選択対応）
+      const tagFilters = params.tag
+        ? params.tag.split(',').map(normalizeFilterValue).filter(Boolean)
+        : [];
       if (tagFilters.length) {
         filtered = filtered.filter(e => {
-          const tagValues = new Set();
+          const eventTags = [];
           if (Array.isArray(e.tags)) {
             e.tags.forEach(tag => {
-              const normalized = normalizeQueryValue(tag);
-              if (normalized) tagValues.add(normalized);
+              if (typeof tag === 'string') {
+                eventTags.push(tag);
+              } else if (tag?.id) {
+                eventTags.push(tag.id);
+              } else if (tag?.name) {
+                eventTags.push(tag.name);
+              }
             });
           }
           if (Array.isArray(e.tagIds)) {
-            e.tagIds.forEach(tag => {
-              const normalized = normalizeQueryValue(tag);
-              if (normalized) tagValues.add(normalized);
-            });
+            e.tagIds.forEach(tag => eventTags.push(tag));
           }
-          if (e.tag) {
-            const normalized = normalizeQueryValue(e.tag);
-            if (normalized) tagValues.add(normalized);
-          }
-          if (e.tag_id) {
-            const normalized = normalizeQueryValue(e.tag_id);
-            if (normalized) tagValues.add(normalized);
-          }
-          return tagFilters.some(tag => tagValues.has(tag));
+          const normalizedEventTags = eventTags
+            .map(tag => normalizeFilterValue(tag))
+            .filter(Boolean);
+          return tagFilters.some(tagFilter => normalizedEventTags.includes(tagFilter));
         });
       }
 
@@ -643,6 +658,7 @@
     async function loadEvents() {
       const params = URLManager.getParams();
       const urlParams = new URLSearchParams(window.location.search);
+      const hasFilterParams = Boolean(params.pref || params.category || params.tag);
 
       // events_index が読み込まれていない場合は待つ
       if (!Array.isArray(window.eventIndex)) {
@@ -820,11 +836,9 @@
         resultCountEl.textContent = currentEvents.length;
       }
       if (resultMessageEl) {
-        if (currentEvents.length === 0) {
-          resultMessageEl.textContent = '該当イベントはありません（0件です）';
-        } else {
-          resultMessageEl.textContent = '';
-        }
+        resultMessageEl.textContent = currentEvents.length === 0
+          ? '該当イベントはありません（0件です）'
+          : '';
       }
 
       // 0件時のおすすめ導線（検索条件に近いイベントを表示）
@@ -866,10 +880,6 @@
       // マップ更新
       renderMapMarkers();
 
-      if (urlParams.get('source') === 'map') {
-        scrollToEventListSearchTarget();
-      }
-
       // 検索フォームに値を設定
       const searchQueryEl = document.getElementById('eventListSearchInput');
       const searchCategoryEl = document.getElementById('search-category');
@@ -879,14 +889,18 @@
       const mobileFilterAreaEl = document.getElementById('mobile-filter-area');
       const mobileFilterDateEl = document.getElementById('mobile-filter-date');
       
-      const categorySelectValue = params.category ? params.category.split(',')[0] : '';
       if (searchQueryEl) searchQueryEl.value = params.q || '';
-      if (searchCategoryEl) searchCategoryEl.value = categorySelectValue;
+      if (searchCategoryEl) searchCategoryEl.value = params.category || '';
       if (searchDateEl) searchDateEl.value = params.date || '';
       if (searchAreaEl) searchAreaEl.value = params.area || '';
-      if (mobileFilterCategoryEl) mobileFilterCategoryEl.value = categorySelectValue;
+      if (mobileFilterCategoryEl) mobileFilterCategoryEl.value = params.category || '';
       if (mobileFilterAreaEl) mobileFilterAreaEl.value = params.area || '';
       if (mobileFilterDateEl) mobileFilterDateEl.value = params.date || '';
+
+      if (hasFilterParams && !window.skipAutoScrollAfterFilter) {
+        scrollToEventListSearchTarget();
+      }
+      window.skipAutoScrollAfterFilter = false;
     }
 
     // カテゴリ・エリアの選択肢を設定（eventMeta / eventIndex ベース）
