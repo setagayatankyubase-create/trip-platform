@@ -3588,10 +3588,8 @@
         mapSearchMap.appendChild(notice);
       }
       if (filteredCount === 0) {
-        const sentence = buildConditionSentence(filteredCount);
         notice.innerHTML = `
-          <div class="no-results-sentence">${sentence}</div>
-          <p class="no-results-guidance">エリアを広げる、カテゴリやタグを1つ外すなど、少し条件を緩めてみましょう。</p>
+          <p class="no-results-guidance">条件を少し緩めると、他の体験が見つかります</p>
         `;
         notice.style.display = 'flex';
       } else {

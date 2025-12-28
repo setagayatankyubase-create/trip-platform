@@ -2428,10 +2428,6 @@ body {
   gap: 6px;
   z-index: 5;
 }
-.no-results-sentence {
-  font-weight: 700;
-  font-size: 0.95rem;
-}
 .no-results-guidance {
   margin: 0;
   font-size: 0.85rem;
