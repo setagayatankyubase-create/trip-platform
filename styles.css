@@ -26,6 +26,28 @@
   --hover: var(--brand-strong);
 }
 
+:root{
+  --header-h: 76px;
+}
+
+@media (max-width: 768px){
+  :root{ --header-h: 64px; }
+}
+
+.hero-section{
+  height: auto;
+  min-height: calc(100svh - var(--header-h));
+  padding-top: var(--header-h);
+  margin-bottom: 40px;
+}
+
+.hero-section-background{
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
