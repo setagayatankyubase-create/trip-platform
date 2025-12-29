@@ -2449,12 +2449,12 @@ body {
   top: 110px;
   padding: 20px;
   border-radius: 14px;
-  background: #fff;
+  background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
   border: 1px solid rgba(15, 23, 42, 0.06);
   box-shadow: var(--shadow-soft);
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
 }
 .map-controls .clear-button,
 .map-controls button.clear {
@@ -2472,21 +2472,82 @@ body {
   color: var(--primary);
   background: rgba(11,122,93,0.06);
 }
-.map-cta {
-  margin-top: 16px;
-  display: block;
-  padding: 12px 14px;
+.map-controls #categoryCard,
+.map-controls .search-card {
+  padding: 16px;
   border-radius: 12px;
-  background: var(--brand);
-  color: #fff;
-  font-weight: 700;
-  text-align: center;
-  box-shadow: 0 10px 22px rgba(11,122,93,0.22);
+  background: var(--surface-muted);
+  border: 1px solid rgba(15,23,42,0.06);
+  box-shadow: var(--shadow-soft);
+}
+
+.map-cta {
+  appearance: none;
+  -webkit-appearance: none;
+  margin-top: 8px;
+  border: 1px solid rgba(255,255,255,0.16);
+  border-radius: 14px;
+  padding: 14px 18px;
+  min-height: 52px;
+  font-size: 0.98rem;
+  font-weight: 800;
   letter-spacing: 0.02em;
+  line-height: 1.2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #fff;
+  text-decoration: none;
+  user-select: none;
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--primary) 92%, #fff 8%) 0%,
+    var(--primary) 60%,
+    color-mix(in srgb, var(--primary) 86%, #000 14%) 100%
+  );
+  box-shadow:
+    0 10px 22px rgba(11,122,93,0.22),
+    inset 0 1px 0 rgba(255,255,255,0.18);
+  transform: translateZ(0);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+.map-cta *{
+  background: transparent !important;
+  box-shadow: none !important;
 }
 .map-cta:hover{
   transform: translateY(-1px);
-  box-shadow: 0 14px 26px rgba(11,122,93,0.28);
+  filter: saturate(1.02);
+  box-shadow:
+    0 14px 26px rgba(11,122,93,0.28),
+    inset 0 1px 0 rgba(255,255,255,0.22);
+}
+.map-cta:active{
+  transform: translateY(0px);
+  box-shadow:
+    0 10px 22px rgba(11,122,93,0.20),
+    inset 0 2px 10px rgba(0,0,0,0.18);
+}
+.map-cta:focus-visible{
+  outline: none;
+  box-shadow:
+    0 0 0 4px var(--focus-ring),
+    0 14px 26px rgba(11,122,93,0.28);
+}
+.map-cta::before{
+  content: "";
+  display: block;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(15,23,42,0.12), transparent);
+  margin-bottom: 14px;
+}
+.map-cta::after{
+  content: "選択中の条件で表示します";
+  display: block;
+  margin-top: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  opacity: 0.85;
 }
 .prefecture-name {
   font-weight: 600;
