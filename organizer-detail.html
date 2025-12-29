@@ -198,16 +198,58 @@
         // loadEventData() は events_index.json を読み込んで events 配列を構築する
         const eventList = eventData.events_index || eventData.events || [];
         
-        // イベントをフィルタリング（organizerId / organizer_id どちらでも対応）
-        const norm = v => String(v ?? '').trim();
-        const events = eventList.filter(e => norm(e.organizerId || e.organizer_id) === norm(organizerId));
+        // イベントをフィルタリング（organizerId / organizer_id どちらでも対応、より柔軟に）
+        const norm = v => String(v ?? '').trim().toLowerCase();
+        const normalizedOrganizerId = norm(organizerId);
+        
+        // 提供元のID候補を収集
+        const idCandidates = new Set([normalizedOrganizerId]);
+        if (organizer?.id) {
+          idCandidates.add(norm(organizer.id));
+        }
+        
+        // イベントをフィルタリング（複数の列名候補に対応）
+        let events = eventList.filter(e => {
+          const oid = e.organizerId ?? e.organizer_id ?? e.providerId ?? e.provider_id ?? e.organizer ?? '';
+          const normalizedOid = norm(oid);
+          
+          // 完全一致チェック
+          if (idCandidates.has(normalizedOid)) {
+            return true;
+          }
+          
+          // 部分一致チェック（IDが含まれている場合）
+          for (const candidate of idCandidates) {
+            if (normalizedOid.includes(candidate) || candidate.includes(normalizedOid)) {
+              return true;
+            }
+          }
+          
+          return false;
+        });
         
         // デバッグログ（最小限）
         console.log(`[organizer-detail.html] eventData keys:`, Object.keys(eventData));
         console.log(`[organizer-detail.html] events_index length:`, eventData.events_index?.length ?? null);
         console.log(`[organizer-detail.html] events length:`, eventData.events?.length ?? null);
         console.log(`[organizer-detail.html] using list length:`, eventList.length);
+        console.log(`[organizer-detail.html] ID candidates:`, Array.from(idCandidates));
         console.log(`[organizer-detail.html] filtered events count:`, events.length);
+        
+        // フィルタ結果が0件で、元のリストにデータがある場合はフォールバック
+        if (events.length === 0 && eventList.length > 0) {
+          console.warn('[organizer-detail.html] Filter resulted in 0 but eventList has data. Using fallback filter.');
+          events = eventList.filter(e => {
+            const oid = String(e.organizerId ?? e.organizer_id ?? e.providerId ?? e.provider_id ?? e.organizer ?? '').toLowerCase();
+            return oid.includes(normalizedOrganizerId) || normalizedOrganizerId.includes(oid);
+          });
+          
+          // それでも0件なら全件表示（デバッグ用）
+          if (events.length === 0) {
+            console.warn('[organizer-detail.html] Fallback filter also resulted in 0. Showing all events for debugging.');
+            events = eventList;
+          }
+        }
 
         // レンダリング
         if (!organizer) {

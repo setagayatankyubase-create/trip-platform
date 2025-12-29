@@ -457,49 +457,88 @@
         console.log('[organizer-demo.html] eventList length:', eventList.length);
         
         // 正規化関数を改善：空白除去も追加（全角/半角スペースに対応）
-        const norm = v => String(v ?? '').trim().replace(/[\s　]+/g, '');
+        const norm = v => String(v ?? '').trim().replace(/[\s　]+/g, '').toLowerCase();
         
-        // ID候補（正規化処理は削除 - すべてdemoorg-xxxで統一）
+        // ID候補（正規化処理を追加 - 大文字小文字を無視）
         const idCandidates = new Set([norm(organizerId)]);
         // 提供元のIDも候補に追加
         const organizerOriginalId = norm(demoData.organizer?.id || '');
         if (organizerOriginalId) {
           idCandidates.add(organizerOriginalId);
         }
+        // 提供元の他のID候補も追加（nameベースのマッチングも考慮）
+        if (demoData.organizer?.name) {
+          idCandidates.add(norm(demoData.organizer.name));
+        }
         
         console.log('[organizer-demo.html] ID candidates for filtering:', Array.from(idCandidates));
+        console.log('[organizer-demo.html] Total eventList length:', eventList.length);
         
         // 最初の数件のイベントのorganizerIdを確認
         if (eventList.length > 0) {
-          console.log('[organizer-demo.html] Sample events organizerId:', eventList.slice(0, 3).map(e => ({
+          console.log('[organizer-demo.html] Sample events organizerId:', eventList.slice(0, 5).map(e => ({
             id: e.id,
+            title: e.title || e.name,
             organizerId: e.organizerId,
             organizer_id: e.organizer_id,
             providerId: e.providerId,
-            provider_id: e.provider_id
+            provider_id: e.provider_id,
+            organizer: e.organizer,
+            normalized_organizerId: norm(e.organizerId ?? e.organizer_id ?? e.providerId ?? e.provider_id ?? e.organizer ?? '')
           })));
         }
         
-        // イベントをフィルタリング（複数の列名候補に対応）
+        // イベントをフィルタリング（複数の列名候補に対応、より柔軟に）
         let events = eventList.filter(ev => {
           // 複数の列名候補をチェック（organizerId, organizer_id, providerId, provider_id など）
           const oid = ev.organizerId ?? ev.organizer_id ?? ev.providerId ?? ev.provider_id ?? ev.organizer ?? ev.organizerID ?? '';
-          return idCandidates.has(norm(oid));
+          const normalizedOid = norm(oid);
+          
+          // 完全一致チェック
+          if (idCandidates.has(normalizedOid)) {
+            return true;
+          }
+          
+          // 部分一致チェック（IDが含まれている場合）
+          for (const candidate of idCandidates) {
+            if (normalizedOid.includes(candidate) || candidate.includes(normalizedOid)) {
+              return true;
+            }
+          }
+          
+          return false;
         });
         
         console.log('[organizer-demo.html] filtered events count:', events.length);
+        console.log('[organizer-demo.html] filtered events:', events.map(e => ({
+          id: e.id,
+          title: e.title || e.name,
+          organizerId: e.organizerId || e.organizer_id || e.providerId || e.provider_id || 'N/A'
+        })));
         
         // ★重要：元はあるのに0件なら、二重フィルタを解除
         if (events.length === 0 && eventList.length > 0) {
           console.warn('[organizer-demo.html] Filter resulted in 0 but eventList has data. Skipping filter as fallback.');
           console.warn('[organizer-demo.html] Expected organizerId:', Array.from(idCandidates));
-          console.warn('[organizer-demo.html] Sample event organizerIds:', eventList.slice(0, 3).map(e => ({
+          console.warn('[organizer-demo.html] Sample event organizerIds:', eventList.slice(0, 5).map(e => ({
             id: e.id,
             organizerId: e.organizerId || 'N/A',
             organizer_id: e.organizer_id || 'N/A',
-            providerId: e.providerId || 'N/A'
+            providerId: e.providerId || 'N/A',
+            provider_id: e.provider_id || 'N/A'
           })));
-          events = eventList;
+          // フォールバック：フィルタを緩和して、提供元IDが含まれているイベントをすべて表示
+          events = eventList.filter(ev => {
+            const oid = String(ev.organizerId ?? ev.organizer_id ?? ev.providerId ?? ev.provider_id ?? ev.organizer ?? '').toLowerCase();
+            const urlId = String(organizerId).toLowerCase();
+            return oid.includes(urlId) || urlId.includes(oid);
+          });
+          
+          // それでも0件なら全件表示
+          if (events.length === 0) {
+            console.warn('[organizer-demo.html] Fallback filter also resulted in 0. Showing all events.');
+            events = eventList;
+          }
         } else if (events.length === 0 && eventList.length === 0) {
           console.warn('[organizer-demo.html] ⚠️ No events available (neither demoData.events nor window.eventData.events)');
         }
