@@ -240,8 +240,29 @@ const OrganizerPageRenderer = {
 
     if (!container) return;
 
+    // 強制的に複数件出る描画に統一
+    container.innerHTML = '';  // まず空にする
+    
     if (events.length > 0) {
-      CardRenderer.renderList(events, 'organizer-events');
+      // 各イベントをforEachでループして追加
+      events.forEach(ev => {
+        const html = CardRenderer.render(ev);  // 既存のカード生成関数を使う
+        container.insertAdjacentHTML('beforeend', html);
+      });
+      
+      // クリックイベントリスナーを追加（イベントデータを参照できるようにクロージャで保持）
+      const eventsMap = new Map(events.map(ev => [ev.id, ev]));
+      const links = container.querySelectorAll('.card-link');
+      links.forEach(link => {
+        link.addEventListener('click', (e) => {
+          const eventId = link.getAttribute('data-event-id');
+          const event = eventsMap.get(eventId);
+          const organizerId = event ? (event.organizerId || event.organizer_id || '') : '';
+          if (typeof ClickTracker !== 'undefined' && ClickTracker.track) {
+            ClickTracker.track(eventId, organizerId);
+          }
+        });
+      });
     } else {
       container.innerHTML = `
         <div class="empty-state" style="grid-column: 1 / -1;">
