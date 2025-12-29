@@ -2434,24 +2434,32 @@ body {
   align-items: center;
 }
 
+.map-area .map-left {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
 .map-left {
   min-width: 0;
   border-radius: 16px;
-  background: radial-gradient(1200px 600px at 50% 40%, rgba(11,122,93,0.06), transparent 55%);
-  border: 1px solid rgba(15, 23, 42, 0.06);
+  background: transparent;
+  border: none;
   overflow: hidden;
 }
 .map-right {
   position: relative;
+  padding-left: 10px;
+  border-left: 1px solid rgba(15,23,42,0.06);
 }
 .map-controls {
   position: sticky;
   top: 110px;
-  padding: 20px;
+  padding: 14px 14px 16px;
   border-radius: 14px;
-  background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
-  border: 1px solid rgba(15, 23, 42, 0.06);
-  box-shadow: var(--shadow-soft);
+  background: transparent;
+  border: none;
+  box-shadow: none;
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -2476,9 +2484,9 @@ body {
 .map-controls .search-card {
   padding: 16px;
   border-radius: 12px;
-  background: var(--surface-muted);
-  border: 1px solid rgba(15,23,42,0.06);
-  box-shadow: var(--shadow-soft);
+  background: rgba(245,246,251,0.7);
+  border: 1px solid rgba(15,23,42,0.08);
+  box-shadow: none;
 }
 
 .map-cta {
@@ -2574,21 +2582,22 @@ body {
 }
 
 .map-svg .pref {
-  fill: #f6f8f7;
-  stroke: rgba(15, 23, 42, 0.14);
-  stroke-width: 1.2;
+  fill: #f4f7f6;
+  stroke: rgba(15,23,42,0.18);
+  stroke-width: 1.3;
   transition: fill 0.2s ease, stroke 0.2s ease, transform 0.2s ease;
   cursor: pointer;
 }
 .map-svg .pref:hover {
-  fill: rgba(11,122,93,0.10);
-  stroke: rgba(11,122,93,0.55);
+  fill: rgba(11,122,93,0.14);
+  stroke: rgba(11,122,93,0.65);
+  stroke-width: 1.6;
   transform: translateY(-1px);
 }
 .map-svg .pref.is-selected {
-  fill: rgba(11, 122, 93, 0.22);
-  stroke: rgba(11, 122, 93, 0.95);
-  stroke-width: 1.8;
+  fill: rgba(11,122,93,0.38);
+  stroke: rgba(11,122,93,0.95);
+  stroke-width: 2.1;
 }
 
 /* 関東地方の地図レイアウト */
