@@ -949,8 +949,13 @@ const CardRenderer = {
       }).call(this);
     `;
 
-    // インデックスデータでは city が area 相当として使われる
-    const area = event.area || event.city || "";
+    // 位置情報を都道府県→市区順で表示
+    const prefecture = event.prefecture || event.prefecture_name || event.prefectureName || "";
+    const city = event.city || event.area || event.area_name || event.town || "";
+    const locationParts = [];
+    if (prefecture) locationParts.push(prefecture);
+    if (city) locationParts.push(city);
+    const locationDisplay = locationParts.join(", ");
 
     // 日程情報のフォーマット（表示しない）
     // 日付表示は削除されました
@@ -972,7 +977,7 @@ const CardRenderer = {
               ${this.getRatingHtml(event)}
             </div>
             <div class="card-title">${event.title}</div>
-            <div class="card-location">${area}, ${event.prefecture || ''}</div>
+            <div class="card-location">${locationDisplay}</div>
             <div class="card-price">¥ ${event.price.toLocaleString()}</div>
           </div>
         </div>
