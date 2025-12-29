@@ -2404,13 +2404,18 @@ body {
 
 /* 地図エリア（左地図＋右カラム） */
 .map-area {
-  margin: 0;
-  padding: 0;
+  margin: 0 auto;
+  padding: 18px;
+  max-width: 1180px;
   display: grid;
   grid-template-columns: 1fr 360px;
   gap: 16px;
   align-items: start;
   width: 100%;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfcff 100%);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  box-shadow: var(--shadow-soft);
 }
 .map-prefecture {
   position: absolute;
@@ -2429,33 +2434,59 @@ body {
   align-items: center;
 }
 
+.map-left {
+  min-width: 0;
+  border-radius: 16px;
+  background: radial-gradient(1200px 600px at 50% 40%, rgba(11,122,93,0.06), transparent 55%);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  overflow: hidden;
+}
 .map-right {
-  background: transparent;
-  border-radius: 0;
-  padding: 0;
-  box-shadow: none;
+  position: relative;
 }
 .map-controls {
   position: sticky;
-  top: 120px;
+  top: 110px;
   padding: 20px;
   border-radius: 14px;
-  background: linear-gradient(180deg, #ffffff 0%, #f9fbfa 100%);
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.06);
   box-shadow: var(--shadow-soft);
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
+.map-controls .clear-button,
+.map-controls button.clear {
+  background: transparent;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  color: var(--text-muted);
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 600;
+  box-shadow: none;
+}
+.map-controls .clear-button:hover,
+.map-controls button.clear:hover {
+  border-color: rgba(11,122,93,0.35);
+  color: var(--primary);
+  background: rgba(11,122,93,0.06);
+}
 .map-cta {
   margin-top: 16px;
   display: block;
-  padding: 14px 16px;
+  padding: 12px 14px;
   border-radius: 12px;
   background: var(--brand);
   color: #fff;
   font-weight: 700;
   text-align: center;
-  box-shadow: 0 12px 28px rgba(11,122,93,0.35);
+  box-shadow: 0 10px 22px rgba(11,122,93,0.22);
+  letter-spacing: 0.02em;
+}
+.map-cta:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 14px 26px rgba(11,122,93,0.28);
 }
 .prefecture-name {
   font-weight: 600;
@@ -2482,15 +2513,15 @@ body {
 }
 
 .map-svg .pref {
-  fill: #f2f5f4;
-  stroke: #cfd8d4;
+  fill: #f6f8f7;
+  stroke: rgba(15, 23, 42, 0.14);
   stroke-width: 1.2;
   transition: fill 0.2s ease, stroke 0.2s ease, transform 0.2s ease;
   cursor: pointer;
 }
 .map-svg .pref:hover {
-  fill: #e7f3ee;
-  stroke: rgba(11, 122, 93, 0.55);
+  fill: rgba(11,122,93,0.10);
+  stroke: rgba(11,122,93,0.55);
   transform: translateY(-1px);
 }
 .map-svg .pref.is-selected {
